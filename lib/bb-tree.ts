@@ -621,23 +621,23 @@ function subtreeQuery(subtree, bb, func) {
 /// Returns the fraction along the segment query the node hits. Returns Infinity if it doesn't hit.
 function nodeSegmentQuery(node, a, b)
 {
-	var idx = 1/(b.x - a.x);
-	var tx1 = (node.bb_l == a.x ? -Infinity : (node.bb_l - a.x) * idx);
-	var tx2 = (node.bb_r == a.x ?  Infinity : (node.bb_r - a.x) * idx);
-	var txmin = Math.min(tx1, tx2);
-	var txmax = Math.max(tx1, tx2);
-	
-	var idy = 1/(b.y - a.y);
-	var ty1 = (node.bb_b == a.y ? -Infinity : (node.bb_b - a.y) * idy);
-	var ty2 = (node.bb_t == a.y ?  Infinity : (node.bb_t - a.y) * idy);
-	var tymin = Math.min(ty1, ty2);
-	var tymax = Math.max(ty1, ty2);
+	const idx = 1/(b.x - a.x);
+	const tx1 = (node.bb_l == a.x ? -Infinity : (node.bb_l - a.x) * idx);
+	const tx2 = (node.bb_r == a.x ?  Infinity : (node.bb_r - a.x) * idx);
+	const txmin = Math.min(tx1, tx2);
+	const txmax = Math.max(tx1, tx2);
+	const
+	const idy = 1/(b.y - a.y);
+	const ty1 = (node.bb_b == a.y ? -Infinity : (node.bb_b - a.y) * idy);
+	const ty2 = (node.bb_t == a.y ?  Infinity : (node.bb_t - a.y) * idy);
+	const tymin = Math.min(ty1, ty2);
+	const tymax = Math.max(ty1, ty2);
 	
 	if (tymin <= txmax && txmin <= tymax){
-		var min_ = Math.max(txmin, tymin);
-		var max_ = Math.min(txmax, tymax);
+		const min_ = Math.max(txmin, tymin);
+		const max_ = Math.min(txmax, tymax);
 		
-		if (0.0 <= max_ && min_ <= 1.0) return max(min_, 0.0);
+		if (0.0 <= max_ && min_ <= 1.0) return Math.max(min_, 0.0);
 	}
 	
 	return Infinity;
@@ -649,8 +649,8 @@ function subtreeSegmentQuery(subtree, a, b, t_exit, func)
 	if(subtree.isLeaf){
 		return func(subtree.obj);
 	} else {
-		var t_a = nodeSegmentQuery(subtree.A, a, b);
-		var t_b = nodeSegmentQuery(subtree.B, a, b);
+		const t_a = nodeSegmentQuery(subtree.A, a, b);
+		const t_b = nodeSegmentQuery(subtree.B, a, b);
 		
 		if(t_a < t_b){
             if (t_a < t_exit) {
@@ -749,7 +749,7 @@ function partitionNodes(tree, nodes, offset, count) {
     let bb_t = node.bb_t;
 
     const end = offset + count;
-    for (var i = offset + 1; i < end; i++) {
+    for (let i = offset + 1; i < end; i++) {
         //bb = bbMerge(bb, nodes[i].bb);
         node = nodes[i];
         bb_l = Math.min(bb_l, node.bb_l);
@@ -764,12 +764,12 @@ function partitionNodes(tree, nodes, offset, count) {
     // Sort the bounds and use the median as the splitting point
     const bounds = new Array(count * 2);
     if (splitWidth) {
-        for (var i = offset; i < end; i++) {
+        for (let i = offset; i < end; i++) {
             bounds[2 * i + 0] = nodes[i].bb_l;
             bounds[2 * i + 1] = nodes[i].bb_r;
         }
     } else {
-        for (var i = offset; i < end; i++) {
+        for (let i = offset; i < end; i++) {
             bounds[2 * i + 0] = nodes[i].bb_b;
             bounds[2 * i + 1] = nodes[i].bb_t;
         }
@@ -796,7 +796,7 @@ function partitionNodes(tree, nodes, offset, count) {
     // Partition the nodes
     let right = end;
     for (let left = offset; left < right;) {
-        var node = nodes[left];
+        let node = nodes[left];
         //	if(bbMergedArea(node.bb, b) < bbMergedArea(node.bb, a)){
         if (bbTreeMergedArea2(node, b_l, b_b, b_r, b_t) < bbTreeMergedArea2(node, a_l, a_b, a_r, a_t)) {
             right--;
@@ -808,8 +808,8 @@ function partitionNodes(tree, nodes, offset, count) {
     }
 
     if (right == count) {
-        var node = null;
-        for (var i = offset; i < end; i++) node = subtreeInsert(node, nodes[i], tree);
+        let node = null;
+        for (let i = offset; i < end; i++) node = subtreeInsert(node, nodes[i], tree);
         return node;
     }
 

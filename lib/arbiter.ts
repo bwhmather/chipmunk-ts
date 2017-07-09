@@ -19,6 +19,15 @@
  * SOFTWARE.
  */
 
+import { Body } from './body';
+import { Shape } from './shape';
+import {
+    apply_bias_impulse, apply_impulses,
+    k_scalar, normal_relative_velocity,
+} from './constraints/util';
+import { clamp } from './util';
+import { Vect, vdot2, vmult, vneg, vperp, vsub, vzero } from './vect';
+
 /// @defgroup cpArbiter cpArbiter
 /// The cpArbiter struct controls pairs of colliding shapes.
 /// They are also used in conjuction with collision handler callbacks
@@ -26,11 +35,28 @@
 
 const CP_MAX_CONTACTS_PER_ARBITER = 4;
 
+
+/// A struct that wraps up the important collision data for an arbiter.
+export class ContactPoint {
+    point: Vect;
+    normal: Vect;
+    dist: number;
+
+    constructor(point, normal, dist) {
+        this.point = point;
+        this.normal = normal;
+        this.dist = dist;
+    }
+}
+
 // **** Collision Handlers
 //
 // Collision handlers are user-defined objects to describe the behaviour of
 // colliding objects.
 export class CollisionHandler {
+    a;
+    b;
+
     constructor() {
         // The collision type
         this.a = this.b = 0;
@@ -75,6 +101,26 @@ export class CollisionHandler {
 
 /// A colliding pair of shapes.
 export class Arbiter {
+    e: number;
+    u: number;
+    surface_vr: Vect;
+
+    a: Shape;
+    body_a: Body;
+    b: Shape;
+    body_b: Body;
+
+    thread_a_next;
+    thread_a_prev;
+    thread_b_next;
+    thread_b_prev;
+
+    contacts;
+    stamp;
+    handler;
+    swappedColl;
+    state;
+
     constructor(a, b) {
         /// Calculated value to use for the elasticity coefficient.
         /// Override in a pre-solve collision handler for custom behavior.
@@ -286,7 +332,7 @@ export class Arbiter {
             con.tMass = 1 / k_scalar(a, b, con.r1, con.r2, vperp(con.n));
 
             // Calculate the target bias velocity.
-            con.bias = -bias * min(0, con.dist + slop) / dt;
+            con.bias = -bias * Math.min(0, con.dist + slop) / dt;
             con.jBias = 0;
 
             // Calculate the target bounce velocity.
@@ -320,7 +366,7 @@ export class Arbiter {
         const friction = this.u;
 
         this.contacts.forEach((con, i) => {
-            const con = this.contacts[i];
+            numApplyContact++;
             const nMass = con.nMass;
             const n = con.n;
             const r1 = con.r1;
@@ -343,11 +389,11 @@ export class Arbiter {
 
             const jbn = (con.bias - vbn) * nMass;
             const jbnOld = con.jBias;
-            con.jBias = max(jbnOld + jbn, 0);
+            con.jBias = Math.max(jbnOld + jbn, 0);
 
             const jn = -(con.bounce + vrn) * nMass;
             const jnOld = con.jnAcc;
-            con.jnAcc = max(jnOld + jn, 0);
+            con.jnAcc = Math.max(jnOld + jn, 0);
 
             const jtMax = friction * con.jnAcc;
             const jt = -vrt * con.tMass;
@@ -381,15 +427,6 @@ export class Arbiter {
     // From chipmunk_private.h
     next(body) {
         return (this.body_a == body ? this.thread_a_next : this.thread_b_next);
-    }
-}
-
-/// A struct that wraps up the important collision data for an arbiter.
-export class ContactPoint {
-    constructor(point, normal, dist) {
-        this.point = point;
-        this.normal = normal;
-        this.dist = dist;
     }
 }
 

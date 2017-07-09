@@ -19,10 +19,27 @@
  * SOFTWARE.
  */
 
+import { Body } from '../body';
+import { Shape } from '../shape';
+import { Space } from '../space';
+
 // TODO: Comment me!
 
 // a and b are bodies that the constraint applies to.
-class Constraint {
+export abstract class Constraint {
+    a: Body;
+    b: Body;
+
+    space: Space;
+
+    next_a;
+    next_b;
+
+    maxForce: number;
+
+    errorBias: number;
+    maxBias: number;
+
     constructor(a, b) {
         /// The first body connected to this constraint.
         this.a = a;

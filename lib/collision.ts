@@ -18,6 +18,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { CircleShape, SegmentShape } from './shape';
+import { PolyShape } from './poly-shape';
+import { assert, clamp01, hashPair } from './util';
+import {
+    Vect, vzero, vneg,
+    vadd, vsub, vmult,
+    vcross, vcross2,
+    vdot, vdot2,
+    vlengthsq,
+} from './vect';
 
 let numContacts = 0;
 
@@ -57,32 +67,32 @@ function circle2circleQuery(p1, p2, r1, r2) {
 };
 
 // Collide circle shapes.
-function circle2circle({ tc, r }, { tc, r }) {
-    const contact = circle2circleQuery(tc, tc, r, r);
-    return contact ? [contact] : NONE;
+function circle2circle(circ1, circ2) {
+	const contact = circle2circleQuery(circ1.tc, circ2.tc, circ1.r, circ2.r);
+	return contact ? [contact] : NONE;
 };
 
-function circle2segment({ tc, r }, segmentShape) {
-    const seg_a = segmentShape.ta;
-    const seg_b = segmentShape.tb;
-    const center = tc;
+function circle2segment(circleShape, segmentShape) {
+	const seg_a = segmentShape.ta;
+	const seg_b = segmentShape.tb;
+	const center = circleShape.tc;
 
-    const seg_delta = vsub(seg_b, seg_a);
-    const closest_t = clamp01(vdot(seg_delta, vsub(center, seg_a)) / vlengthsq(seg_delta));
-    const closest = vadd(seg_a, vmult(seg_delta, closest_t));
+	const seg_delta = vsub(seg_b, seg_a);
+	const closest_t = clamp01(vdot(seg_delta, vsub(center, seg_a))/vlengthsq(seg_delta));
+	const closest = vadd(seg_a, vmult(seg_delta, closest_t));
 
-    const contact = circle2circleQuery(center, closest, r, segmentShape.r);
-    if (contact) {
-        const n = contact.n;
-
-        // Reject endcap collisions if tangents are provided.
-        return (
-            (closest_t === 0 && vdot(n, segmentShape.a_tangent) < 0) ||
-            (closest_t === 1 && vdot(n, segmentShape.b_tangent) < 0)
-        ) ? NONE : [contact];
-    } else {
-        return NONE;
-    }
+	const contact = circle2circleQuery(center, closest, circleShape.r, segmentShape.r);
+	if(contact){
+		const n = contact.n;
+		
+		// Reject endcap collisions if tangents are provided.
+		return (
+			(closest_t === 0 && vdot(n, segmentShape.a_tangent) < 0) ||
+			(closest_t === 1 && vdot(n, segmentShape.b_tangent) < 0)
+		) ? NONE : [contact];
+	} else {
+		return NONE;
+	}
 }
 
 // Find the minimum separating axis for the given poly and axis list.
@@ -182,29 +192,29 @@ function poly2poly(poly1, poly2) {
 };
 
 // Like cpPolyValueOnAxis(), but for segments.
-function segValueOnAxis({ ta, r, tb }, n, d) {
-    const a = vdot(n, ta) - r;
-    const b = vdot(n, tb) - r;
-    return min(a, b) - d;
+function segValueOnAxis(seg, n, d) {
+	const a = vdot(n, seg.ta) - seg.r;
+	const b = vdot(n, seg.tb) - seg.r;
+	return Math.min(a, b) - d;
 };
 
 // Identify vertexes that have penetrated the segment.
-function findPointsBehindSeg(arr, { tn, ta, tb, r }, { tVerts, hashid }, pDist, coef) {
-    const dta = vcross(tn, ta);
-    const dtb = vcross(tn, tb);
-    const n = vmult(tn, coef);
+function findPointsBehindSeg(arr, seg, poly, pDist, coef) {
+	const dta = vcross(seg.tn, seg.ta);
+	const dtb = vcross(seg.tn, seg.tb);
+	const n = vmult(seg.tn, coef);
 
-    const verts = tVerts;
-    for (let i = 0; i < verts.length; i += 2) {
-        const vx = verts[i];
-        const vy = verts[i + 1];
-        if (vdot2(vx, vy, n.x, n.y) < vdot(tn, ta) * coef + r) {
-            const dt = vcross2(tn.x, tn.y, vx, vy);
-            if (dta >= dt && dt >= dtb) {
-                arr.push(new Contact(new Vect(vx, vy), n, pDist, hashPair(hashid, i)));
-            }
-        }
-    }
+	const verts = poly.tVerts;
+	for(let i=0; i<verts.length; i+=2){
+		const vx = verts[i];
+		const vy = verts[i+1];
+		if(vdot2(vx, vy, n.x, n.y) < vdot(seg.tn, seg.ta)*coef + seg.r){
+			const dt = vcross2(seg.tn.x, seg.tn.y, vx, vy);
+			if(dta >= dt && dt >= dtb){
+				arr.push(new Contact(new Vect(vx, vy), n, pDist, hashPair(poly.hashid, i)));
+			}
+		}
+	}
 };
 
 // This one is complicated and gross. Just don't go there...
@@ -261,13 +271,13 @@ function seg2poly(seg, poly) {
         const poly_a = new Vect(verts[mini2], verts[mini2 + 1]);
 
         let con;
-        if ((con = circle2circleQuery(seg.ta, poly_a, seg.r, 0, arr))) return [con];
-        if ((con = circle2circleQuery(seg.tb, poly_a, seg.r, 0, arr))) return [con];
+        if ((con = circle2circleQuery(seg.ta, poly_a, seg.r, 0))) return [con];
+        if ((con = circle2circleQuery(seg.tb, poly_a, seg.r, 0))) return [con];
 
         const len = numVerts * 2;
         const poly_b = new Vect(verts[(mini2 + 2) % len], verts[(mini2 + 3) % len]);
-        if ((con = circle2circleQuery(seg.ta, poly_b, seg.r, 0, arr))) return [con];
-        if ((con = circle2circleQuery(seg.tb, poly_b, seg.r, 0, arr))) return [con];
+        if ((con = circle2circleQuery(seg.ta, poly_b, seg.r, 0))) return [con];
+        if ((con = circle2circleQuery(seg.tb, poly_b, seg.r, 0))) return [con];
     }
 
     //	console.log(poly.tVerts, poly.tPlanes);
@@ -277,52 +287,51 @@ function seg2poly(seg, poly) {
 
 // This one is less gross, but still gross.
 // TODO: Comment me!
-function circle2poly({ tc, r }, { tPlanes, tVerts }) {
-    const planes = tPlanes;
+function circle2poly(circ, poly)
+{
+	const planes = poly.tPlanes;
+	
+	let mini = 0;
+	let min = vdot(planes[0].n, circ.tc) - planes[0].d - circ.r;
+	for(let i=0; i<planes.length; i++){
+		const dist = vdot(planes[i].n, circ.tc) - planes[i].d - circ.r;
+		if(dist > 0){
+			return NONE;
+		} else if(dist > min) {
+			min = dist;
+			mini = i;
+		}
+	}
+	
+	const n = planes[mini].n;
 
-    let mini = 0;
-    let min = vdot(planes[0].n, tc) - planes[0].d - r;
-    for (let i = 0; i < planes.length; i++) {
-        const dist = vdot(planes[i].n, tc) - planes[i].d - r;
-        if (dist > 0) {
-            return NONE;
-        } else if (dist > min) {
-            min = dist;
-            mini = i;
-        }
-    }
+	const verts = poly.tVerts;
+	const len = verts.length;
+	const mini2 = mini<<1;
 
-    const n = planes[mini].n;
+	const ax = verts[mini2];
+	const ay = verts[mini2+1];
+	const bx = verts[(mini2+2)%len];
+	const by = verts[(mini2+3)%len];
 
-    const verts = tVerts;
-    const len = verts.length;
-    const mini2 = mini << 1;
-
-    //var a = poly.tVerts[mini];
-    //var b = poly.tVerts[(mini + 1)%poly.tVerts.length];
-    const ax = verts[mini2];
-    const ay = verts[mini2 + 1];
-    const bx = verts[(mini2 + 2) % len];
-    const by = verts[(mini2 + 3) % len];
-
-    const dta = vcross2(n.x, n.y, ax, ay);
-    const dtb = vcross2(n.x, n.y, bx, by);
-    const dt = vcross(n, tc);
-
-    if (dt < dtb) {
-        var con = circle2circleQuery(tc, new Vect(bx, by), r, 0, con);
-        return con ? [con] : NONE;
-    } else if (dt < dta) {
-        return [new Contact(
-            vsub(tc, vmult(n, r + min / 2)),
-            vneg(n),
-            min,
-            0
-        )];
-    } else {
-        var con = circle2circleQuery(tc, new Vect(ax, ay), r, 0, con);
-        return con ? [con] : NONE;
-    }
+	const dta = vcross2(n.x, n.y, ax, ay);
+	const dtb = vcross2(n.x, n.y, bx, by);
+	const dt = vcross(n, circ.tc);
+		
+	if(dt < dtb){
+		const con = circle2circleQuery(circ.tc, new Vect(bx, by), circ.r, 0);
+		return con ? [con] : NONE;
+	} else if(dt < dta) {
+		return [new Contact(
+			vsub(circ.tc, vmult(n, circ.r + min/2)),
+			vneg(n),
+			min,
+			0
+		)];
+	} else {
+		const con = circle2circleQuery(circ.tc, new Vect(ax, ay), circ.r, 0);
+		return con ? [con] : NONE;
+	}
 };
 
 // The javascripty way to do this would be either nested object or methods on the prototypes.

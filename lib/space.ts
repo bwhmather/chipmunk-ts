@@ -28,6 +28,9 @@ import { hashPair, deleteObjFromList, assert, assertSoft } from './util';
 // import { SpaceHash } from '???';
 import { collideShapes } from './collision';
 import { Vect, vlengthsq, vneg, vzero } from './vect';
+import {
+    componentRoot, componentActive, floodFillComponent,
+} from './space-components';
 
 
 const defaultCollisionHandler = new CollisionHandler();
@@ -52,7 +55,7 @@ export class Space {
     bodies: Body[];
     rousedBodies: Body[];
     // TODO
-    sleepingComponents: Any[];
+    sleepingComponents;
 
     staticShapes: BBTree;
     activeShapes: BBTree;

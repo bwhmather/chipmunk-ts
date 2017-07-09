@@ -34,52 +34,16 @@
 	
 	Spatial indexes should be treated as opaque structs.
 	This means you shouldn't be reading any of the fields directly.
+ */
+import { BB } from './bb';
 
-	All spatial indexes define the following methods:
-		
+
+export abstract class SpatialIndex {
+
 	// The number of objects in the spatial index.
-	count = 0;
-
-	// Iterate the objects in the spatial index. @c func will be called once for each object.
-	each(func);
-	
-	// Returns true if the spatial index contains the given object.
-	// Most spatial indexes use hashed storage, so you must provide a hash value too.
-	contains(obj, hashid);
-
-	// Add an object to a spatial index.
-	insert(obj, hashid);
-
-	// Remove an object from a spatial index.
-	remove(obj, hashid);
-	
-	// Perform a full reindex of a spatial index.
-	reindex();
-
-	// Reindex a single object in the spatial index.
-	reindexObject(obj, hashid);
-
-	// Perform a point query against the spatial index, calling @c func for each potential match.
-	// A pointer to the point will be passed as @c obj1 of @c func.
-	// func(shape);
-	pointQuery(point, func);
-
-	// Perform a segment query against the spatial index, calling @c func for each potential match.
-	// func(shape);
-	segmentQuery(vect a, vect b, t_exit, func);
-
-	// Perform a rectangle query against the spatial index, calling @c func for each potential match.
-	// func(shape);
-	query(bb, func);
-
-	// Simultaneously reindex and find all colliding objects.
-	// @c func will be called once for each potentially overlapping pair of objects found.
-	// If the spatial index was initialized with a static index, it will collide it's objects against that as well.
-	reindexQuery(func);
-*/
-
-class SpatialIndex {
     count: number;
+
+    staticIndex;
 
     construtor(staticIndex) {
         this.staticIndex = staticIndex;
@@ -103,6 +67,44 @@ class SpatialIndex {
             });
         }
     }
+
+	// Iterate the objects in the spatial index. @c func will be called once for each object.
+    abstract each(f);
+	
+	// Returns true if the spatial index contains the given object.
+	// Most spatial indexes use hashed storage, so you must provide a hash value too.
+	abstract contains(obj, hashid);
+
+	// Add an object to a spatial index.
+	abstract insert(obj, hashid);
+
+	// Remove an object from a spatial index.
+	abstract remove(obj, hashid);
+	
+	// Perform a full reindex of a spatial index.
+    reindex() {}
+
+	// Reindex a single object in the spatial index.
+    reindexObject(obj, hashid) {}
+
+	// Perform a point query against the spatial index, calling @c func for each potential match.
+	// A pointer to the point will be passed as @c obj1 of @c func.
+	// func(shape);
+	abstract pointQuery(point, func);
+
+	// Perform a segment query against the spatial index, calling @c func for each potential match.
+	// func(shape);
+	abstract segmentQuery(vect_a, vect_b, t_exit, func);
+
+	// Perform a rectangle query against the spatial index, calling @c func for each potential match.
+	// func(shape);
+	abstract query(bb, func);
+
+	// Simultaneously reindex and find all colliding objects.
+	// @c func will be called once for each potentially overlapping pair of objects found.
+	// If the spatial index was initialized with a static index, it will collide it's objects against that as well.
+	abstract reindexQuery(func);
+
 }
 
 

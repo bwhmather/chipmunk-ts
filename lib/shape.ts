@@ -81,6 +81,10 @@ export abstract class Shape {
     collision_type: number;
 
     // TODO
+    collisionCode;
+    collisionTable;
+
+    // TODO
     group: number;
 
     // TODO
@@ -251,7 +255,7 @@ const circleSegmentQuery = (shape, center, r, a, b, info?) => {
     }
 };
 
-class CircleShape extends Shape {
+export class CircleShape extends Shape {
     c: Vect;
     tc: Vect;
 
@@ -329,7 +333,7 @@ CircleShape.prototype.setOffset = function(offset)
 
 // Segment shape
 
-class SegmentShape extends Shape {
+export class SegmentShape extends Shape {
     a: Vect;
     b: Vect;
     n: Vect;

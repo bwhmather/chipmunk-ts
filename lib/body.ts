@@ -39,6 +39,7 @@ import {
     vmult, vcross,
     vperp, vrotate, vunrotate,
 } from './vect';
+import { componentActivate, componentRoot } from './space-components';
 
 
 
@@ -65,7 +66,7 @@ export class Body {
 
     /// Rotation of the body around it's center of gravity in radians.
     /// Must agree with cpBody.rot! Use cpBodySetAngle() when changing the angle for this reason.
-    //this.a;
+    a: number;
     /// Angular velocity of the body around it's center of gravity in radians/second.
     w: number;
     /// Torque applied to the body around it's center of gravity.
@@ -81,9 +82,9 @@ export class Body {
     w_limit: number;
 
     // This stuff is all private.
-    private v_biasy: number;
-    private v_biasx: number;
-    private w_bias: number;
+    v_biasy: number;
+    v_biasx: number;
+    w_bias: number;
 
     space: Space;
 
@@ -94,9 +95,9 @@ export class Body {
 
     // This stuff is used to track information on the collision graph.
     // TODO
-    private nodeRoot;
-    private nodeNext;
-    private nodeIdleTime: number;
+    nodeRoot;
+    nodeNext;
+    nodeIdleTime: number;
 
     // Mass and one-over-mass.
     m: number;
@@ -232,7 +233,7 @@ export class Body {
         this.sanityCheck();
         // If I allow the position to be set to vzero, vzero will get changed.
         if (pos === vzero) {
-            pos = cp.v(0, 0);
+            pos = new Vect(0, 0);
         }
         this.p = pos;
     }
@@ -391,9 +392,6 @@ export class Body {
         assert(this.v_limit === this.v_limit, "Body's velocity limit is invalid.");
         assert(this.w_limit === this.w_limit, "Body's angular velocity limit is invalid.");
     }
-
-    sanityCheck() { }
-
 
     activate() {
         if (!this.isRogue()) {

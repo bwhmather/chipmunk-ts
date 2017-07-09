@@ -30,7 +30,7 @@ import { Vect, vdot, vdot2, vcross, vcross2 } from '../vect';
 
 
 // a and b are bodies.
-function relative_velocity(a, b, r1, r2){
+export function relative_velocity(a, b, r1, r2){
 	//var v1_sum = vadd(a.v, vmult(vperp(r1), a.w));
 	const v1_sumx = a.vx + (-r1.y) * a.w;
 	const v1_sumy = a.vy + ( r1.x) * a.w;
@@ -43,7 +43,7 @@ function relative_velocity(a, b, r1, r2){
 	return new Vect(v2_sumx - v1_sumx, v2_sumy - v1_sumy);
 };
 
-function normal_relative_velocity(a, b, r1, r2, n){
+export function normal_relative_velocity(a, b, r1, r2, n){
 	//return vdot(relative_velocity(a, b, r1, r2), n);
 	const v1_sumx = a.vx + (-r1.y) * a.w;
 	const v1_sumy = a.vy + ( r1.x) * a.w;
@@ -66,7 +66,7 @@ function apply_impulses(a, b, r1, r2, j)
 };
 */
 
-function apply_impulse(body, jx, jy, r){
+export function apply_impulse(body, jx, jy, r){
 //	body.v = body.v.add(vmult(j, body.m_inv));
 	body.vx += jx * body.m_inv;
 	body.vy += jy * body.m_inv;
@@ -74,13 +74,13 @@ function apply_impulse(body, jx, jy, r){
 	body.w += body.i_inv*(r.x*jy - r.y*jx);
 };
 
-function apply_impulses(a, b, r1, r2, jx, jy)
+export function apply_impulses(a, b, r1, r2, jx, jy)
 {
 	apply_impulse(a, -jx, -jy, r1);
 	apply_impulse(b, jx, jy, r2);
 };
 
-function apply_bias_impulse(body, jx, jy, r)
+export function apply_bias_impulse(body, jx, jy, r)
 {
 	//body.v_bias = vadd(body.v_bias, vmult(j, body.m_inv));
 	body.v_biasx += jx * body.m_inv;
@@ -95,13 +95,13 @@ function apply_bias_impulses(a, b, r1, r2, j)
 	apply_bias_impulse(b, j, r2);
 };*/
 
-function k_scalar_body(body, r, n)
+export function k_scalar_body(body, r, n)
 {
 	const rcn = vcross(r, n);
 	return body.m_inv + body.i_inv*rcn*rcn;
 };
 
-function k_scalar(a, b, r1, r2, n)
+export function k_scalar(a, b, r1, r2, n)
 {
 	const value = k_scalar_body(a, r1, n) + k_scalar_body(b, r2, n);
 	assertSoft(value !== 0, "Unsolvable collision or constraint.");
@@ -110,7 +110,7 @@ function k_scalar(a, b, r1, r2, n)
 };
 
 // k1 and k2 are modified by the function to contain the outputs.
-function k_tensor(a, b, r1, r2, k1, k2)
+export function k_tensor(a, b, r1, r2, k1, k2)
 {
     // calculate mass matrix
     // If I wasn't lazy and wrote a proper matrix class, this wouldn't be so gross...
@@ -151,12 +151,12 @@ function k_tensor(a, b, r1, r2, k1, k2)
     k2.x = -k21*det_inv;k2.y =  k11*det_inv;
 };
 
-function mult_k(vr, k1, k2)
+export function mult_k(vr, k1, k2)
 {
 	return new Vect(vdot(vr, k1), vdot(vr, k2));
 };
 
-function bias_coef(errorBias, dt)
+export function bias_coef(errorBias, dt)
 {
 	return 1 - errorBias ** dt;
 };

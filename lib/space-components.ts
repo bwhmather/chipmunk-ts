@@ -19,12 +19,14 @@
  * SOFTWARE.
  */
 
+import { assert, assertSoft, deleteObjFromList } from './util';
+
 /// **** Sleeping Functions
-var componentRoot = function(body) {
+export function componentRoot(body) {
     return (body ? body.nodeRoot : null);
 };
 
-var componentActivate = function(root) {
+export function componentActivate(root) {
     if (!root || !root.isSleeping(root)) return;
     assert(!root.isRogue(), "Internal Error: componentActivate() called on a rogue body.");
 
@@ -43,7 +45,7 @@ var componentActivate = function(root) {
 
     deleteObjFromList(space.sleepingComponents, root);
 };
-var componentAdd = function(root, body) {
+export function componentAdd(root, body) {
     body.nodeRoot = root;
 
     if (body !== root) {
@@ -52,7 +54,7 @@ var componentAdd = function(root, body) {
     }
 };
 
-var floodFillComponent = function(root, body) {
+export function floodFillComponent(root, body) {
     // Rogue bodies cannot be put to sleep and prevent bodies they are touching from sleeping anyway.
     // Static bodies (which are a type of rogue body) are effectively sleeping all the time.
     if (!body.isRogue()) {
@@ -71,7 +73,7 @@ var floodFillComponent = function(root, body) {
     }
 };
 
-var componentActive = function(root, threshold) {
+export function componentActive(root, threshold) {
     for (var body = root; body; body = body.nodeNext) {
         if (body.nodeIdleTime < threshold) return true;
     }
