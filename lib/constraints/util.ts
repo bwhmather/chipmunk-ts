@@ -25,28 +25,32 @@
 
 //#define J_MAX(constraint, dt) (((cpConstraint *)constraint)->maxForce*(dt))
 
+import { assertSoft } from '../util';
+import { Vect, vdot, vdot2, vcross, vcross2 } from '../vect';
+
+
 // a and b are bodies.
-function relative_velocity({ vx, w, vy }, { vx, w, vy }, { y, x }, { y, x }) {
-    //var v1_sum = vadd(a.v, vmult(vperp(r1), a.w));
-    const v1_sumx = vx + (-y) * w;
-    const v1_sumy = vy + (x) * w;
+function relative_velocity(a, b, r1, r2){
+	//var v1_sum = vadd(a.v, vmult(vperp(r1), a.w));
+	const v1_sumx = a.vx + (-r1.y) * a.w;
+	const v1_sumy = a.vy + ( r1.x) * a.w;
 
-    //var v2_sum = vadd(b.v, vmult(vperp(r2), b.w));
-    const v2_sumx = vx + (-y) * w;
-    const v2_sumy = vy + (x) * w;
-
-    //	return vsub(v2_sum, v1_sum);
-    return new Vect(v2_sumx - v1_sumx, v2_sumy - v1_sumy);
+	//var v2_sum = vadd(b.v, vmult(vperp(r2), b.w));
+	const v2_sumx = b.vx + (-r2.y) * b.w;
+	const v2_sumy = b.vy + ( r2.x) * b.w;
+	
+//	return vsub(v2_sum, v1_sum);
+	return new Vect(v2_sumx - v1_sumx, v2_sumy - v1_sumy);
 };
 
-function normal_relative_velocity({ vx, w, vy }, { vx, w, vy }, { y, x }, { y, x }, { x, y }) {
-    //return vdot(relative_velocity(a, b, r1, r2), n);
-    const v1_sumx = vx + (-y) * w;
-    const v1_sumy = vy + (x) * w;
-    const v2_sumx = vx + (-y) * w;
-    const v2_sumy = vy + (x) * w;
+function normal_relative_velocity(a, b, r1, r2, n){
+	//return vdot(relative_velocity(a, b, r1, r2), n);
+	const v1_sumx = a.vx + (-r1.y) * a.w;
+	const v1_sumy = a.vy + ( r1.x) * a.w;
+	const v2_sumx = b.vx + (-r2.y) * b.w;
+	const v2_sumy = b.vy + ( r2.x) * b.w;
 
-    return vdot2(v2_sumx - v1_sumx, v2_sumy - v1_sumy, x, y);
+	return vdot2(v2_sumx - v1_sumx, v2_sumy - v1_sumy, n.x, n.y);
 };
 
 /*
@@ -62,24 +66,26 @@ function apply_impulses(a, b, r1, r2, j)
 };
 */
 
-function apply_impulse(body, jx, jy, { x, y }) {
-    //	body.v = body.v.add(vmult(j, body.m_inv));
-    body.vx += jx * body.m_inv;
-    body.vy += jy * body.m_inv;
-    //	body.w += body.i_inv*vcross(r, j);
-    body.w += body.i_inv * (x * jy - y * jx);
+function apply_impulse(body, jx, jy, r){
+//	body.v = body.v.add(vmult(j, body.m_inv));
+	body.vx += jx * body.m_inv;
+	body.vy += jy * body.m_inv;
+//	body.w += body.i_inv*vcross(r, j);
+	body.w += body.i_inv*(r.x*jy - r.y*jx);
 };
 
-function apply_impulses(a, b, r1, r2, jx, jy) {
-    apply_impulse(a, -jx, -jy, r1);
-    apply_impulse(b, jx, jy, r2);
+function apply_impulses(a, b, r1, r2, jx, jy)
+{
+	apply_impulse(a, -jx, -jy, r1);
+	apply_impulse(b, jx, jy, r2);
 };
 
-function apply_bias_impulse(body, jx, jy, { x, y }) {
-    //body.v_bias = vadd(body.v_bias, vmult(j, body.m_inv));
-    body.v_biasx += jx * body.m_inv;
-    body.v_biasy += jy * body.m_inv;
-    body.w_bias += body.i_inv * vcross2(x, y, jx, jy);
+function apply_bias_impulse(body, jx, jy, r)
+{
+	//body.v_bias = vadd(body.v_bias, vmult(j, body.m_inv));
+	body.v_biasx += jx * body.m_inv;
+	body.v_biasy += jy * body.m_inv;
+	body.w_bias += body.i_inv*vcross2(r.x, r.y, jx, jy);
 };
 
 /*
@@ -89,20 +95,23 @@ function apply_bias_impulses(a, b, r1, r2, j)
 	apply_bias_impulse(b, j, r2);
 };*/
 
-function k_scalar_body({ m_inv, i_inv }, r, n) {
-    const rcn = vcross(r, n);
-    return m_inv + i_inv * rcn * rcn;
+function k_scalar_body(body, r, n)
+{
+	const rcn = vcross(r, n);
+	return body.m_inv + body.i_inv*rcn*rcn;
 };
 
-function k_scalar(a, b, r1, r2, n) {
-    const value = k_scalar_body(a, r1, n) + k_scalar_body(b, r2, n);
-    assertSoft(value !== 0, "Unsolvable collision or constraint.");
-
-    return value;
+function k_scalar(a, b, r1, r2, n)
+{
+	const value = k_scalar_body(a, r1, n) + k_scalar_body(b, r2, n);
+	assertSoft(value !== 0, "Unsolvable collision or constraint.");
+	
+	return value;
 };
 
 // k1 and k2 are modified by the function to contain the outputs.
-function k_tensor({ m_inv, i_inv }, { m_inv, i_inv }, { x, y }, { x, y }, k1, k2) {
+function k_tensor(a, b, r1, r2, k1, k2)
+{
     // calculate mass matrix
     // If I wasn't lazy and wrote a proper matrix class, this wouldn't be so gross...
     let k11;
@@ -110,43 +119,46 @@ function k_tensor({ m_inv, i_inv }, { m_inv, i_inv }, { x, y }, { x, y }, k1, k2
     let k12;
     let k21;
     let k22;
-    const m_sum = m_inv + m_inv;
+    const m_sum = a.m_inv + b.m_inv;
 
     // start with I*m_sum
-    k11 = m_sum; k12 = 0;
-    k21 = 0; k22 = m_sum;
+    k11 = m_sum;k12 = 0;
+    k21 = 0;k22 = m_sum;
 
     // add the influence from r1
-    const a_i_inv = i_inv;
-    const r1xsq = x * x * a_i_inv;
-    const r1ysq = y * y * a_i_inv;
-    const r1nxy = -x * y * a_i_inv;
-    k11 += r1ysq; k12 += r1nxy;
-    k21 += r1nxy; k22 += r1xsq;
+    const a_i_inv = a.i_inv;
+    const r1xsq =  r1.x * r1.x * a_i_inv;
+    const r1ysq =  r1.y * r1.y * a_i_inv;
+    const r1nxy = -r1.x * r1.y * a_i_inv;
+    k11 += r1ysq;k12 += r1nxy;
+    k21 += r1nxy;k22 += r1xsq;
 
     // add the influnce from r2
-    const b_i_inv = i_inv;
-    const r2xsq = x * x * b_i_inv;
-    const r2ysq = y * y * b_i_inv;
-    const r2nxy = -x * y * b_i_inv;
-    k11 += r2ysq; k12 += r2nxy;
-    k21 += r2nxy; k22 += r2xsq;
+    const b_i_inv = b.i_inv;
+    const r2xsq =  r2.x * r2.x * b_i_inv;
+    const r2ysq =  r2.y * r2.y * b_i_inv;
+    const r2nxy = -r2.x * r2.y * b_i_inv;
+    k11 += r2ysq;k12 += r2nxy;
+    k21 += r2nxy;k22 += r2xsq;
 
     // invert
-    const determinant = k11 * k22 - k12 * k21;
+    const determinant = k11*k22 - k12*k21;
     assertSoft(determinant !== 0, "Unsolvable constraint.");
 
-    const det_inv = 1 / determinant;
+    const det_inv = 1/determinant;
 
-    k1.x = k22 * det_inv; k1.y = -k12 * det_inv;
-    k2.x = -k21 * det_inv; k2.y = k11 * det_inv;
+    k1.x =  k22*det_inv;k1.y = -k12*det_inv;
+    k2.x = -k21*det_inv;k2.y =  k11*det_inv;
 };
 
-function mult_k(vr, k1, k2) {
-    return new Vect(vdot(vr, k1), vdot(vr, k2));
+function mult_k(vr, k1, k2)
+{
+	return new Vect(vdot(vr, k1), vdot(vr, k2));
 };
 
-function bias_coef(errorBias, dt) {
-    return 1 - errorBias ** dt;
+function bias_coef(errorBias, dt)
+{
+	return 1 - errorBias ** dt;
 };
+
 

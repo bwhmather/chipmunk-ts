@@ -25,6 +25,11 @@ let numBB = 0;
 
 // Bounding boxes are JS objects with {l, b, r, t} = left, bottom, right, top, respectively.
 export class BB {
+    l: number;
+    b: number;
+    r: number;
+    t: number;
+
     constructor(l, b, r, t) {
         this.l = l;
         this.b = b;
@@ -57,50 +62,62 @@ export function bbIntersects2(bb, l, b, r, t) {
 };
 
 /// Returns true if @c other lies completely within @c bb.
-export function bbContainsBB({ l, r, b, t }, { l, r, b, t }) {
-    return l <= l && r >= r && b <= b && t >= t;
+export function bbContainsBB(bb, other) {
+    return (
+        bb.l <= other.l &&
+        bb.r >= other.r &&
+        bb.b <= other.b &&
+        bb.t >= other.t
+    );
 };
 
 /// Returns true if @c bb contains @c v.
-export function bbContainsVect({ l, r, b, t }, { x, y }) {
-    return l <= x && r >= x && b <= y && t >= y;
+export function bbContainsVect(bb, v) {
+	return (bb.l <= v.x && bb.r >= v.x && bb.b <= v.y && bb.t >= v.y);
 };
-export function bbContainsVect2(l, b, r, t, { x, y }) {
-    return l <= x && r >= x && b <= y && t >= y;
+
+export function bbContainsVect2(l, b, r, t, v) {
+	return (l <= v.x && r >= v.x && b <= v.y && t >= v.y);
 };
 
 /// Returns a bounding box that holds both bounding boxes.
 export function bbMerge(a, b) {
     return new BB(
-        min(a.l, b.l),
-        min(a.b, b.b),
-        max(a.r, b.r),
-        max(a.t, b.t)
+        Math.min(a.l, b.l),
+        Math.min(a.b, b.b),
+        Math.max(a.r, b.r),
+        Math.max(a.t, b.t)
     );
 };
 
 /// Returns a bounding box that holds both @c bb and @c v.
-export function bbExpand({ l, b, r, t }, { x, y }) {
-    return new BB(
-        min(l, x),
-        min(b, y),
-        max(r, x),
-        max(t, y)
+export function bbExpand(bb, v){
+	return new BB(
+        Math.min(bb.l, v.x),
+        Math.min(bb.b, v.y),
+        Math.max(bb.r, v.x),
+        Math.max(bb.t, v.y)
     );
 };
 
 /// Returns the area of the bounding box.
-export function bbArea({ r, l, t, b }) {
-    return (r - l) * (t - b);
+export function bbArea(bb) {
+    return (bb.r - bb.l) * (bb.t - bb.b);
 };
 
 /// Merges @c a and @c b and returns the area of the merged bounding box.
 export function bbMergedArea(a, b) {
-    return (max(a.r, b.r) - min(a.l, b.l)) * (max(a.t, b.t) - min(a.b, b.b));
+    return (
+        (Math.max(a.r, b.r) - Math.min(a.l, b.l)) *
+        (Math.max(a.t, b.t) - Math.min(a.b, b.b))
+    );
 };
 
 export function bbMergedArea2(bb, l, b, r, t) {
-    return (max(bb.r, r) - min(bb.l, l)) * (max(bb.t, t) - min(bb.b, b));
+    return (
+        (Math.max(bb.r, r) - Math.min(bb.l, l)) *
+        (Math.max(bb.t, t) - Math.min(bb.b, b))
+    );
 };
 
 /// Return true if the bounding box intersects the line segment with ends @c a and @c b.
@@ -109,10 +126,10 @@ export function bbIntersectsSegment(bb, a, b) {
 };
 
 /// Clamp a vector to a bounding box.
-export function bbClampVect({ l, r, b, t }, v) {
-    const x = min(max(l, v.x), r);
-    const y = min(max(b, v.y), t);
-    return new Vect(x, y);
+export function bbClampVect(bb, v) {
+	const x = Math.min(Math.max(bb.l, v.x), bb.r);
+	const y = Math.min(Math.max(bb.b, v.y), bb.t);
+	return new Vect(x, y);
 };
 
 // TODO edge case issue

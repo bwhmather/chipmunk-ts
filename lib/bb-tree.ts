@@ -25,6 +25,14 @@ import { SpatialIndex } from './spatial-index';
 // This file implements a modified AABB tree for collision detection.
 
 export class BBTree extends SpatialIndex {
+    velocityFunc;
+    leaves;
+    root;
+    pooledNodes;
+    pooledPairs;
+    stamp;
+    dynamicIndex;
+
     constructor(staticIndex) {
         super(staticIndex);
 
@@ -65,10 +73,10 @@ export class BBTree extends SpatialIndex {
 
             const v = vmult(velocityFunc(obj), 0.1);
 
-            dest.bb_l = obj.bb_l + min(-x, v.x);
-            dest.bb_b = obj.bb_b + min(-y, v.y);
-            dest.bb_r = obj.bb_r + max(x, v.x);
-            dest.bb_t = obj.bb_t + max(y, v.y);
+            dest.bb_l = obj.bb_l + Math.min(-x, v.x);
+            dest.bb_b = obj.bb_b + Math.min(-y, v.y);
+            dest.bb_r = obj.bb_r + Math.max(x, v.x);
+            dest.bb_t = obj.bb_t + Math.max(y, v.y);
         } else {
             dest.bb_l = obj.bb_l;
             dest.bb_b = obj.bb_b;
@@ -237,12 +245,24 @@ function voidQueryFunc(obj1, obj2) { }
 var numNodes = 0;
 
 export class Node {
+    isLeaf: boolean;
+    obj;
+    bb_l: number;
+    bb_b: number;
+    bb_r: number;
+    bb_t: number;
+    parent;
+
+    A;
+    B;
+
     constructor(tree, a, b) {
+        this.isLeaf = false;
         this.obj = null;
-        this.bb_l = min(a.bb_l, b.bb_l);
-        this.bb_b = min(a.bb_b, b.bb_b);
-        this.bb_r = max(a.bb_r, b.bb_r);
-        this.bb_t = max(a.bb_t, b.bb_t);
+        this.bb_l = Math.min(a.bb_l, b.bb_l);
+        this.bb_b = Math.min(a.bb_b, b.bb_b);
+        this.bb_r = Math.max(a.bb_r, b.bb_r);
+        this.bb_t = Math.max(a.bb_t, b.bb_t);
         this.parent = null;
 
         this.setA(a);
@@ -283,10 +303,10 @@ export class Node {
             //node.bb = bbMerge(node.A.bb, node.B.bb);
             const a = node.A;
             const b = node.B;
-            node.bb_l = min(a.bb_l, b.bb_l);
-            node.bb_b = min(a.bb_b, b.bb_b);
-            node.bb_r = max(a.bb_r, b.bb_r);
-            node.bb_t = max(a.bb_t, b.bb_t);
+            node.bb_l = Math.min(a.bb_l, b.bb_l);
+            node.bb_b = Math.min(a.bb_b, b.bb_b);
+            node.bb_r = Math.max(a.bb_r, b.bb_r);
+            node.bb_t = Math.max(a.bb_t, b.bb_t);
         }
     }
 
@@ -301,22 +321,22 @@ export class Node {
         this.A.markSubtree(tree, staticRoot, func);
         this.B.markSubtree(tree, staticRoot, func);
     }
+
+    intersectsBB(bb) {
+        return (
+            this.bb_l <= bb.r &&
+            bb.l <= this.bb_r &&
+            this.bb_b <= bb.t &&
+            bb.b <= this.bb_t
+        );
+    }
+
+    bbArea() {
+        return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
+    }
 }
 
-Node.prototype.bbArea = Leaf.prototype.bbArea = function() {
-    return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
-};
 
-
-
-Node.prototype.intersectsBB = Leaf.prototype.intersectsBB = function({ r, l, t, b }) {
-    return this.bb_l <= r && l <= this.bb_r && this.bb_b <= t && b <= this.bb_t;
-};
-
-
-
-
-Node.prototype.isLeaf = false;
 
 
 
@@ -329,7 +349,18 @@ Node.prototype.isLeaf = false;
 let numLeaves = 0;
 
 export class Leaf {
+    isLeaf: boolean;
+    bb_l: number;
+    bb_b: number;
+    bb_r: number;
+    bb_t: number;
+    obj;
+    parent;
+    stamp;
+    pairs;
+
     constructor(tree, obj) {
+        this.isLeaf = true;
         this.obj = obj;
         tree.getBB(obj, this);
 
@@ -436,19 +467,20 @@ export class Leaf {
             this.markSubtree(tree, staticRoot, null);
         }
     }
+
+    intersectsBB(bb) {
+        return (
+            this.bb_l <= bb.r &&
+            bb.l <= this.bb_r &&
+            this.bb_b <= bb.t &&
+            bb.b <= this.bb_t
+        );
+    }
+
+    bbArea() {
+        return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
+    }
 }
-
-
-
-Leaf.prototype.isLeaf = true;
-
-
-
-
-
-
-
-
 
 
 
@@ -458,6 +490,14 @@ var numPairs = 0;
 
 // Objects created with constructors are faster than object literals. :(
 export class Pair {
+    // TODO
+    prevA;
+    leafA;
+    nextA;
+    prevB;
+    leafB;
+    nextB;
+
     constructor(leafA, nextA, leafB, nextB) {
         this.prevA = null;
         this.leafA = leafA;
@@ -512,18 +552,27 @@ function pairInsert(a, b, tree) {
     }
 }
 
-// **** Node Functions
-function bbTreeMergedArea({ bb_r, bb_l, bb_t, bb_b }, { bb_r, bb_l, bb_t, bb_b }) {
-    return (max(bb_r, bb_r) - min(bb_l, bb_l)) * (max(bb_t, bb_t) - min(bb_b, bb_b));
-}
+
+function bbTreeMergedArea(a, b) {
+    return (
+        (Math.max(a.bb_r, b.bb_r) - Math.min(a.bb_l, b.bb_l)) *
+        (Math.max(a.bb_t, b.bb_t) - Math.min(a.bb_b, b.bb_b))
+    );
+};
+
 
 // **** Subtree Functions
 
 // Would it be better to make these functions instance methods on Node and Leaf?
 
-function bbProximity({ bb_l, bb_r, bb_b, bb_t }, { bb_l, bb_r, bb_b, bb_t }) {
-    return Math.abs(bb_l + bb_r - bb_l - bb_r) + Math.abs(bb_b + bb_t - bb_b - bb_t);
-}
+function bbProximity(a, b) {
+    return (
+        Math.abs(a.bb_l + a.bb_r - b.bb_l - b.bb_r) +
+        Math.abs(a.bb_b + a.bb_t - b.bb_b - b.bb_t)
+    );
+};
+
+
 
 function subtreeInsert(subtree, leaf, tree) {
     //	var s = new Error().stack;
@@ -549,10 +598,10 @@ function subtreeInsert(subtree, leaf, tree) {
         }
 
         //		subtree.bb = bbMerge(subtree.bb, leaf.bb);
-        subtree.bb_l = min(subtree.bb_l, leaf.bb_l);
-        subtree.bb_b = min(subtree.bb_b, leaf.bb_b);
-        subtree.bb_r = max(subtree.bb_r, leaf.bb_r);
-        subtree.bb_t = max(subtree.bb_t, leaf.bb_t);
+        subtree.bb_l = Math.min(subtree.bb_l, leaf.bb_l);
+        subtree.bb_b = Math.min(subtree.bb_b, leaf.bb_b);
+        subtree.bb_r = Math.max(subtree.bb_r, leaf.bb_r);
+        subtree.bb_t = Math.max(subtree.bb_t, leaf.bb_t);
 
         return subtree;
     }
@@ -570,47 +619,69 @@ function subtreeQuery(subtree, bb, func) {
 }
 
 /// Returns the fraction along the segment query the node hits. Returns Infinity if it doesn't hit.
-function nodeSegmentQuery({ bb_l, bb_r, bb_b, bb_t }, { x, y }, { x, y }) {
-    const idx = 1 / (x - x);
-    const tx1 = (bb_l == x ? -Infinity : (bb_l - x) * idx);
-    const tx2 = (bb_r == x ? Infinity : (bb_r - x) * idx);
-    const txmin = min(tx1, tx2);
-    const txmax = max(tx1, tx2);
+function nodeSegmentQuery(node, a, b)
+{
+	var idx = 1/(b.x - a.x);
+	var tx1 = (node.bb_l == a.x ? -Infinity : (node.bb_l - a.x) * idx);
+	var tx2 = (node.bb_r == a.x ?  Infinity : (node.bb_r - a.x) * idx);
+	var txmin = Math.min(tx1, tx2);
+	var txmax = Math.max(tx1, tx2);
+	
+	var idy = 1/(b.y - a.y);
+	var ty1 = (node.bb_b == a.y ? -Infinity : (node.bb_b - a.y) * idy);
+	var ty2 = (node.bb_t == a.y ?  Infinity : (node.bb_t - a.y) * idy);
+	var tymin = Math.min(ty1, ty2);
+	var tymax = Math.max(ty1, ty2);
+	
+	if (tymin <= txmax && txmin <= tymax){
+		var min_ = Math.max(txmin, tymin);
+		var max_ = Math.min(txmax, tymax);
+		
+		if (0.0 <= max_ && min_ <= 1.0) return max(min_, 0.0);
+	}
+	
+	return Infinity;
+};
 
-    const idy = 1 / (y - y);
-    const ty1 = (bb_b == y ? -Infinity : (bb_b - y) * idy);
-    const ty2 = (bb_t == y ? Infinity : (bb_t - y) * idy);
-    const tymin = min(ty1, ty2);
-    const tymax = max(ty1, ty2);
 
-    if (tymin <= txmax && txmin <= tymax) {
-        const min_ = max(txmin, tymin);
-        const max_ = min(txmax, tymax);
+function subtreeSegmentQuery(subtree, a, b, t_exit, func)
+{
+	if(subtree.isLeaf){
+		return func(subtree.obj);
+	} else {
+		var t_a = nodeSegmentQuery(subtree.A, a, b);
+		var t_b = nodeSegmentQuery(subtree.B, a, b);
+		
+		if(t_a < t_b){
+            if (t_a < t_exit) {
+                t_exit = Math.min(
+                    t_exit, subtreeSegmentQuery(subtree.A, a, b, t_exit, func),
+                );
+            }
+            if (t_b < t_exit) {
+                t_exit = Math.min(
+                    t_exit, subtreeSegmentQuery(subtree.B, a, b, t_exit, func),
+                );
+            }
+		} else {
+            if (t_b < t_exit) {
+                t_exit = Math.min(
+                    t_exit, subtreeSegmentQuery(subtree.B, a, b, t_exit, func),
+                );
+            }
+            if (t_a < t_exit) {
+                t_exit = Math.min(
+                    t_exit, subtreeSegmentQuery(subtree.A, a, b, t_exit, func),
+                );
+            }
+		}
+		
+		return t_exit;
+	}
+};
 
-        if (0.0 <= max_ && min_ <= 1.0) return max(min_, 0.0);
-    }
 
-    return Infinity;
-}
 
-function subtreeSegmentQuery({ isLeaf, obj, A, B }, a, b, t_exit, func) {
-    if (isLeaf) {
-        return func(obj);
-    } else {
-        const t_a = nodeSegmentQuery(A, a, b);
-        const t_b = nodeSegmentQuery(B, a, b);
-
-        if (t_a < t_b) {
-            if (t_a < t_exit) t_exit = min(t_exit, subtreeSegmentQuery(A, a, b, t_exit, func));
-            if (t_b < t_exit) t_exit = min(t_exit, subtreeSegmentQuery(B, a, b, t_exit, func));
-        } else {
-            if (t_b < t_exit) t_exit = min(t_exit, subtreeSegmentQuery(B, a, b, t_exit, func));
-            if (t_a < t_exit) t_exit = min(t_exit, subtreeSegmentQuery(A, a, b, t_exit, func));
-        }
-
-        return t_exit;
-    }
-}
 
 function subtreeRemove(subtree, leaf, tree) {
     if (leaf == subtree) {
@@ -639,15 +710,28 @@ typedef struct MarkContext {
 } MarkContext;
 */
 
-function bbTreeIntersectsNode({ bb_l, bb_r, bb_b, bb_t }, { bb_r, bb_l, bb_t, bb_b }) {
-    return bb_l <= bb_r && bb_l <= bb_r && bb_b <= bb_t && bb_b <= bb_t;
-}
+function bbTreeIntersectsNode(a, b) {
+    return (
+        a.bb_l <= b.bb_r &&
+        b.bb_l <= a.bb_r &&
+        a.bb_b <= b.bb_t &&
+        b.bb_b <= a.bb_t
+    );
+};
+
+
+
+
 // **** Misc
 // **** Tree Optimization
 
-function bbTreeMergedArea2({ bb_r, bb_l, bb_t, bb_b }, l, b, r, t) {
-    return (max(bb_r, r) - min(bb_l, l)) * (max(bb_t, t) - min(bb_b, b));
-}
+function bbTreeMergedArea2(node, l, b, r, t)
+{
+    return (
+        (Math.max(node.bb_r, r) - Math.min(node.bb_l, l)) *
+        (Math.max(node.bb_t, t) - Math.min(node.bb_b, b))
+    );
+};
 
 function partitionNodes(tree, nodes, offset, count) {
     if (count == 1) {
@@ -668,10 +752,10 @@ function partitionNodes(tree, nodes, offset, count) {
     for (var i = offset + 1; i < end; i++) {
         //bb = bbMerge(bb, nodes[i].bb);
         node = nodes[i];
-        bb_l = min(bb_l, node.bb_l);
-        bb_b = min(bb_b, node.bb_b);
-        bb_r = max(bb_r, node.bb_r);
-        bb_t = max(bb_t, node.bb_t);
+        bb_l = Math.min(bb_l, node.bb_l);
+        bb_b = Math.min(bb_b, node.bb_b);
+        bb_r = Math.max(bb_r, node.bb_r);
+        bb_t = Math.max(bb_t, node.bb_t);
     }
 
     // Split it on it's longest axis

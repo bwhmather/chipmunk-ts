@@ -79,6 +79,8 @@
 */
 
 class SpatialIndex {
+    count: number;
+
     construtor(staticIndex) {
         this.staticIndex = staticIndex;
 
