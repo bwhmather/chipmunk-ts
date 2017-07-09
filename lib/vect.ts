@@ -24,27 +24,34 @@
 
 //var numVects = 0;
 
-cp.v = (x, y) => new Vect(x, y);
+export class Vect {
+    x: number;
+    y: number;
 
-class Vect {
     constructor(x, y) {
         this.x = x;
         this.y = y;
         //numVects++;
 
-        //	var s = new Error().stack;
-        //	traces[s] = traces[s] ? traces[s]+1 : 1;
+    //	var s = new Error().stack;
+    //	traces[s] = traces[s] ? traces[s]+1 : 1;
     }
 
-    add({ x, y }) {
-        this.x += x;
-        this.y += y;
+    add(v2) {
+        this.x += v2.x;
+        this.y += v2.y;
         return this;
     }
 
-    sub({ x, y }) {
-        this.x -= x;
-        this.y -= y;
+    sub(v2) {
+        this.x -= v2.x;
+        this.y -= v2.y;
+        return this;
+    }
+
+    neg() {
+        this.x = -this.x;
+        this.y = -this.y;
         return this;
     }
 
@@ -59,194 +66,210 @@ class Vect {
         return this;
     }
 
-    neg() {
-        this.x = -this.x;
-        this.y = -this.y;
-        return this;
-    }
-
-    rotate({ x, y }) {
-        this.x = this.x * x - this.y * y;
-        this.y = this.x * y + this.y * x;
+    rotate(v2) {
+        this.x = this.x * v2.x - this.y * v2.y;
+        this.y = this.x * v2.y + this.y * v2.x;
         return this;
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const vzero = cp.vzero = new Vect(0, 0);
+export function vzero(): Vect {
+    return new Vect(0,0);
+}
 
 // The functions below *could* be rewritten to be instance methods on Vect. I don't
 // know how that would effect performance. For now, I'm keeping the JS similar to
 // the original C code.
 
 /// Vector dot product.
-function vdot({ x, y }, { x, y }) {
-    return x * x + y * y;
+export function vdot(v1: Vect, v2: Vect): number
+{
+	return v1.x*v2.x + v1.y*v2.y;
 }
 
-const vdot2 = (x1, y1, x2, y2) => x1 * x2 + y1 * y2;
+export function vdot2(x1: number, y1: number, x2: number, y2: number): number {
+    return x1*x2 + y1*y2;
+}
 
 /// Returns the length of v.
-function vlength(v) {
-    return Math.sqrt(vdot(v, v));
+export function vlength(v: Vect): number
+{
+	return Math.sqrt(vdot(v, v));
 }
 
-function vlength2(x, y) {
-    return Math.sqrt(x * x + y * y);
+export function vlength2(x: number, y: number): number
+{
+	return Math.sqrt(x*x + y*y);
 }
 
 /// Check if two vectors are equal. (Be careful when comparing floating point numbers!)
-function veql({ x, y }, { x, y }) {
-    return x === x && y === y;
+export function veql(v1: Vect, v2: Vect): boolean
+{
+	return (v1.x === v2.x && v1.y === v2.y);
 }
 
 /// Add two vectors
-function vadd({ x, y }, { x, y }) {
-    return new Vect(x + x, y + y);
+export function vadd(v1: Vect, v2: Vect): Vect
+{
+	return new Vect(v1.x + v2.x, v1.y + v2.y);
 }
 
 /// Subtract two vectors.
-function vsub({ x, y }, { x, y }) {
-    return new Vect(x - x, y - y);
+export function vsub(v1: Vect, v2: Vect): Vect
+{
+	return new Vect(v1.x - v2.x, v1.y - v2.y);
 }
+
 /// Negate a vector.
-function vneg({ x, y }) {
-    return new Vect(-x, -y);
+export function vneg(v: Vect): Vect
+{
+	return new Vect(-v.x, -v.y);
 }
 
 /// Scalar multiplication.
-function vmult({ x, y }, s) {
-    return new Vect(x * s, y * s);
+export function vmult(v: Vect, s: number): Vect
+{
+	return new Vect(v.x*s, v.y*s);
 }
+
 /// 2D vector cross product analog.
 /// The cross product of 2D vectors results in a 3D vector with only a z component.
 /// This function returns the magnitude of the z value.
-function vcross({ x, y }, { y, x }) {
-    return x * y - y * x;
+export function vcross(v1: Vect, v2: Vect): number
+{
+	return v1.x*v2.y - v1.y*v2.x;
 }
 
-const vcross2 = (x1, y1, x2, y2) => x1 * y2 - y1 * x2;
+export function vcross2(x1: number, y1: number, x2: number, y2: number): number {
+    return x1*y2 - y1*x2;
+}
 
 /// Returns a perpendicular vector. (90 degree rotation)
-function vperp({ y, x }) {
-    return new Vect(-y, x);
+export function vperp(v: Vect): Vect
+{
+	return new Vect(-v.y, v.x);
 }
 
 /// Returns a perpendicular vector. (-90 degree rotation)
-function vpvrperp({ y, x }) {
-    return new Vect(y, -x);
+export function vpvrperp(v: Vect): Vect
+{
+	return new Vect(v.y, -v.x);
 }
 
 /// Returns the vector projection of v1 onto v2.
-function vproject(v1, v2) {
-    return vmult(v2, vdot(v1, v2) / vlengthsq(v2));
+export function vproject(v1: Vect, v2: Vect): Vect
+{
+	return vmult(v2, vdot(v1, v2)/vlengthsq(v2));
 }
 
 /// Uses complex number multiplication to rotate v1 by v2. Scaling will occur if v1 is not a unit vector.
-function vrotate({ x, y }, { x, y }) {
-    return new Vect(x * x - y * y, x * y + y * x);
+export function vrotate(v1: Vect, v2: Vect): Vect
+{
+	return new Vect(v1.x*v2.x - v1.y*v2.y, v1.x*v2.y + v1.y*v2.x);
 }
 
+
 /// Inverse of vrotate().
-function vunrotate({ x, y }, { x, y }) {
-    return new Vect(x * x + y * y, y * x - x * y);
+export function vunrotate(v1: Vect, v2: Vect): Vect
+{
+	return new Vect(v1.x*v2.x + v1.y*v2.y, v1.y*v2.x - v1.x*v2.y);
 }
 
 /// Returns the squared length of v. Faster than vlength() when you only need to compare lengths.
-function vlengthsq(v) {
-    return vdot(v, v);
+export function vlengthsq(v: Vect): number
+{
+	return vdot(v, v);
 }
 
-function vlengthsq2(x, y) {
-    return x * x + y * y;
+export function vlengthsq2(x: number, y: number): number
+{
+	return x*x + y*y;
 }
 
 /// Linearly interpolate between v1 and v2.
-function vlerp(v1, v2, t) {
-    return vadd(vmult(v1, 1 - t), vmult(v2, t));
+export function vlerp(v1: Vect, v2: Vect, t: number): Vect
+{
+	return vadd(vmult(v1, 1 - t), vmult(v2, t));
 }
 
 /// Returns a normalized copy of v.
-function vnormalize(v) {
-    return vmult(v, 1 / vlength(v));
+export function vnormalize(v: Vect): Vect
+{
+	return vmult(v, 1/vlength(v));
 }
 
 /// Returns a normalized copy of v or vzero if v was already vzero. Protects against divide by zero errors.
-function vnormalize_safe(v) {
-    return (v.x === 0 && v.y === 0 ? vzero : vnormalize(v));
+export function vnormalize_safe(v: Vect): Vect
+{
+	return (v.x === 0 && v.y === 0 ? vzero() : vnormalize(v));
 }
 
 /// Clamp v to length len.
-function vclamp(v, len) {
-    return (vdot(v, v) > len * len) ? vmult(vnormalize(v), len) : v;
+export function vclamp(v: Vect, len: number): Vect
+{
+	return (vdot(v,v) > len*len) ? vmult(vnormalize(v), len) : v;
 }
 
 /// Linearly interpolate between v1 towards v2 by distance d.
-function vlerpconst(v1, v2, d) {
-    return vadd(v1, vclamp(vsub(v2, v1), d));
+export function vlerpconst(v1: Vect, v2: Vect, d: number): Vect
+{
+	return vadd(v1, vclamp(vsub(v2, v1), d));
 }
 
 /// Returns the distance between v1 and v2.
-function vdist(v1, v2) {
-    return vlength(vsub(v1, v2));
+export function vdist(v1: Vect, v2: Vect): number
+{
+	return vlength(vsub(v1, v2));
 }
 
 /// Returns the squared distance between v1 and v2. Faster than vdist() when you only need to compare distances.
-function vdistsq(v1, v2) {
-    return vlengthsq(vsub(v1, v2));
+export function vdistsq(v1: Vect, v2: Vect): number
+{
+	return vlengthsq(vsub(v1, v2));
 }
 
 /// Returns true if the distance between v1 and v2 is less than dist.
-function vnear(v1, v2, dist) {
-    return vdistsq(v1, v2) < dist * dist;
+export function vnear(v1: Vect, v2: Vect, dist): boolean
+{
+	return vdistsq(v1, v2) < dist*dist;
 }
 
 /// Spherical linearly interpolate between v1 and v2.
-function vslerp(v1, v2, t) {
-    const omega = Math.acos(vdot(v1, v2));
-
-    if (omega) {
-        const denom = 1 / Math.sin(omega);
-        return vadd(vmult(v1, Math.sin((1 - t) * omega) * denom), vmult(v2, Math.sin(t * omega) * denom));
-    } else {
-        return v1;
-    }
+export function vslerp(v1: Vect, v2: Vect, t: number): Vect
+{
+	const omega = Math.acos(vdot(v1, v2));
+	
+	if(omega) {
+		const denom = 1/Math.sin(omega);
+		return vadd(vmult(v1, Math.sin((1 - t)*omega)*denom), vmult(v2, Math.sin(t*omega)*denom));
+	} else {
+		return v1;
+	}
 }
 
 /// Spherical linearly interpolate between v1 towards v2 by no more than angle a radians
-function vslerpconst(v1, v2, a) {
-    const angle = Math.acos(vdot(v1, v2));
-    return vslerp(v1, v2, min(a, angle) / angle);
+export function vslerpconst(v1: Vect, v2: Vect, a): Vect
+{
+	const angle = Math.acos(vdot(v1, v2));
+	return vslerp(v1, v2, Math.min(a, angle)/angle);
 }
 
 /// Returns the unit length vector for the given angle (in radians).
-function vforangle(a) {
-    return new Vect(Math.cos(a), Math.sin(a));
+export function vforangle(a: number): Vect
+{
+	return new Vect(Math.cos(a), Math.sin(a));
 }
 
 /// Returns the angular direction v is pointing in (in radians).
-function vtoangle({ y, x }) {
-    return Math.atan2(y, x);
+export function vtoangle(v: Vect): number
+{
+	return Math.atan2(v.y, v.x);
 }
 
 ///	Returns a string representation of v. Intended mostly for debugging purposes and not production use.
-function vstr({ x, y }) {
-    return "(" + x.toFixed(3) + ", " + y.toFixed(3) + ")";
+export function vstr(v: Vect): string
+{
+	return "(" + v.x.toFixed(3) + ", " + v.y.toFixed(3) + ")";
 }
+
 
