@@ -1,18 +1,28 @@
 {
-  "author": "Joseph Gentle <josephg@gmail.com> (josephg.com)",
   "name": "chipmunk",
   "description": "Chipmunk 2d physics engine, in Javascript",
+  "keywords": [
+    "physics",
+    "engine",
+    "chipmunk"
+  ],
   "version": "6.1.1",
+  "author": "Joseph Gentle <josephg@gmail.com> (josephg.com)",
   "homepage": "https://github.com/josephg/chipmunk-js",
   "repository": {
     "type": "git",
     "url": "git://github.com/josephg/Chipmunk-js.git"
   },
-  "main": "cp.js",
-  "engines": {
-    "node": "~0.6.5"
-  },
-  "keywords": ["physics", "engine", "chipmunk"],
+  "main": "dist/chipmunk.js",
+  "module": "dist/chipmunk.jsm",
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "rollup": "^0.43.0",
+    "rollup-plugin-typescript": "^0.8.1",
+    "tslint": "^5.5.0",
+    "typescript": "^2.4.1"
+  },
+  "scripts": {
+    "build": "rollup -c"
+  }
 }
