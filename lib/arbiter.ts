@@ -24,6 +24,7 @@
 /// They are also used in conjuction with collision handler callbacks
 /// allowing you to retrieve information on the collision and control it.
 
+const CP_MAX_CONTACTS_PER_ARBITER = 4;
 
 // **** Collision Handlers
 //
@@ -57,7 +58,6 @@ export class CollisionHandler {
 }
 
 
-const CP_MAX_CONTACTS_PER_ARBITER = 4;
 
 // Arbiter states
 //
@@ -74,7 +74,7 @@ const CP_MAX_CONTACTS_PER_ARBITER = 4;
 //	'cached'
 
 /// A colliding pair of shapes.
-class Arbiter {
+export class Arbiter {
     constructor(a, b) {
         /// Calculated value to use for the elasticity coefficient.
         /// Override in a pre-solve collision handler for custom behavior.
@@ -385,7 +385,7 @@ class Arbiter {
 }
 
 /// A struct that wraps up the important collision data for an arbiter.
-class ContactPoint {
+export class ContactPoint {
     constructor(point, normal, dist) {
         this.point = point;
         this.normal = normal;
@@ -399,7 +399,7 @@ Arbiter.prototype.threadForBody = function(body)
 	return (this.body_a === body ? this.thread_a : this.thread_b);
 };*/
 
-function unthreadHelper(arb, body, prev, next) => {
+function unthreadHelper(arb, body, prev, next) {
     // thread_x_y is quite ugly, but it avoids making unnecessary js objects per
     // arbiter.
     if (prev) {

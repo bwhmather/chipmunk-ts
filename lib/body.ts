@@ -25,7 +25,90 @@
 /// They are given a shape by creating collision shapes (cpShape) that point to the body.
 /// @{
 
+// DEBUG,
+import { Shape } from './shape';
+import { Space } from './space';
+import { apply_impulse } from './constraints/util';
+import {
+    assert, assertSoft,
+    clamp, deleteObjFromList,
+} from './util';
+import {
+    Vect, vzero,
+    vadd, vsub,
+    vmult, vcross,
+    vperp, vrotate, vunrotate,
+} from './vect';
+
+
+
+function filterConstraints(node, body, filter) {
+    if (node === filter) {
+        return node.next(body);
+    } else if (node.a === body) {
+        node.next_a = filterConstraints(node.next_a, body, filter);
+    } else {
+        node.next_b = filterConstraints(node.next_b, body, filter);
+    }
+
+    return node;
+}
+
 export class Body {
+    /// Position of the rigid body's center of gravity.
+    p: Vect;
+    /// Velocity of the rigid body's center of gravity.
+    vx: number;
+    vy: number;
+    /// Force acting on the rigid body's center of gravity.
+    f: Vect;
+
+    /// Rotation of the body around it's center of gravity in radians.
+    /// Must agree with cpBody.rot! Use cpBodySetAngle() when changing the angle for this reason.
+    //this.a;
+    /// Angular velocity of the body around it's center of gravity in radians/second.
+    w: number;
+    /// Torque applied to the body around it's center of gravity.
+    t: number;
+
+    /// Cached unit length vector representing the angle of the body.
+    /// Used for fast rotations using cpvrotate().
+    //cpVect rot;
+
+    /// Maximum velocity allowed when updating the velocity.
+    v_limit: number;
+    /// Maximum rotational rate (in radians/second) allowed when updating the angular velocity.
+    w_limit: number;
+
+    // This stuff is all private.
+    private v_biasy: number;
+    private v_biasx: number;
+    private w_bias: number;
+
+    space: Space;
+
+    shapeList: Shape[];
+    // TODO
+    arbiterList = null; // These are both wacky linked lists.
+    constraintList = null;
+
+    // This stuff is used to track information on the collision graph.
+    // TODO
+    private nodeRoot;
+    private nodeNext;
+    private nodeIdleTime: number;
+
+    // Mass and one-over-mass.
+    m: number;
+    m_inv: number;
+
+    // Inertia and one over inertia.
+    i: number;
+    i_inv: number;
+
+    // Set this.a and this.rot
+    rot: Vect;
+
     constructor(m, i) {
         /// Mass of the body.
         /// Must agree with cpBody.m_inv! Use body.setMass() when changing the mass for this reason.
@@ -402,31 +485,15 @@ export class Body {
 
 
 
-
-function filterConstraints(node, body, filter) {
-    if (node === filter) {
-        return node.next(body);
-    } else if (node.a === body) {
-        node.next_a = filterConstraints(node.next_a, body, filter);
-    } else {
-        node.next_b = filterConstraints(node.next_b, body, filter);
-    }
-
-    return node;
-}
-
-
 // I wonder if this should use the constructor style like Body...
-function createStaticBody() {
+export function createStaticBody() {
     const body = new Body(Infinity, Infinity);
     body.nodeIdleTime = Infinity;
 
     return body;
 }
 
-if (typeof DEBUG !== 'undefined' && DEBUG) {
-    function v_assert_nan({ x, y }, message) { assert(x == x && y == y, message); }
-    function v_assert_infinite({ x, y }, message) { assert(Math.abs(x) !== Infinity && Math.abs(y) !== Infinity, message); }
-    function v_assert_sane(v, message) { v_assert_nan(v, message); v_assert_infinite(v, message); }
-} else { }
+function v_assert_nan({ x, y }, message) { assert(x == x && y == y, message); }
+function v_assert_infinite({ x, y }, message) { assert(Math.abs(x) !== Infinity && Math.abs(y) !== Infinity, message); }
+function v_assert_sane(v, message) { v_assert_nan(v, message); v_assert_infinite(v, message); }
 

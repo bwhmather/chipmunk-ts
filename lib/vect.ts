@@ -73,9 +73,7 @@ export class Vect {
     }
 }
 
-export function vzero(): Vect {
-    return new Vect(0,0);
-}
+export const vzero = new Vect(0,0);
 
 // The functions below *could* be rewritten to be instance methods on Vect. I don't
 // know how that would effect performance. For now, I'm keeping the JS similar to
@@ -201,7 +199,7 @@ export function vnormalize(v: Vect): Vect
 /// Returns a normalized copy of v or vzero if v was already vzero. Protects against divide by zero errors.
 export function vnormalize_safe(v: Vect): Vect
 {
-	return (v.x === 0 && v.y === 0 ? vzero() : vnormalize(v));
+	return (v.x === 0 && v.y === 0 ? vzero : vnormalize(v));
 }
 
 /// Clamp v to length len.

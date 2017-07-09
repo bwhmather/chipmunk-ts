@@ -39,7 +39,7 @@ export function bb(l, b, r, t) {
     return new BB(l, b, r, t);
 }
 
-function bbNewForCircle({ x, y }, r) {
+export function bbNewForCircle({ x, y }, r) {
     return new BB(
         x - r,
         y - r,
@@ -49,28 +49,28 @@ function bbNewForCircle({ x, y }, r) {
 };
 
 /// Returns true if @c a and @c b intersect.
-function bbIntersects(a, b) {
+export function bbIntersects(a, b) {
     return (a.l <= b.r && b.l <= a.r && a.b <= b.t && b.b <= a.t);
 };
-function bbIntersects2(bb, l, b, r, t) {
+export function bbIntersects2(bb, l, b, r, t) {
     return (bb.l <= r && l <= bb.r && bb.b <= t && b <= bb.t);
 };
 
 /// Returns true if @c other lies completely within @c bb.
-function bbContainsBB({ l, r, b, t }, { l, r, b, t }) {
+export function bbContainsBB({ l, r, b, t }, { l, r, b, t }) {
     return l <= l && r >= r && b <= b && t >= t;
 };
 
 /// Returns true if @c bb contains @c v.
-function bbContainsVect({ l, r, b, t }, { x, y }) {
+export function bbContainsVect({ l, r, b, t }, { x, y }) {
     return l <= x && r >= x && b <= y && t >= y;
 };
-function bbContainsVect2(l, b, r, t, { x, y }) {
+export function bbContainsVect2(l, b, r, t, { x, y }) {
     return l <= x && r >= x && b <= y && t >= y;
 };
 
 /// Returns a bounding box that holds both bounding boxes.
-function bbMerge(a, b) {
+export function bbMerge(a, b) {
     return new BB(
         min(a.l, b.l),
         min(a.b, b.b),
@@ -80,7 +80,7 @@ function bbMerge(a, b) {
 };
 
 /// Returns a bounding box that holds both @c bb and @c v.
-function bbExpand({ l, b, r, t }, { x, y }) {
+export function bbExpand({ l, b, r, t }, { x, y }) {
     return new BB(
         min(l, x),
         min(b, y),
@@ -90,26 +90,26 @@ function bbExpand({ l, b, r, t }, { x, y }) {
 };
 
 /// Returns the area of the bounding box.
-function bbArea({ r, l, t, b }) {
+export function bbArea({ r, l, t, b }) {
     return (r - l) * (t - b);
 };
 
 /// Merges @c a and @c b and returns the area of the merged bounding box.
-function bbMergedArea(a, b) {
+export function bbMergedArea(a, b) {
     return (max(a.r, b.r) - min(a.l, b.l)) * (max(a.t, b.t) - min(a.b, b.b));
 };
 
-function bbMergedArea2(bb, l, b, r, t) {
+export function bbMergedArea2(bb, l, b, r, t) {
     return (max(bb.r, r) - min(bb.l, l)) * (max(bb.t, t) - min(bb.b, b));
 };
 
 /// Return true if the bounding box intersects the line segment with ends @c a and @c b.
-function bbIntersectsSegment(bb, a, b) {
+export function bbIntersectsSegment(bb, a, b) {
     return (bbSegmentQuery(bb, a, b) != Infinity);
 };
 
 /// Clamp a vector to a bounding box.
-function bbClampVect({ l, r, b, t }, v) {
+export function bbClampVect({ l, r, b, t }, v) {
     const x = min(max(l, v.x), r);
     const y = min(max(b, v.y), t);
     return new Vect(x, y);
@@ -117,7 +117,7 @@ function bbClampVect({ l, r, b, t }, v) {
 
 // TODO edge case issue
 /// Wrap a vector to a bounding box.
-function bbWrapVect({ r, l, t, b }, v) {
+export function bbWrapVect({ r, l, t, b }, v) {
     const ix = Math.abs(r - l);
     const modx = (v.x - l) % ix;
     const x = (modx > 0) ? modx : modx + ix;

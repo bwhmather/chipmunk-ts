@@ -19,6 +19,19 @@
  * SOFTWARE.
  */
 
+import { assert, closestPointOnSegment } from './util'
+import {
+    Vect, vzero,
+    vadd, vsub,
+    vmult, vcross, vdot,
+    vdist, vlength2,
+    vlerp, vnormalize,
+    vneg, vperp, vrotate,
+} from './vect';
+
+import { Body } from './body';
+import { BB } from './bb';
+import { Space } from './space';
 /// Segment query info struct.
 /* These are created using literals where needed.
 typedef struct cpSegmentQueryInfo {
@@ -31,12 +44,14 @@ typedef struct cpSegmentQueryInfo {
 } cpSegmentQueryInfo;
 */
 
+
+
 let shapeIDCounter = 0;
 
-const CP_NO_GROUP = cp.NO_GROUP = 0;
-const CP_ALL_LAYERS = cp.ALL_LAYERS = ~0;
+const CP_NO_GROUP = 0;
+const CP_ALL_LAYERS = ~0;
 
-cp.resetShapeIdCounter = () => {
+function resetShapeIdCounter() {
     shapeIDCounter = 0;
 };
 
@@ -44,7 +59,37 @@ cp.resetShapeIdCounter = () => {
 //
 /// Opaque collision shape struct. Do not create directly - instead use
 /// PolyShape, CircleShape and SegmentShape.
-class Shape {
+export class Shape {
+    body: Body;
+
+    bb_l: number;
+    bb_b: number;
+    bb_r: number;
+    bb_t: number;
+
+    hashid: number;
+    sensor: boolean;
+
+    e: number;
+    u: number;
+
+    surface_v: Vect;
+
+    // TODO
+    collision_type: number;
+
+    // TODO
+    group: number;
+
+    // TODO
+    layers;
+
+    space: Space;
+
+    // TODO
+    cacheData;
+
+
     constructor(body) {
         /// The rigid body this collision shape is attached to.
         this.body = body;
@@ -73,10 +118,6 @@ class Shape {
         this.layers = CP_ALL_LAYERS;
 
         this.space = null;
-
-        // Copy the collision code from the prototype into the actual object. This makes collision
-        // function lookups slightly faster.
-        this.collisionCode = this.collisionCode;
     }
 
     setElasticity(e) { this.e = e; }
@@ -132,7 +173,11 @@ CP_DefineShapeStructProperty(cpLayers, layers, Layers, cpTrue);
 */
 
 /// Extended point query info struct. Returned from calling pointQuery on a shape.
-class PointQueryExtendedInfo {
+export class PointQueryExtendedInfo {
+    shape: Shape;
+    d: number;
+    n: Vect;
+
     constructor(shape) {
         /// Shape that was hit, NULL if no collision occurred.
         this.shape = shape;
@@ -143,7 +188,11 @@ class PointQueryExtendedInfo {
     }
 }
 
-class NearestPointQueryInfo {
+export class NearestPointQueryInfo {
+    shape: Shape;
+    p: Vect;
+    d: number;
+
     constructor(shape, p, d) {
         /// The nearest shape, NULL if no shape was within range.
         this.shape = shape;
@@ -154,7 +203,11 @@ class NearestPointQueryInfo {
     }
 }
 
-class SegmentQueryInfo {
+export class SegmentQueryInfo {
+    shape: Shape;
+    t: number;
+    n: Vect;
+
     constructor(shape, t, n) {
         /// The shape that was hit, NULL if no collision occured.
         this.shape = shape;
@@ -197,13 +250,25 @@ const circleSegmentQuery = (shape, center, r, a, b, info) => {
 };
 
 class CircleShape extends Shape {
+    c: Vect;
+    tc: Vect;
+
+    bb_l: number;
+    bb_b: number;
+    bb_r: number;
+    bb_t: number;
+
+    r: number;
+
+    type: string;
+
     constructor(body, radius, offset) {
+        super(body);
+
         this.c = this.tc = offset;
         this.r = radius;
 
         this.type = 'circle';
-
-        super(body);
     }
 
     cacheData(p, rot) {
@@ -265,7 +330,25 @@ CircleShape.prototype.setOffset = function(offset)
 // Segment shape
 
 class SegmentShape extends Shape {
+    a: Vect;
+    b: Vect;
+    n: Vect;
+
+    // TODO
+    ta;
+    tb;
+    tn;
+
+    r: number;
+
+    a_tangent: Vect;
+    b_tangent: Vect;
+
+    type: string;
+
     constructor(body, a, b, r) {
+        super(body);
+
         this.a = a;
         this.b = b;
         this.n = vperp(vnormalize(vsub(b, a)));
@@ -278,7 +361,6 @@ class SegmentShape extends Shape {
         this.b_tangent = vzero;
 
         this.type = 'segment';
-        super(body);
     }
 
     cacheData(p, rot) {

@@ -19,6 +19,17 @@
  * SOFTWARE.
  */
 
+import { BB, bbNewForCircle, bbIntersects2 } from './bb';
+import { Body } from './body'; 
+import { BBTree } from './bb-tree';
+import { Arbiter, CollisionHandler, ContactPoint } from './arbiter';
+import { Constraint } from './constraints/constraint';
+import { hashPair, deleteObjFromList, assert, assertSoft } from './util';
+// import { SpaceHash } from '???';
+import { collideShapes } from './collision';
+import { Vect, vlengthsq, vneg, vzero } from './vect';
+
+
 const defaultCollisionHandler = new CollisionHandler();
 
 function assertSpaceUnlocked({ locked }) {
@@ -33,7 +44,85 @@ function updateFunc(shape) {
     shape.update(body.p, body.rot);
 }
 /// Basic Unit of Simulation in Chipmunk
-class Space {
+export class Space {
+
+    stamp: number;
+    curr_dt: number;
+
+    bodies: Body[];
+    rousedBodies: Body[];
+    // TODO
+    sleepingComponents: Any[];
+
+    staticShapes: BBTree;
+    activeShapes: BBTree;
+
+    arbiters: Arbiter[];
+    // TODO
+    contactBuffersHead;
+    // TODO
+    cachedArbiters;
+
+    constraints: Constraint[];
+
+    locked: number;
+
+    // TODO
+    collisionHandlers;
+    defaultHandler: CollisionHandler;
+
+    // TODO
+    postStepCallbacks;
+
+    /// Number of iterations to use in the impulse solver to solve contacts.
+    iterations: number;
+
+    /// Gravity to pass to rigid bodies when integrating velocity.
+    gravity: Vect;
+
+    /// Damping rate expressed as the fraction of velocity bodies retain each second.
+    /// A value of 0.9 would mean that each body's velocity will drop 10% per second.
+    /// The default value is 1.0, meaning no damping is applied.
+    /// @note This damping value is different than those of cpDampedSpring and cpDampedRotarySpring.
+    damping: number;
+
+    /// Speed threshold for a body to be considered idle.
+    /// The default value of 0 means to let the space guess a good threshold based on gravity.
+    idleSpeedThreshold: number;
+
+    /// Time a group of bodies must remain idle in order to fall asleep.
+    /// Enabling sleeping also implicitly enables the the contact graph.
+    /// The default value of Infinity disables the sleeping algorithm.
+    sleepTimeThreshold: number;
+
+    /// Amount of encouraged penetration between colliding shapes..
+    /// Used to reduce oscillating contacts and keep the collision cache warm.
+    /// Defaults to 0.1. If you have poor simulation quality,
+    /// increase this number as much as possible without allowing visible amounts of overlap.
+    collisionSlop: number;
+
+    /// Determines how fast overlapping shapes are pushed apart.
+    /// Expressed as a fraction of the error remaining after each second.
+    /// Defaults to pow(1.0 - 0.1, 60.0) meaning that Chipmunk fixes 10% of overlap each frame at 60Hz.
+    collisionBias: number;
+
+    /// Number of frames that contact information should persist.
+    /// Defaults to 3. There is probably never a reason to change this value.
+    collisionPersistence: number;
+
+    /// Rebuild the contact graph during each step. Must be enabled to use the cpBodyEachArbiter() function.
+    /// Disabled by default for a small performance boost. Enabled implicitly when the sleeping feature is enabled.
+    enableContactGraph: boolean;
+
+    /// The designated static body for this space.
+    /// You can modify this body, or replace it with your own static body.
+    /// By default it points to a statically allocated cpBody in the cpSpace struct.
+    staticBody: Body;
+
+    // Cache the collideShapes callback function for the space.
+    // TODO
+    collideShapes;
+
     constructor() {
         this.stamp = 0;
         this.curr_dt = 0;
@@ -410,23 +499,6 @@ class Space {
         }
     }
 
-    /// Switch the space to use a spatial has as it's spatial index.
-    useSpatialHash(dim, count) {
-        throw new Error('Spatial Hash not implemented.');
-
-        const staticShapes = new SpaceHash(dim, count, null);
-        const activeShapes = new SpaceHash(dim, count, staticShapes);
-
-        this.staticShapes.each(shape => {
-            staticShapes.insert(shape, shape.hashid);
-        });
-        this.activeShapes.each(shape => {
-            activeShapes.insert(shape, shape.hashid);
-        });
-
-        this.staticShapes = staticShapes;
-        this.activeShapes = activeShapes;
-    }
     activateBody(body) {
         assert(!body.isRogue(), "Internal error: Attempting to activate a rogue body.");
 

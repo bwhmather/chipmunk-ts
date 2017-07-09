@@ -353,7 +353,7 @@ PolyShape.prototype.collisionTable = [
     poly2poly
 ];
 
-const collideShapes = cp.collideShapes = (a, b) => {
+export function collideShapes(a, b) {
     assert(a.collisionCode <= b.collisionCode, 'Collided shapes must be sorted by type');
     return a.collisionTable[b.collisionCode](a, b);
 };

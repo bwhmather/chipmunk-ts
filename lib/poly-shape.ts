@@ -52,7 +52,7 @@ class SplittingPlane {
 
 /// Initialize a polygon shape.
 /// The vertexes must be convex and have a clockwise winding.
-class PolyShape extends Shape {
+export class PolyShape extends Shape {
     constructor(body, verts, offset) {
         this.setVerts(verts, offset);
         this.type = 'poly';
@@ -250,23 +250,27 @@ class PolyShape extends Shape {
 }
 
 /// Initialize a box shaped polygon shape.
-const BoxShape = (body, width, height) => {
-    const hw = width / 2;
-    const hh = height / 2;
+export class BoxShape extends BoxShape2 {
+    constructor(body, width, height) {
+        const hw = width / 2;
+        const hh = height / 2;
 
-    return BoxShape2(body, new BB(-hw, -hh, hw, hh));
+        super(body, new BB(-hw, -hh, hw, hh));
+    }
 };
 
 /// Initialize an offset box shaped polygon shape.
-var BoxShape2 = (body, { l, b, t, r }) => {
-    const verts = [
-        l, b,
-        l, t,
-        r, t,
-        r, b,
-    ];
+export class BoxShape2 extends PolyShape {
+    constructor(body, { l, b, t, r }) {
+        const verts = [
+            l, b,
+            l, t,
+            r, t,
+            r, b,
+        ];
 
-    return new PolyShape(body, verts, vzero);
+        super(body, verts, vzero);
+    }
 };
 
 

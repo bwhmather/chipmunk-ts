@@ -78,27 +78,29 @@
 	reindexQuery(func);
 */
 
-var SpatialIndex = cp.SpatialIndex = function(staticIndex) {
-    this.staticIndex = staticIndex;
+class SpatialIndex {
+    construtor(staticIndex) {
+        this.staticIndex = staticIndex;
 
 
-    if (staticIndex) {
-        if (staticIndex.dynamicIndex) {
-            throw new Error("This static index is already associated with a dynamic index.");
+        if (staticIndex) {
+            if (staticIndex.dynamicIndex) {
+                throw new Error("This static index is already associated with a dynamic index.");
+            }
+            staticIndex.dynamicIndex = this;
         }
-        staticIndex.dynamicIndex = this;
     }
-};
 
 // Collide the objects in an index against the objects in a staticIndex using the query callback function.
-SpatialIndex.prototype.collideStatic = function(staticIndex, func) {
-    if (staticIndex.count > 0) {
-        var query = staticIndex.query;
+    collideStatic(staticIndex, func) {
+        if (staticIndex.count > 0) {
+            var query = staticIndex.query;
 
-        this.each(function(obj) {
-            query(obj, new BB(obj.bb_l, obj.bb_b, obj.bb_r, obj.bb_t), func);
-        });
+            this.each(function(obj) {
+                query(obj, new BB(obj.bb_l, obj.bb_b, obj.bb_r, obj.bb_t), func);
+            });
+        }
     }
-};
+}
 
 

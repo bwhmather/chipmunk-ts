@@ -19,9 +19,12 @@
  * SOFTWARE.
  */
 
+import { SpatialIndex } from './spatial-index';
+
+
 // This file implements a modified AABB tree for collision detection.
 
-class BBTree extends SpatialIndex {
+export class BBTree extends SpatialIndex {
     constructor(staticIndex) {
         super(staticIndex);
 
@@ -233,7 +236,7 @@ function voidQueryFunc(obj1, obj2) { }
 
 var numNodes = 0;
 
-class Node {
+export class Node {
     constructor(tree, a, b) {
         this.obj = null;
         this.bb_l = min(a.bb_l, b.bb_l);
@@ -325,7 +328,7 @@ Node.prototype.isLeaf = false;
 
 let numLeaves = 0;
 
-class Leaf {
+export class Leaf {
     constructor(tree, obj) {
         this.obj = obj;
         tree.getBB(obj, this);
@@ -454,7 +457,7 @@ Leaf.prototype.isLeaf = true;
 var numPairs = 0;
 
 // Objects created with constructors are faster than object literals. :(
-class Pair {
+export class Pair {
     constructor(leafA, nextA, leafB, nextB) {
         this.prevA = null;
         this.leafA = leafA;
@@ -753,7 +756,7 @@ function partitionNodes(tree, nodes, offset, count) {
 //}
 // **** Debug Draw
 
-function nodeRender(node, depth) {
+export function nodeRender(node, depth) {
     if (!node.isLeaf && depth <= 10) {
         nodeRender(node.A, depth + 1);
         nodeRender(node.B, depth + 1);
