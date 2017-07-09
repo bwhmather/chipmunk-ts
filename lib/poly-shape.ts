@@ -19,6 +19,17 @@
  * SOFTWARE.
  */
 
+import { BB } from './bb';
+import { Shape, NearestPointQueryInfo, SegmentQueryInfo } from './shape'
+import { assert, closestPointOnSegment2 } from './util';
+import {
+    Vect, vzero,
+    vcross, vcross2,
+    vdot, vdot2,
+    vdist, vlerp,
+    vnormalize,
+    vperp, vrotate,
+} from './vect';
 /// Check that a set of vertexes is convex and has a clockwise winding.
 function polyValidate(verts) {
     const len = verts.length;
@@ -40,12 +51,15 @@ function polyValidate(verts) {
 }
 
 class SplittingPlane {
+    n: Vect;
+    d: number;
+
     constructor(n, d) {
         this.n = n;
         this.d = d;
     }
 
-    compare(v) {
+    compare(v: Vect): number {
         return vdot(this.n, v) - this.d;
     }
 }
@@ -53,10 +67,16 @@ class SplittingPlane {
 /// Initialize a polygon shape.
 /// The vertexes must be convex and have a clockwise winding.
 export class PolyShape extends Shape {
+    verts: number[]
+    tVerts: number[]
+    // TODO
+    planes;
+    tPlanes;
+
     constructor(body, verts, offset) {
+        super(body);
         this.setVerts(verts, offset);
         this.type = 'poly';
-        super(body);
     }
 
     setVerts(verts, { x, y }) {
@@ -95,7 +115,7 @@ export class PolyShape extends Shape {
         }
     }
 
-    transformVerts(p, rot) {
+    transformVerts(p: Vect, rot: Vect) {
         const src = this.verts;
         const dst = this.tVerts;
 
@@ -117,10 +137,10 @@ export class PolyShape extends Shape {
             dst[i] = vx;
             dst[i + 1] = vy;
 
-            l = min(l, vx);
-            r = max(r, vx);
-            b = min(b, vy);
-            t = max(t, vy);
+            l = Math.min(l, vx);
+            r = Math.max(r, vx);
+            b = Math.min(b, vy);
+            t = Math.max(t, vy);
         }
 
         this.bb_l = l;
@@ -209,7 +229,7 @@ export class PolyShape extends Shape {
         let m = vdot2(x, y, verts[0], verts[1]);
 
         for (let i = 2; i < verts.length; i += 2) {
-            m = min(m, vdot2(x, y, verts[i], verts[i + 1]));
+            m = Math.min(m, vdot2(x, y, verts[i], verts[i + 1]));
         }
 
         return m - d;
@@ -249,6 +269,21 @@ export class PolyShape extends Shape {
     }
 }
 
+/// Initialize an offset box shaped polygon shape.
+export class BoxShape2 extends PolyShape {
+    constructor(body, bb) {
+        const verts = [
+            bb.l, bb.b,
+            bb.l, bb.t,
+            bb.r, bb.t,
+            bb.r, bb.b,
+        ];
+
+        super(body, verts, vzero);
+    }
+};
+
+
 /// Initialize a box shaped polygon shape.
 export class BoxShape extends BoxShape2 {
     constructor(body, width, height) {
@@ -258,19 +293,4 @@ export class BoxShape extends BoxShape2 {
         super(body, new BB(-hw, -hh, hw, hh));
     }
 };
-
-/// Initialize an offset box shaped polygon shape.
-export class BoxShape2 extends PolyShape {
-    constructor(body, { l, b, t, r }) {
-        const verts = [
-            l, b,
-            l, t,
-            r, t,
-            r, b,
-        ];
-
-        super(body, verts, vzero);
-    }
-};
-
 

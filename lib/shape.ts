@@ -59,7 +59,9 @@ function resetShapeIdCounter() {
 //
 /// Opaque collision shape struct. Do not create directly - instead use
 /// PolyShape, CircleShape and SegmentShape.
-export class Shape {
+export abstract class Shape {
+    type: string;
+
     body: Body;
 
     bb_l: number;
@@ -85,10 +87,6 @@ export class Shape {
     layers;
 
     space: Space;
-
-    // TODO
-    cacheData;
-
 
     constructor(body) {
         /// The rigid body this collision shape is attached to.
@@ -155,6 +153,10 @@ export class Shape {
     getBB() {
         return new BB(this.bb_l, this.bb_b, this.bb_r, this.bb_t);
     }
+
+    protected abstract cacheData(pos: Vect, rot: number);
+
+    protected abstract nearestPointQuery({ x, y });
 }
 
 /* Not implemented - all these getters and setters. Just edit the object directly.
@@ -230,7 +232,7 @@ export class SegmentQueryInfo {
 
 // Circles.
 
-const circleSegmentQuery = (shape, center, r, a, b, info) => {
+const circleSegmentQuery = (shape, center, r, a, b, info?) => {
     // offset the line to be relative to the circle
     a = vsub(a, center);
     b = vsub(b, center);
@@ -259,8 +261,6 @@ class CircleShape extends Shape {
     bb_t: number;
 
     r: number;
-
-    type: string;
 
     constructor(body, radius, offset) {
         super(body);
@@ -343,8 +343,6 @@ class SegmentShape extends Shape {
 
     a_tangent: Vect;
     b_tangent: Vect;
-
-    type: string;
 
     constructor(body, a, b, r) {
         super(body);
