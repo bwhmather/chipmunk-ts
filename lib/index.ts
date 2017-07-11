@@ -23,7 +23,6 @@ export * from './bb-tree';
 export * from './bb';
 export * from './body';
 export * from './collision';
-export * from './index';
 export * from './poly-shape';
 export * from './shape';
 export * from './space-components';
