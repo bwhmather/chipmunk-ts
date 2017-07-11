@@ -18,10 +18,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { Constraint } from './constraint';
+import { assertSoft } from '../util';
 
-const defaultSpringTorque = ({ restAngle, stiffness }, relativeAngle) => (relativeAngle - restAngle) * stiffness;
 
-class DampedRotarySpring extends Constraint {
+function defaultSpringTorque(spring, relativeAngle){
+	return (relativeAngle - spring.restAngle)*spring.stiffness;
+}
+
+
+export class DampedRotarySpring extends Constraint {
+    restAngle: number;
+    stiffness: number;
+    damping: number;
+
+    // TODO
+    springTorqueFunc;
+
+    target_wrn: number;
+    w_coef: number;
+    iSum: number;
+
     constructor(a, b, restAngle, stiffness, damping) {
         super(a, b);
 
