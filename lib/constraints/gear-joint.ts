@@ -18,8 +18,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { Constraint } from './constraint';
+import { bias_coef } from './util';
+import { clamp } from '../util';
 
-class GearJoint extends Constraint {
+
+
+export class GearJoint extends Constraint {
+    phase: number;
+    ratio: number;
+    ratio_inv: number;
+
+    jAcc: number;
+    iSum: number;
+    bias: number;
+    jMax: number;
+
     constructor(a, b, phase, ratio) {
         super(a, b);
 
