@@ -18,8 +18,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { Constraint } from './constraint';
+import {
+  mult_k, k_tensor, apply_impulses, bias_coef, relative_velocity,
+} from './util';
+import {
+  Vect, vzero,
+  vadd, vsub,
+  vmult, vcross, vdot,
+  vclamp, vperp,
+  vnormalize,
+  vproject,
+  vlength,
+  vrotate,
+} from '../vect';
 
-class GrooveJoint extends Constraint {
+
+export class GrooveJoint extends Constraint {
+    grv_a: Vect;
+    grv_b: Vect;
+    grv_n: Vect;
+    grv_tn: Vect;
+
+    anchr1: Vect;
+    anchr2: Vect;
+
+    clamp: number;
+    r1: Vect;
+    r2: Vect;
+    k1: Vect;
+    k2: Vect;
+    jAcc: Vect;
+    jMaxLen: number;
+    bias: Vect;
+
+
     constructor(a, b, groove_a, groove_b, anchr2) {
         super(a, b);
 
