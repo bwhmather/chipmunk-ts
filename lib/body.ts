@@ -90,8 +90,8 @@ export class Body {
 
     shapeList: Shape[];
     // TODO
-    arbiterList = null; // These are both wacky linked lists.
-    constraintList = null;
+    arbiterList; // These are both wacky linked lists.
+    constraintList;
 
     // This stuff is used to track information on the collision graph.
     // TODO

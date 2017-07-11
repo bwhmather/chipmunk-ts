@@ -21,6 +21,8 @@
 
 /// Chipmunk's axis-aligned 2D bounding box type along with a few handy routines.
 
+import { Vect } from './vect';
+
 let numBB = 0;
 
 // Bounding boxes are JS objects with {l, b, r, t} = left, bottom, right, top, respectively.
@@ -118,11 +120,6 @@ export function bbMergedArea2(bb, l, b, r, t) {
         (Math.max(bb.r, r) - Math.min(bb.l, l)) *
         (Math.max(bb.t, t) - Math.min(bb.b, b))
     );
-};
-
-/// Return true if the bounding box intersects the line segment with ends @c a and @c b.
-export function bbIntersectsSegment(bb, a, b) {
-    return (bbSegmentQuery(bb, a, b) != Infinity);
 };
 
 /// Clamp a vector to a bounding box.

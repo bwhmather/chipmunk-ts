@@ -45,7 +45,7 @@ export abstract class SpatialIndex {
 
     staticIndex;
 
-    construtor(staticIndex) {
+    constructor(staticIndex) {
         this.staticIndex = staticIndex;
 
 

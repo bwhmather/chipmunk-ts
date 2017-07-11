@@ -31,10 +31,6 @@ export class Vect {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        //numVects++;
-
-    //	var s = new Error().stack;
-    //	traces[s] = traces[s] ? traces[s]+1 : 1;
     }
 
     add(v2) {
@@ -73,11 +69,11 @@ export class Vect {
     }
 }
 
-export const vzero = new Vect(0,0);
+export function v(x, y) {
+  return new Vect(x, y);
+}
 
-// The functions below *could* be rewritten to be instance methods on Vect. I don't
-// know how that would effect performance. For now, I'm keeping the JS similar to
-// the original C code.
+export const vzero = new Vect(0,0);
 
 /// Vector dot product.
 export function vdot(v1: Vect, v2: Vect): number

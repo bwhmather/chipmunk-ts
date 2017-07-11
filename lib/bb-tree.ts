@@ -20,6 +20,9 @@
  */
 
 import { SpatialIndex } from './spatial-index';
+import { BB } from './bb';
+import { vmult } from './vect';
+import { assertSoft } from './util';
 
 
 // This file implements a modified AABB tree for collision detection.
@@ -172,7 +175,9 @@ export class BBTree extends SpatialIndex {
         const staticRoot = staticIndex && staticIndex.root;
 
         this.root.markSubtree(this, staticRoot, func);
-        if (staticIndex && !staticRoot) this.collideStatic(this, staticIndex, func);
+      if (staticIndex && !staticRoot) {
+        this.collideStatic(staticIndex, func);
+      }
 
         this.incrementStamp();
     }
@@ -205,24 +210,8 @@ export class BBTree extends SpatialIndex {
         if (this.root) subtreeQuery(this.root, bb, func);
     }
 
-    optimize() {
-        const nodes = new Array(this.count);
-        let i = 0;
-
-        for (const hashid in this.leaves) {
-            nodes[i++] = this.nodes[hashid];
-        }
-
-        tree.subtreeRecycle(root);
-        this.root = partitionNodes(tree, nodes, nodes.length);
-    }
-
     log() {
         if (this.root) nodeRender(this.root, 0);
-    }
-
-    count() {
-        return this.count;
     }
 
     each(func) {
@@ -626,7 +615,7 @@ function nodeSegmentQuery(node, a, b)
 	const tx2 = (node.bb_r == a.x ?  Infinity : (node.bb_r - a.x) * idx);
 	const txmin = Math.min(tx1, tx2);
 	const txmax = Math.max(tx1, tx2);
-	const
+
 	const idy = 1/(b.y - a.y);
 	const ty1 = (node.bb_b == a.y ? -Infinity : (node.bb_b - a.y) * idy);
 	const ty2 = (node.bb_t == a.y ?  Infinity : (node.bb_t - a.y) * idy);
@@ -681,8 +670,6 @@ function subtreeSegmentQuery(subtree, a, b, t_exit, func)
 };
 
 
-
-
 function subtreeRemove(subtree, leaf, tree) {
     if (leaf == subtree) {
         return null;
@@ -700,15 +687,6 @@ function subtreeRemove(subtree, leaf, tree) {
     }
 }
 
-// **** Marking Functions
-
-/*
-typedef struct MarkContext {
-	bbTree *tree;
-	Node *staticRoot;
-	cpSpatialIndexQueryFunc func;
-} MarkContext;
-*/
 
 function bbTreeIntersectsNode(a, b) {
     return (
@@ -720,11 +698,6 @@ function bbTreeIntersectsNode(a, b) {
 };
 
 
-
-
-// **** Misc
-// **** Tree Optimization
-
 function bbTreeMergedArea2(node, l, b, r, t)
 {
     return (
@@ -733,112 +706,6 @@ function bbTreeMergedArea2(node, l, b, r, t)
     );
 };
 
-function partitionNodes(tree, nodes, offset, count) {
-    if (count == 1) {
-        return nodes[offset];
-    } else if (count == 2) {
-        return tree.makeNode(nodes[offset], nodes[offset + 1]);
-    }
-
-    // Find the AABB for these nodes
-    //var bb = nodes[offset].bb;
-    var node = nodes[offset];
-    let bb_l = node.bb_l;
-    let bb_b = node.bb_b;
-    let bb_r = node.bb_r;
-    let bb_t = node.bb_t;
-
-    const end = offset + count;
-    for (let i = offset + 1; i < end; i++) {
-        //bb = bbMerge(bb, nodes[i].bb);
-        node = nodes[i];
-        bb_l = Math.min(bb_l, node.bb_l);
-        bb_b = Math.min(bb_b, node.bb_b);
-        bb_r = Math.max(bb_r, node.bb_r);
-        bb_t = Math.max(bb_t, node.bb_t);
-    }
-
-    // Split it on it's longest axis
-    const splitWidth = (bb_r - bb_l > bb_t - bb_b);
-
-    // Sort the bounds and use the median as the splitting point
-    const bounds = new Array(count * 2);
-    if (splitWidth) {
-        for (let i = offset; i < end; i++) {
-            bounds[2 * i + 0] = nodes[i].bb_l;
-            bounds[2 * i + 1] = nodes[i].bb_r;
-        }
-    } else {
-        for (let i = offset; i < end; i++) {
-            bounds[2 * i + 0] = nodes[i].bb_b;
-            bounds[2 * i + 1] = nodes[i].bb_t;
-        }
-    }
-
-    bounds.sort((a, b) => // This might run faster if the function was moved out into the global scope.
-        a - b);
-    const split = (bounds[count - 1] + bounds[count]) * 0.5; // use the median as the split
-
-    // Generate the child BBs
-    //var a = bb, b = bb;
-    const a_l = bb_l;
-
-    const a_b = bb_b;
-    let a_r = bb_r;
-    let a_t = bb_t;
-    let b_l = bb_l;
-    let b_b = bb_b;
-    const b_r = bb_r;
-    const b_t = bb_t;
-
-    if (splitWidth) a_r = b_l = split; else a_t = b_b = split;
-
-    // Partition the nodes
-    let right = end;
-    for (let left = offset; left < right;) {
-        let node = nodes[left];
-        //	if(bbMergedArea(node.bb, b) < bbMergedArea(node.bb, a)){
-        if (bbTreeMergedArea2(node, b_l, b_b, b_r, b_t) < bbTreeMergedArea2(node, a_l, a_b, a_r, a_t)) {
-            right--;
-            nodes[left] = nodes[right];
-            nodes[right] = node;
-        } else {
-            left++;
-        }
-    }
-
-    if (right == count) {
-        let node = null;
-        for (let i = offset; i < end; i++) node = subtreeInsert(node, nodes[i], tree);
-        return node;
-    }
-
-    // Recurse and build the node!
-    return NodeNew(tree,
-        partitionNodes(tree, nodes, offset, right - offset),
-        partitionNodes(tree, nodes, right, end - right)
-    );
-}
-
-//static void
-//bbTreeOptimizeIncremental(bbTree *tree, int passes)
-//{
-//	for(int i=0; i<passes; i++){
-//		Node *root = tree.root;
-//		Node *node = root;
-//		int bit = 0;
-//		unsigned int path = tree.opath;
-//		
-//		while(!NodeIsLeaf(node)){
-//			node = (path&(1<<bit) ? node.a : node.b);
-//			bit = (bit + 1)&(sizeof(unsigned int)*8 - 1);
-//		}
-//		
-//		root = subtreeRemove(root, node, tree);
-//		tree.root = subtreeInsert(root, node, tree);
-//	}
-//}
-// **** Debug Draw
 
 export function nodeRender(node, depth) {
     if (!node.isLeaf && depth <= 10) {
