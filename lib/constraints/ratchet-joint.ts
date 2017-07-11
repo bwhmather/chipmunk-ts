@@ -18,12 +18,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { Constraint } from './constraint';
+import { bias_coef } from './util';
+import { clamp } from '../util';
 
-class RatchetJoint extends Constraint {
+
+export class RatchetJoint extends Constraint {
+    angle: number;
+    phase: number;
+
+    // TODO
+    ratchet;
+    iSum: number;
+    bias: number;
+    jAcc: number;
+    jMax: number;
+
     constructor(a, b, phase, ratchet) {
         super(a, b);
 
-        this.angle = 0;
         this.phase = phase;
         this.ratchet = ratchet;
 
@@ -95,8 +108,8 @@ class RatchetJoint extends Constraint {
         b.w += j * b.i_inv;
     }
 
-    getImpulse({ jAcc }) {
-        return Math.abs(jAcc);
+    getImpulse() {
+        return Math.abs(this.jAcc);
     }
 }
 
