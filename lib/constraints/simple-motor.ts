@@ -18,8 +18,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { Constraint } from './constraint';
+import { clamp } from '../util';
 
-class SimpleMotor extends Constraint {
+
+export class SimpleMotor extends Constraint {
+    rate: number;
+    jAcc: number;
+    iSum: number;
+    jMax: number;
+
     constructor(a, b, rate) {
         super(a, b);
 
