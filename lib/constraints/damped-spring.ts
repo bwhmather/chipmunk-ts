@@ -18,10 +18,44 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { Constraint } from './constraint';
+import {
+  apply_impulses, normal_relative_velocity,
+  k_scalar,
+} from './util';
+import { assertSoft } from '../util';
+import {
+  Vect,
+  vadd, vsub, vmult,
+  vlength, vrotate,
+} from '../vect';
 
-const defaultSpringForce = ({ restLength, stiffness }, dist) => (restLength - dist) * stiffness;
+function defaultSpringForce(spring, dist){
+	return (spring.restLength - dist)*spring.stiffness;
+};
 
-class DampedSpring extends Constraint {
+
+
+export class DampedSpring extends Constraint {
+    anchr1: Vect;
+    anchr2: Vect;
+
+    restLength: number;
+    stiffness: number;
+    damping: number;
+
+    // TODO
+    springForceFunc;
+
+    target_vrn: number;
+    v_coef: number;
+
+    r1: Vect;
+    r2: Vect;
+
+    nMass: number;
+    n: Vect;
+
     constructor(a, b, anchr1, anchr2, restLength, stiffness, damping) {
         super(a, b);
 
