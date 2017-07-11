@@ -18,8 +18,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { Constraint } from './constraint';
+import { bias_coef } from './util';
+import { clamp } from '../util';
+
 
 class RotaryLimitJoint extends Constraint {
+    min: number;
+    max: number;
+
+    jAcc: number;
+    iSum: number;
+    bias: number;
+    jMax: number;
+
     constructor(a, b, min, max) {
         super(a, b);
 
@@ -91,7 +103,7 @@ class RotaryLimitJoint extends Constraint {
     }
 
     getImpulse() {
-        return Math.abs(joint.jAcc);
+        return Math.abs(this.jAcc);
     }
 }
 
