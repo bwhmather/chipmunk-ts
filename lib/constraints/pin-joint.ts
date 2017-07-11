@@ -18,8 +18,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { Constraint } from './constraint';
+import {
+  apply_impulses,
+  normal_relative_velocity,
+  k_scalar, bias_coef,
+} from './util';
+import { assertSoft, clamp } from '../util';
+import {
+  Vect,
+  vadd, vsub,
+  vrotate,
+  vlength,
+  vmult,
+} from '../vect';
 
-class PinJoint extends Constraint {
+
+export class PinJoint extends Constraint {
+    anchr1: Vect;
+    anchr2: Vect;
+
+    p1: Vect;
+    p2: Vect;
+
+    dist: number;
+    r1: Vect;
+    r2: Vect;
+
+    n: Vect;
+    nMass: number;
+    jnAcc: number;
+    jnMax: number;
+    bias: number;
+
     constructor(a, b, anchr1, anchr2) {
         super(a, b);
 
