@@ -18,9 +18,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import { Constraint } from './constraint';
+import {
+  mult_k, k_tensor,
+  bias_coef,
+  apply_impulse, apply_impulses,
+  relative_velocity,
+} from './util';
+import {
+  Vect, vzero,
+  vrotate,
+  vadd, vsub,
+  vclamp, vlength,
+  vmult,
+} from '../vect';
+
 
 // Pivot joints can also be created with (a, b, pivot);
-class PivotJoint extends Constraint {
+export class PivotJoint extends Constraint {
+    anchr1: Vect;
+    anchr2: Vect;
+
+    r1: Vect;
+    r2: Vect;
+
+    k1: Vect;
+    k2: Vect;
+
+    jAcc: Vect;
+
+    jMaxLen: number;
+    bias: Vect;
     constructor(a, b, anchr1, anchr2) {
         super(a, b);
 
