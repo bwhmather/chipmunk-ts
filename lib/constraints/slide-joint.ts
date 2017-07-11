@@ -19,7 +19,39 @@
  * SOFTWARE.
  */
 
-class SlideJoint extends Constraint {
+import { Constraint } from './constraint';
+import {
+  apply_impulses,
+  bias_coef,
+  k_scalar,
+  relative_velocity,
+} from './util';
+import {
+  Vect, vzero,
+  vadd, vsub,
+  vdot, vlength,
+  vneg, vrotate,
+  vnormalize_safe,
+} from '../vect';
+import { clamp } from '../util';
+
+
+export class SlideJoint extends Constraint {
+    anchr1: Vect;
+    anchr2: Vect;
+    min: number;
+    max: number;
+
+    r1: Vect;
+    r2: Vect;
+    n: Vect;
+    nMass: number;
+
+    jnAcc: number;
+    jnMax: number;
+
+    bias: number;
+
     constructor(a, b, anchr1, anchr2, min, max) {
         super(a, b);
 
