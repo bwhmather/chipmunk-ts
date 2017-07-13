@@ -31,19 +31,35 @@ import {
 
 let numContacts = 0;
 
-function Contact(p, n, dist, hash) {
-    this.p = p;
-    this.n = n;
-    this.dist = dist;
+export class Contact {
+    // The contact point.
+    p: Vect;
+    // The contact normal.
+    n: Vect;
+    dist: number;
+    r1: Vect;
+    r2: Vect;
+    nMass: number = 0;
+    tMass: number = 0;
+    bounce: number = 0;
+    bias: number = 0;
+    jnAcc: number = 0;
+    jtAcc: number = 0;
+    jBias: number = 0;
 
-    this.r1 = this.r2 = vzero;
-    this.nMass = this.tMass = this.bounce = this.bias = 0;
+    hash: any;
 
-    this.jnAcc = this.jtAcc = this.jBias = 0;
+    constructor (p: Vect, n: Vect, dist: number, hash: any) {
+        this.p = p;
+        this.n = n;
+        this.dist = dist;
 
-    this.hash = hash;
-    numContacts++;
-};
+        this.r1 = this.r2 = vzero;
+
+        this.hash = hash;
+        numContacts++;
+    }
+}
 
 const NONE = [];
 
