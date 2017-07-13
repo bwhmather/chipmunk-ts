@@ -83,21 +83,18 @@ export class CollisionHandler {
     separate(arb, space) { }
 }
 
-
-
-// Arbiter states
-//
-// Arbiter is active and its the first collision.
-//	'first coll'
-// Arbiter is active and its not the first collision.
-//	'normal',
-// Collision has been explicitly ignored.
-// Either by returning false from a begin collision handler or calling
-// cpArbiterIgnore()
-//  'ignore',
-// Collison is no longer active. A space will cache an arbiter for up to
-// cpSpace.collisionPersistence more steps.
-//	'cached'
+type ArbiterState = (
+    // Arbiter is active and its the first collision.
+    "first-coll" |
+    // Arbiter is active and its not the first collision.
+    "normal" |
+    // Collision has been explicitly ignored, either by returning false from a
+    // begin collision handler or calling cpArbiterIgnore()
+    "ignore" |
+    // Collison is no longer active. A space will cache an arbiter for up to
+    // cpSpace.collisionPersistence more steps.
+    "cached"
+);
 
 /// A colliding pair of shapes.
 export class Arbiter {
@@ -127,7 +124,7 @@ export class Arbiter {
     stamp;
     handler;
     swappedColl;
-    state;
+    state: ArbiterState;
 
     constructor(a, b) {
         this.a = a; this.body_a = a.body;
@@ -141,7 +138,7 @@ export class Arbiter {
         this.stamp = 0;
         this.handler = null;
         this.swappedColl = false;
-        this.state = 'first coll';
+        this.state = 'first-coll';
     }
 
     getShapes() {
@@ -225,7 +222,7 @@ export class Arbiter {
     /// Returns true if this is the first step a pair of objects started
     /// colliding.
     isFirstContact() {
-        return this.state === 'first coll';
+        return this.state === 'first-coll';
     }
 
     /// Return a contact set from an arbiter.
@@ -295,7 +292,7 @@ export class Arbiter {
         this.b = b; this.body_b = b.body;
 
         // mark it as new if it's been cached
-        if (this.state == 'cached') this.state = 'first coll';
+        if (this.state == 'cached') this.state = 'first-coll';
     }
 
     preStep(dt, slop, bias) {
