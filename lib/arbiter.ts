@@ -20,7 +20,9 @@
  */
 
 import { Body } from './body';
+import { Space } from './space';
 import { Shape } from './shape';
+import { Contact } from './collision';
 import {
     apply_bias_impulse, apply_impulses,
     k_scalar, normal_relative_velocity,
@@ -42,7 +44,7 @@ export class ContactPoint {
     normal: Vect;
     dist: number;
 
-    constructor(point, normal, dist) {
+    constructor(point: Vect, normal: Vect, dist: number) {
         this.point = point;
         this.normal = normal;
         this.dist = dist;
@@ -54,8 +56,8 @@ export class ContactPoint {
 // Collision handlers are user-defined objects to describe the behaviour of
 // colliding objects.
 export class CollisionHandler {
-    a;
-    b;
+    a: number;
+    b: number;
 
     constructor() {
         // The collision type
@@ -65,22 +67,22 @@ export class CollisionHandler {
     /// Collision begin event callback
     /// Returning false from a begin callback causes the collision to be ignored
     /// until the the separate callback is called when the objects stop colliding.
-    begin(arb, space) {
+    begin(arb: Arbiter, space: Space) {
         return true;
     }
 
     /// Collision pre-solve event callback
     /// Returning false from a pre-step callback causes the collision to be ignored
     /// until the next step.
-    preSolve(arb, space) {
+    preSolve(arb: Arbiter, space: Space) {
         return true;
     }
 
     /// Collision post-solve event function callback type.
-    postSolve(arb, space) { }
+    postSolve(arb: Arbiter, space: Space) { }
 
     /// Collision separate event function callback type.
-    separate(arb, space) { }
+    separate(arb: Arbiter, space: Space) { }
 }
 
 type ArbiterState = (
@@ -141,7 +143,7 @@ export class Arbiter {
         this.state = 'first-coll';
     }
 
-    getShapes() {
+    getShapes(): [Shape, Shape] {
         if (this.swappedColl) {
             return [this.b, this.a];
         } else {
@@ -152,7 +154,7 @@ export class Arbiter {
     /// Calculate the total impulse that was applied by this arbiter.
     /// This function should only be called from a post-solve, post-step or
     /// cpBodyEachArbiter callback.
-    totalImpulse() {
+    totalImpulse(): Vect {
         const contacts = this.contacts;
         const sum = new Vect(0, 0);
 
@@ -168,7 +170,7 @@ export class Arbiter {
     /// this arbiter.
     /// This function should only be called from a post-solve, post-step or
     /// cpBodyEachArbiter callback.
-    totalImpulseWithFriction() {
+    totalImpulseWithFriction(): Vect {
         const contacts = this.contacts;
         const sum = new Vect(0, 0);
 
@@ -184,7 +186,7 @@ export class Arbiter {
     /// but not dynamic friction.
     /// This function should only be called from a post-solve, post-step or
     /// cpBodyEachArbiter callback.
-    totalKE() {
+    totalKE(): number {
         const eCoef = (1 - this.e) / (1 + this.e);
         let sum = 0;
 
@@ -211,22 +213,22 @@ export class Arbiter {
     /// Return the colliding shapes involved for this arbiter.
     /// The order of their cpSpace.collision_type values will match
     /// the order set when the collision handler was registered.
-    getA() {
+    getA(): Shape {
         return this.swappedColl ? this.b : this.a;
     }
 
-    getB() {
+    getB(): Shape {
         return this.swappedColl ? this.a : this.b;
     }
 
     /// Returns true if this is the first step a pair of objects started
     /// colliding.
-    isFirstContact() {
+    isFirstContact(): boolean {
         return this.state === 'first-coll';
     }
 
     /// Return a contact set from an arbiter.
-    getContactPointSet() {
+    getContactPointSet(): ContactPoint[] {
         const set = new Array(this.contacts.length);
 
         let i;
@@ -240,29 +242,30 @@ export class Arbiter {
     }
 
     /// Get the normal of the @c ith contact point.
-    getNormal(i) {
+    getNormal(i: number): Vect {
         const n = this.contacts[i].n;
         return this.swappedColl ? vneg(n) : n;
     }
 
     /// Get the position of the @c ith contact point.
-    getPoint(i) {
+    getPoint(i: number): Vect {
         return this.contacts[i].p;
     }
 
     /// Get the depth of the @c ith contact point.
-    getDepth(i) {
+    getDepth(i: number): Vect {
         return this.contacts[i].dist;
     }
 
     unthread() {
+        console.log(this.thread_a_prev)
         unthreadHelper(this, this.body_a, this.thread_a_prev, this.thread_a_next);
         unthreadHelper(this, this.body_b, this.thread_b_prev, this.thread_b_next);
         this.thread_a_prev = this.thread_a_next = null;
         this.thread_b_prev = this.thread_b_next = null;
     }
 
-    update(contacts, handler, a, b) {
+    update(contacts: Contact[], handler: CollisionHandler, a: Shape, b: Shape) {
         // Arbiters without contact data may exist if a collision function rejected the collision.
         if (this.contacts) {
             // Iterate over the possible pairs to look for hash value matches.
@@ -295,7 +298,7 @@ export class Arbiter {
         if (this.state == 'cached') this.state = 'first-coll';
     }
 
-    preStep(dt, slop, bias) {
+    preStep(dt: number, slop: number, bias: number) {
         const a = this.body_a;
         const b = this.body_b;
 
@@ -317,7 +320,7 @@ export class Arbiter {
         }
     }
 
-    applyCachedImpulse(dt_coef) {
+    applyCachedImpulse(dt_coef: number) {
         if (this.isFirstContact()) return;
 
         const a = this.body_a;
@@ -342,7 +345,7 @@ export class Arbiter {
         const surface_vr = this.surface_vr;
         const friction = this.u;
 
-        this.contacts.forEach((con, i) => {
+        this.contacts.forEach((con: Contact, i: number) => {
             numApplyContact++;
             const nMass = con.nMass;
             const n = con.n;
@@ -392,7 +395,7 @@ export class Arbiter {
         });
     }
 
-    callSeparate(space) {
+    callSeparate(space: Space) {
         // The handler needs to be looked up again as the handler cached on the
         // arbiter may have been deleted since the last step.
         const handler = space.lookupHandler(
@@ -402,7 +405,7 @@ export class Arbiter {
     }
 
     // From chipmunk_private.h
-    next(body) {
+    next(body: Body) {
         return (this.body_a == body ? this.thread_a_next : this.thread_b_next);
     }
 }
@@ -413,7 +416,7 @@ Arbiter.prototype.threadForBody = function(body)
 	return (this.body_a === body ? this.thread_a : this.thread_b);
 };*/
 
-function unthreadHelper(arb, body, prev, next) {
+function unthreadHelper(arb: Arbiter, body: Body, prev: Arbiter, next: Arbiter) {
     // thread_x_y is quite ugly, but it avoids making unnecessary js objects per
     // arbiter.
     if (prev) {
