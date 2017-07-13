@@ -101,9 +101,17 @@ export class CollisionHandler {
 
 /// A colliding pair of shapes.
 export class Arbiter {
-    e: number;
-    u: number;
-    surface_vr: Vect;
+    /// Calculated value to use for the elasticity coefficient.
+    /// Override in a pre-solve collision handler for custom behavior.
+    e: number = 0;
+
+    /// Calculated value to use for the friction coefficient.
+    /// Override in a pre-solve collision handler for custom behavior.
+    u: number = 0;
+
+    /// Calculated value to use for applying surface velocities.
+    /// Override in a pre-solve collision handler for custom behavior.
+    surface_vr: Vect = vzero;
 
     a: Shape;
     body_a: Body;
@@ -122,16 +130,6 @@ export class Arbiter {
     state;
 
     constructor(a, b) {
-        /// Calculated value to use for the elasticity coefficient.
-        /// Override in a pre-solve collision handler for custom behavior.
-        this.e = 0;
-        /// Calculated value to use for the friction coefficient.
-        /// Override in a pre-solve collision handler for custom behavior.
-        this.u = 0;
-        /// Calculated value to use for applying surface velocities.
-        /// Override in a pre-solve collision handler for custom behavior.
-        this.surface_vr = vzero;
-
         this.a = a; this.body_a = a.body;
         this.b = b; this.body_b = b.body;
 
