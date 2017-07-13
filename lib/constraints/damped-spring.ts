@@ -20,18 +20,18 @@
  */
 import { Constraint } from './constraint';
 import {
-  apply_impulses, normal_relative_velocity,
-  k_scalar,
+    apply_impulses, normal_relative_velocity,
+    k_scalar,
 } from './util';
 import { assertSoft } from '../util';
 import {
-  Vect,
-  vadd, vsub, vmult,
-  vlength, vrotate,
+    Vect,
+    vadd, vsub, vmult,
+    vlength, vrotate,
 } from '../vect';
 
-function defaultSpringForce(spring, dist){
-	return (spring.restLength - dist)*spring.stiffness;
+function defaultSpringForce(spring, dist) {
+    return (spring.restLength - dist) * spring.stiffness;
 };
 
 

@@ -22,8 +22,8 @@ import { Constraint } from './constraint';
 import { assertSoft } from '../util';
 
 
-function defaultSpringTorque(spring, relativeAngle){
-	return (relativeAngle - spring.restAngle)*spring.stiffness;
+function defaultSpringTorque(spring, relativeAngle) {
+    return (relativeAngle - spring.restAngle) * spring.stiffness;
 }
 
 

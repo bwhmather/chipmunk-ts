@@ -75,11 +75,11 @@ export function bbContainsBB(bb, other) {
 
 /// Returns true if @c bb contains @c v.
 export function bbContainsVect(bb, v) {
-	return (bb.l <= v.x && bb.r >= v.x && bb.b <= v.y && bb.t >= v.y);
+    return (bb.l <= v.x && bb.r >= v.x && bb.b <= v.y && bb.t >= v.y);
 };
 
 export function bbContainsVect2(l, b, r, t, v) {
-	return (l <= v.x && r >= v.x && b <= v.y && t >= v.y);
+    return (l <= v.x && r >= v.x && b <= v.y && t >= v.y);
 };
 
 /// Returns a bounding box that holds both bounding boxes.
@@ -93,8 +93,8 @@ export function bbMerge(a, b) {
 };
 
 /// Returns a bounding box that holds both @c bb and @c v.
-export function bbExpand(bb, v){
-	return new BB(
+export function bbExpand(bb, v) {
+    return new BB(
         Math.min(bb.l, v.x),
         Math.min(bb.b, v.y),
         Math.max(bb.r, v.x),
@@ -124,9 +124,9 @@ export function bbMergedArea2(bb, l, b, r, t) {
 
 /// Clamp a vector to a bounding box.
 export function bbClampVect(bb, v) {
-	const x = Math.min(Math.max(bb.l, v.x), bb.r);
-	const y = Math.min(Math.max(bb.b, v.y), bb.t);
-	return new Vect(x, y);
+    const x = Math.min(Math.max(bb.l, v.x), bb.r);
+    const y = Math.min(Math.max(bb.b, v.y), bb.t);
+    return new Vect(x, y);
 };
 
 // TODO edge case issue

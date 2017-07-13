@@ -20,17 +20,17 @@
  */
 import { Constraint } from './constraint';
 import {
-  mult_k, k_tensor, apply_impulses, bias_coef, relative_velocity,
+    mult_k, k_tensor, apply_impulses, bias_coef, relative_velocity,
 } from './util';
 import {
-  Vect, vzero,
-  vadd, vsub,
-  vmult, vcross, vdot,
-  vclamp, vperp,
-  vnormalize,
-  vproject,
-  vlength,
-  vrotate,
+    Vect, vzero,
+    vadd, vsub,
+    vmult, vcross, vdot,
+    vclamp, vperp,
+    vnormalize,
+    vproject,
+    vlength,
+    vrotate,
 } from '../vect';
 
 

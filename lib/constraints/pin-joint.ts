@@ -20,17 +20,17 @@
  */
 import { Constraint } from './constraint';
 import {
-  apply_impulses,
-  normal_relative_velocity,
-  k_scalar, bias_coef,
+    apply_impulses,
+    normal_relative_velocity,
+    k_scalar, bias_coef,
 } from './util';
 import { assertSoft, clamp } from '../util';
 import {
-  Vect,
-  vadd, vsub,
-  vrotate,
-  vlength,
-  vmult,
+    Vect,
+    vadd, vsub,
+    vrotate,
+    vlength,
+    vmult,
 } from '../vect';
 
 

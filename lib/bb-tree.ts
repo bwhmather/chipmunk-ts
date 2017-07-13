@@ -175,9 +175,9 @@ export class BBTree extends SpatialIndex {
         const staticRoot = staticIndex && staticIndex.root;
 
         this.root.markSubtree(this, staticRoot, func);
-      if (staticIndex && !staticRoot) {
-        this.collideStatic(staticIndex, func);
-      }
+        if (staticIndex && !staticRoot) {
+            this.collideStatic(staticIndex, func);
+        }
 
         this.incrementStamp();
     }
@@ -608,40 +608,38 @@ function subtreeQuery(subtree, bb, func) {
 }
 
 /// Returns the fraction along the segment query the node hits. Returns Infinity if it doesn't hit.
-function nodeSegmentQuery(node, a, b)
-{
-	const idx = 1/(b.x - a.x);
-	const tx1 = (node.bb_l == a.x ? -Infinity : (node.bb_l - a.x) * idx);
-	const tx2 = (node.bb_r == a.x ?  Infinity : (node.bb_r - a.x) * idx);
-	const txmin = Math.min(tx1, tx2);
-	const txmax = Math.max(tx1, tx2);
+function nodeSegmentQuery(node, a, b) {
+    const idx = 1 / (b.x - a.x);
+    const tx1 = (node.bb_l == a.x ? -Infinity : (node.bb_l - a.x) * idx);
+    const tx2 = (node.bb_r == a.x ? Infinity : (node.bb_r - a.x) * idx);
+    const txmin = Math.min(tx1, tx2);
+    const txmax = Math.max(tx1, tx2);
 
-	const idy = 1/(b.y - a.y);
-	const ty1 = (node.bb_b == a.y ? -Infinity : (node.bb_b - a.y) * idy);
-	const ty2 = (node.bb_t == a.y ?  Infinity : (node.bb_t - a.y) * idy);
-	const tymin = Math.min(ty1, ty2);
-	const tymax = Math.max(ty1, ty2);
-	
-	if (tymin <= txmax && txmin <= tymax){
-		const min_ = Math.max(txmin, tymin);
-		const max_ = Math.min(txmax, tymax);
-		
-		if (0.0 <= max_ && min_ <= 1.0) return Math.max(min_, 0.0);
-	}
-	
-	return Infinity;
+    const idy = 1 / (b.y - a.y);
+    const ty1 = (node.bb_b == a.y ? -Infinity : (node.bb_b - a.y) * idy);
+    const ty2 = (node.bb_t == a.y ? Infinity : (node.bb_t - a.y) * idy);
+    const tymin = Math.min(ty1, ty2);
+    const tymax = Math.max(ty1, ty2);
+
+    if (tymin <= txmax && txmin <= tymax) {
+        const min_ = Math.max(txmin, tymin);
+        const max_ = Math.min(txmax, tymax);
+
+        if (0.0 <= max_ && min_ <= 1.0) return Math.max(min_, 0.0);
+    }
+
+    return Infinity;
 };
 
 
-function subtreeSegmentQuery(subtree, a, b, t_exit, func)
-{
-	if(subtree.isLeaf){
-		return func(subtree.obj);
-	} else {
-		const t_a = nodeSegmentQuery(subtree.A, a, b);
-		const t_b = nodeSegmentQuery(subtree.B, a, b);
-		
-		if(t_a < t_b){
+function subtreeSegmentQuery(subtree, a, b, t_exit, func) {
+    if (subtree.isLeaf) {
+        return func(subtree.obj);
+    } else {
+        const t_a = nodeSegmentQuery(subtree.A, a, b);
+        const t_b = nodeSegmentQuery(subtree.B, a, b);
+
+        if (t_a < t_b) {
             if (t_a < t_exit) {
                 t_exit = Math.min(
                     t_exit, subtreeSegmentQuery(subtree.A, a, b, t_exit, func),
@@ -652,7 +650,7 @@ function subtreeSegmentQuery(subtree, a, b, t_exit, func)
                     t_exit, subtreeSegmentQuery(subtree.B, a, b, t_exit, func),
                 );
             }
-		} else {
+        } else {
             if (t_b < t_exit) {
                 t_exit = Math.min(
                     t_exit, subtreeSegmentQuery(subtree.B, a, b, t_exit, func),
@@ -663,10 +661,10 @@ function subtreeSegmentQuery(subtree, a, b, t_exit, func)
                     t_exit, subtreeSegmentQuery(subtree.A, a, b, t_exit, func),
                 );
             }
-		}
-		
-		return t_exit;
-	}
+        }
+
+        return t_exit;
+    }
 };
 
 
@@ -698,8 +696,7 @@ function bbTreeIntersectsNode(a, b) {
 };
 
 
-function bbTreeMergedArea2(node, l, b, r, t)
-{
+function bbTreeMergedArea2(node, l, b, r, t) {
     return (
         (Math.max(node.bb_r, r) - Math.min(node.bb_l, l)) *
         (Math.max(node.bb_t, t) - Math.min(node.bb_b, b))

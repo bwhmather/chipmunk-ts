@@ -21,17 +21,17 @@
 
 import { Constraint } from './constraint';
 import {
-  apply_impulses,
-  bias_coef,
-  k_scalar,
-  relative_velocity,
+    apply_impulses,
+    bias_coef,
+    k_scalar,
+    relative_velocity,
 } from './util';
 import {
-  Vect, vzero,
-  vadd, vsub,
-  vdot, vlength,
-  vneg, vrotate,
-  vnormalize_safe,
+    Vect, vzero,
+    vadd, vsub,
+    vdot, vlength,
+    vneg, vrotate,
+    vnormalize_safe,
 } from '../vect';
 import { clamp } from '../util';
 

@@ -20,7 +20,7 @@
  */
 
 import { BB, bbNewForCircle, bbIntersects2 } from './bb';
-import { Body } from './body'; 
+import { Body } from './body';
 import { BBTree } from './bb-tree';
 import { Arbiter, CollisionHandler, ContactPoint } from './arbiter';
 import { Constraint } from './constraints/constraint';

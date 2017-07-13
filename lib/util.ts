@@ -100,7 +100,7 @@ export function areaForSegment(a, b, r) {
     return r * (Math.PI * r + 2 * vdist(a, b));
 }
 
-export function momentForPoly(m, verts, {x, y}) {
+export function momentForPoly(m, verts, { x, y }) {
     let sum1 = 0;
     let sum2 = 0;
     const len = verts.length;
@@ -158,7 +158,7 @@ export function momentForBox(m, width, height) {
     return m * (width * width + height * height) / 12;
 }
 
-export function momentForBox2(m, {r, l, t, b}) {
+export function momentForBox2(m, { r, l, t, b }) {
     const width = r - l;
     const height = t - b;
     const offset = vmult(new Vect(l + r, b + t), 0.5);
