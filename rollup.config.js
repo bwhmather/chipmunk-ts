@@ -4,7 +4,7 @@ import uglify from 'rollup-plugin-uglify';
 
 export default [
   {
-    entry: 'lib/index.ts',
+    entry: 'src/index.ts',
     format: 'es',
     dest: 'dist/chipmunk.jsm',
     plugins: [
@@ -14,7 +14,7 @@ export default [
     ]
   },
   {
-    entry: 'lib/index.ts',
+    entry: 'src/index.ts',
     format: 'iife',
     moduleName: 'cp',
     dest: 'dist/chipmunk.js',
@@ -27,7 +27,7 @@ export default [
     ]
   },
   {
-    entry: 'lib/index.ts',
+    entry: 'src/index.ts',
     format: 'iife',
     moduleName: 'cp',
     dest: 'dist/chipmunk.min.js',
