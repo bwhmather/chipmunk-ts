@@ -26,7 +26,7 @@
 /// @{
 
 // DEBUG,
-import { Shape } from './shape';
+import { Shape } from './shapes';
 import { Space } from './space';
 import { apply_impulse } from './constraints/util';
 import {

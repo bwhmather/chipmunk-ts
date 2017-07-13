@@ -21,7 +21,7 @@
 
 import { Body } from './body';
 import { Space } from './space';
-import { Shape } from './shape';
+import { Shape } from './shapes';
 import { Contact } from './collision';
 import {
     apply_bias_impulse, apply_impulses,

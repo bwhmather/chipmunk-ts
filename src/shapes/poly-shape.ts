@@ -19,9 +19,9 @@
  * SOFTWARE.
  */
 
-import { BB } from './bb';
-import { Shape, NearestPointQueryInfo, SegmentQueryInfo } from './shape'
-import { assert, closestPointOnSegment2 } from './util';
+import { BB } from '../bb';
+import { Shape, NearestPointQueryInfo, SegmentQueryInfo } from './base'
+import { assert, closestPointOnSegment2 } from '../util';
 import {
     Vect, vzero,
     vcross, vcross2,
@@ -29,7 +29,8 @@ import {
     vdist, vlerp,
     vnormalize,
     vperp, vrotate,
-} from './vect';
+} from '../vect';
+
 /// Check that a set of vertexes is convex and has a clockwise winding.
 function polyValidate(verts) {
     const len = verts.length;
@@ -268,29 +269,3 @@ export class PolyShape extends Shape {
         return new Vect(this.verts[i * 2], this.verts[i * 2 + 1]);
     }
 }
-
-/// Initialize an offset box shaped polygon shape.
-export class BoxShape2 extends PolyShape {
-    constructor(body, bb) {
-        const verts = [
-            bb.l, bb.b,
-            bb.l, bb.t,
-            bb.r, bb.t,
-            bb.r, bb.b,
-        ];
-
-        super(body, verts, vzero);
-    }
-};
-
-
-/// Initialize a box shaped polygon shape.
-export class BoxShape extends BoxShape2 {
-    constructor(body, width, height) {
-        const hw = width / 2;
-        const hh = height / 2;
-
-        super(body, new BB(-hw, -hh, hw, hh));
-    }
-};
-

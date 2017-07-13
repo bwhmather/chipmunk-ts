@@ -18,8 +18,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { CircleShape, SegmentShape } from './shape';
-import { PolyShape } from './poly-shape';
+import { CircleShape, SegmentShape, PolyShape } from './shapes';
 import { assert, clamp01, hashPair } from './util';
 import {
     Vect, vzero, vneg,

@@ -18,16 +18,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-export * from './arbiter';
-export * from './bb-tree';
-export * from './bb';
-export * from './body';
-export * from './collision';
-export * from './constraints';
-export * from './shapes';
-export * from './space-components';
-export * from './space';
-export * from './spatial-index';
-export * from './util';
-export * from './vect';
 
+import { BB } from '../bb';
+import { Body } from '../body';
+import { PolyShape } from './poly-shape';
+import { vzero } from '../vect';
+
+
+export class BoxShape extends PolyShape {
+    constructor(body: Body, bb: BB) {
+        const verts = [
+            bb.l, bb.b,
+            bb.l, bb.t,
+            bb.r, bb.t,
+            bb.r, bb.b,
+        ];
+
+        super(body, verts, vzero);
+    }
+};

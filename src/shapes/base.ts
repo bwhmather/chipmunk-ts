@@ -19,7 +19,7 @@
  * SOFTWARE.
  */
 
-import { assert, closestPointOnSegment } from './util'
+import { assert, closestPointOnSegment } from '../util'
 import {
     Vect, vzero,
     vadd, vsub,
@@ -27,11 +27,11 @@ import {
     vdist, vlength2,
     vlerp, vnormalize,
     vneg, vperp, vrotate,
-} from './vect';
+} from '../vect';
 
-import { Body } from './body';
-import { BB } from './bb';
-import { Space } from './space';
+import { Body } from '../body';
+import { BB } from '../bb';
+import { Space } from '../space';
 /// Segment query info struct.
 /* These are created using literals where needed.
 typedef struct cpSegmentQueryInfo {
@@ -158,7 +158,7 @@ export abstract class Shape {
         return new BB(this.bb_l, this.bb_b, this.bb_r, this.bb_t);
     }
 
-    protected abstract cacheData(pos: Vect, rot: number);
+    protected abstract cacheData(pos: Vect, rot: Vect): void;
 
     protected abstract nearestPointQuery({ x, y });
 }
@@ -233,238 +233,3 @@ export class SegmentQueryInfo {
         return vdist(start, end) * this.t;
     }
 }
-
-// Circles.
-
-const circleSegmentQuery = (shape, center, r, a, b, info?) => {
-    // offset the line to be relative to the circle
-    a = vsub(a, center);
-    b = vsub(b, center);
-
-    const qa = vdot(a, a) - 2 * vdot(a, b) + vdot(b, b);
-    const qb = -2 * vdot(a, a) + 2 * vdot(a, b);
-    const qc = vdot(a, a) - r * r;
-
-    const det = qb * qb - 4 * qa * qc;
-
-    if (det >= 0) {
-        const t = (-qb - Math.sqrt(det)) / (2 * qa);
-        if (0 <= t && t <= 1) {
-            return new SegmentQueryInfo(shape, t, vnormalize(vlerp(a, b, t)));
-        }
-    }
-};
-
-export class CircleShape extends Shape {
-    c: Vect;
-    tc: Vect;
-
-    bb_l: number;
-    bb_b: number;
-    bb_r: number;
-    bb_t: number;
-
-    r: number;
-
-    constructor(body, radius, offset) {
-        super(body);
-
-        this.c = this.tc = offset;
-        this.r = radius;
-
-        this.type = 'circle';
-    }
-
-    cacheData(p, rot) {
-        //var c = this.tc = vadd(p, vrotate(this.c, rot));
-        const c = this.tc = vrotate(this.c, rot).add(p);
-        //this.bb = bbNewForCircle(c, this.r);
-        const r = this.r;
-        this.bb_l = c.x - r;
-        this.bb_b = c.y - r;
-        this.bb_r = c.x + r;
-        this.bb_t = c.y + r;
-    }
-
-    /// Test if a point lies within a shape.
-    /*CircleShape.prototype.pointQuery = function(p)
-    {
-        var delta = vsub(p, this.tc);
-        var distsq = vlengthsq(delta);
-        var r = this.r;
-
-        if(distsq < r*r){
-            var info = new PointQueryExtendedInfo(this);
-
-            var dist = Math.sqrt(distsq);
-            info.d = r - dist;
-            info.n = vmult(delta, 1/dist);
-            return info;
-        }
-    };*/
-
-    nearestPointQuery({ x, y }) {
-        const deltax = x - this.tc.x;
-        const deltay = y - this.tc.y;
-        const d = vlength2(deltax, deltay);
-        const r = this.r;
-
-        const nearestp = new Vect(this.tc.x + deltax * r / d, this.tc.y + deltay * r / d);
-        return new NearestPointQueryInfo(this, nearestp, d - r);
-    }
-
-    segmentQuery(a, b) {
-        return circleSegmentQuery(this, this.tc, this.r, a, b);
-    }
-}
-
-// The C API has these, and also getters. Its not idiomatic to
-// write getters and setters in JS.
-/*
-CircleShape.prototype.setRadius = function(radius)
-{
-	this.r = radius;
-}
-
-CircleShape.prototype.setOffset = function(offset)
-{
-	this.c = offset;
-}*/
-
-// Segment shape
-
-export class SegmentShape extends Shape {
-    a: Vect;
-    b: Vect;
-    n: Vect;
-
-    // TODO
-    ta;
-    tb;
-    tn;
-
-    r: number;
-
-    a_tangent: Vect;
-    b_tangent: Vect;
-
-    constructor(body, a, b, r) {
-        super(body);
-
-        this.a = a;
-        this.b = b;
-        this.n = vperp(vnormalize(vsub(b, a)));
-
-        this.ta = this.tb = this.tn = null;
-
-        this.r = r;
-
-        this.a_tangent = vzero;
-        this.b_tangent = vzero;
-
-        this.type = 'segment';
-    }
-
-    cacheData(p, rot) {
-        this.ta = vadd(p, vrotate(this.a, rot));
-        this.tb = vadd(p, vrotate(this.b, rot));
-        this.tn = vrotate(this.n, rot);
-
-        let l;
-        let r;
-        let b;
-        let t;
-
-        if (this.ta.x < this.tb.x) {
-            l = this.ta.x;
-            r = this.tb.x;
-        } else {
-            l = this.tb.x;
-            r = this.ta.x;
-        }
-
-        if (this.ta.y < this.tb.y) {
-            b = this.ta.y;
-            t = this.tb.y;
-        } else {
-            b = this.tb.y;
-            t = this.ta.y;
-        }
-
-        const rad = this.r;
-
-        this.bb_l = l - rad;
-        this.bb_b = b - rad;
-        this.bb_r = r + rad;
-        this.bb_t = t + rad;
-    }
-
-    nearestPointQuery(p) {
-        const closest = closestPointOnSegment(p, this.ta, this.tb);
-
-        const deltax = p.x - closest.x;
-        const deltay = p.y - closest.y;
-        const d = vlength2(deltax, deltay);
-        const r = this.r;
-
-        const nearestp = (d ? vadd(closest, vmult(new Vect(deltax, deltay), r / d)) : closest);
-        return new NearestPointQueryInfo(this, nearestp, d - r);
-    }
-
-    segmentQuery(a, b) {
-        const n = this.tn;
-        const d = vdot(vsub(this.ta, a), n);
-        const r = this.r;
-
-        const flipped_n = (d > 0 ? vneg(n) : n);
-        const n_offset = vsub(vmult(flipped_n, r), a);
-
-        const seg_a = vadd(this.ta, n_offset);
-        const seg_b = vadd(this.tb, n_offset);
-        const delta = vsub(b, a);
-
-        if (vcross(delta, seg_a) * vcross(delta, seg_b) <= 0) {
-            const d_offset = d + (d > 0 ? -r : r);
-            const ad = -d_offset;
-            const bd = vdot(delta, n) - d_offset;
-
-            if (ad * bd < 0) {
-                return new SegmentQueryInfo(this, ad / (ad - bd), flipped_n);
-            }
-        } else if (r !== 0) {
-            const info1 = circleSegmentQuery(this, this.ta, this.r, a, b);
-            const info2 = circleSegmentQuery(this, this.tb, this.r, a, b);
-
-            if (info1) {
-                return info2 && info2.t < info1.t ? info2 : info1;
-            } else {
-                return info2;
-            }
-        }
-    }
-
-    setNeighbors(prev, next) {
-        this.a_tangent = vsub(prev, this.a);
-        this.b_tangent = vsub(next, this.b);
-    }
-
-    setEndpoints(a, b) {
-        this.a = a;
-        this.b = b;
-        this.n = vperp(vnormalize(vsub(b, a)));
-    }
-
-    /*
-    cpSegmentShapeSetRadius(cpShape *shape, cpFloat radius)
-    {
-        this.r = radius;
-    }*/
-
-    /*
-    CP_DeclareShapeGetter(cpSegmentShape, cpVect, A);
-    CP_DeclareShapeGetter(cpSegmentShape, cpVect, B);
-    CP_DeclareShapeGetter(cpSegmentShape, cpVect, Normal);
-    CP_DeclareShapeGetter(cpSegmentShape, cpFloat, Radius);
-    */
-}
-

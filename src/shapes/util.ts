@@ -18,16 +18,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-export * from './arbiter';
-export * from './bb-tree';
-export * from './bb';
-export * from './body';
-export * from './collision';
-export * from './constraints';
-export * from './shapes';
-export * from './space-components';
-export * from './space';
-export * from './spatial-index';
-export * from './util';
-export * from './vect';
 
+import {
+    Vect, vsub,
+    vmult, vcross, vdot,
+    vlerp, vnormalize,
+} from '../vect';
+import { Shape, SegmentQueryInfo } from './base'
+
+
+export function circleSegmentQuery(
+    shape: Shape, center: Vect, r: number, a: Vect, b: Vect, info?,
+) {
+    // offset the line to be relative to the circle
+    a = vsub(a, center);
+    b = vsub(b, center);
+
+    const qa = vdot(a, a) - 2 * vdot(a, b) + vdot(b, b);
+    const qb = -2 * vdot(a, a) + 2 * vdot(a, b);
+    const qc = vdot(a, a) - r * r;
+
+    const det = qb * qb - 4 * qa * qc;
+
+    if (det >= 0) {
+        const t = (-qb - Math.sqrt(det)) / (2 * qa);
+        if (0 <= t && t <= 1) {
+            return new SegmentQueryInfo(shape, t, vnormalize(vlerp(a, b, t)));
+        }
+    }
+};

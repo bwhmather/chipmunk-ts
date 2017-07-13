@@ -20,7 +20,7 @@
  */
 
 import { Body } from '../body';
-import { Shape } from '../shape';
+import { Shape } from '../shapes';
 import { Space } from '../space';
 
 // TODO: Comment me!
