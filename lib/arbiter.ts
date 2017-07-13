@@ -267,24 +267,6 @@ export class Arbiter {
         this.thread_b_prev = this.thread_b_next = null;
     }
 
-    //cpFloat
-    //cpContactsEstimateCrushingImpulse(cpContact *contacts, int numContacts)
-    //{
-    //	cpFloat fsum = 0;
-    //	cpVect vsum = vzero;
-    //	
-    //	for(int i=0; i<numContacts; i++){
-    //		cpContact *con = &contacts[i];
-    //		cpVect j = vrotate(con.n, v(con.jnAcc, con.jtAcc));
-    //		
-    //		fsum += vlength(j);
-    //		vsum = vadd(vsum, j);
-    //	}
-    //	
-    //	cpFloat vmag = vlength(vsum);
-    //	return (1 - vmag/fsum);
-    //}
-
     update(contacts, handler, a, b) {
         // Arbiters without contact data may exist if a collision function rejected the collision.
         if (this.contacts) {
