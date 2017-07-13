@@ -136,9 +136,9 @@ Buoyancy.prototype.waterPreSolve = function(arb, space, ptr) {
 		if(a_level*b_level < 0.0){
 			var t = Math.abs(a_level)/(Math.abs(a_level) + Math.abs(b_level));
 
-			var v = cp.v.lerp(a, b, t);
-			clipped.push(v.x);
-			clipped.push(v.y);
+			var v = cp.vlerp(a, b, t);
+			clipped.push(cp.vx);
+			clipped.push(cp.vy);
 		}
 		j=i;
 	}
@@ -148,24 +148,24 @@ Buoyancy.prototype.waterPreSolve = function(arb, space, ptr) {
 
 	var displacedMass = clippedArea*FLUID_DENSITY;
 	var centroid = cp.centroidForPoly(clipped);
-	var r = cp.v.sub(centroid, body.getPos());
+	var r = cp.vsub(centroid, body.getPos());
 
 	var dt = space.getCurrentTimeStep();
 	var g = space.gravity;
 
 	// Apply the buoyancy force as an impulse.
-	body.applyImpulse( cp.v.mult(g, -displacedMass*dt), r);
+	body.applyImpulse( cp.vmult(g, -displacedMass*dt), r);
 
 	// Apply linear damping for the fluid drag.
-	var v_centroid = cp.v.add(body.getVel(), cp.v.mult(cp.v.perp(r), body.w));
-	var k = 1; //k_scalar_body(body, r, cp.v.normalize_safe(v_centroid));
+	var v_centroid = cp.vadd(body.getVel(), cp.vmult(cp.vperp(r), body.w));
+	var k = 1; //k_scalar_body(body, r, cp.vnormalize_safe(v_centroid));
 	var damping = clippedArea*FLUID_DRAG*FLUID_DENSITY;
 	var v_coef = Math.exp(-damping*dt*k); // linear drag
-//	var v_coef = 1.0/(1.0 + damping*dt*cp.v.len(v_centroid)*k); // quadratic drag
-	body.applyImpulse( cp.v.mult(cp.v.sub(cp.v.mult(v_centroid, v_coef), v_centroid), 1.0/k), r);
+//	var v_coef = 1.0/(1.0 + damping*dt*cp.vlen(v_centroid)*k); // quadratic drag
+	body.applyImpulse( cp.vmult(cp.vsub(cp.vmult(v_centroid, v_coef), v_centroid), 1.0/k), r);
 
 	// Apply angular damping for the fluid drag.
-	var w_damping = cp.momentForPoly(FLUID_DRAG*FLUID_DENSITY*clippedArea, clipped, cp.v.neg(body.p));
+	var w_damping = cp.momentForPoly(FLUID_DRAG*FLUID_DENSITY*clippedArea, clipped, cp.vneg(body.p));
 	body.w *= Math.exp(-w_damping*dt* (1/body.i));
 
 	return true;

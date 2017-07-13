@@ -92,7 +92,7 @@ Query.prototype.draw = function() {
 	// Draw a green line from start to end.
 	this.drawSegment(start, end, 'green');
 
-	this.message = "Query: Dist(" + Math.floor(v.dist(start, end)) + ") Point " + v.str(end) + ", ";
+	this.message = "Query: Dist(" + Math.floor(cp.vdist(start, end)) + ") Point " + cp.vstr(end) + ", ";
 
 	var info = this.space.segmentQueryFirst(start, end, cp.ALL_LAYERS, cp.NO_GROUP);
 	if(info) {
@@ -102,12 +102,12 @@ Query.prototype.draw = function() {
 		this.drawSegment(point, end, 'red');
 		
 		// Draw a little blue surface normal
-		this.drawSegment(point, v.add(point, v.mult(info.n, 16)), 'blue');
+		this.drawSegment(point, cp.vadd(point, cp.vmult(info.n, 16)), 'blue');
 		
 		// Draw a little red dot on the hit point.
 		//ChipmunkDebugDrawPoints(3, 1, &point, RGBAColor(1,0,0,1));
 
-		this.message += "Segment Query: Dist(" + Math.floor(info.hitDist(start, end)) + ") Normal " + v.str(info.n);
+		this.message += "Segment Query: Dist(" + Math.floor(info.hitDist(start, end)) + ") Normal " + cp.vstr(info.n);
 		//messageCursor += sprintf(messageCursor, "Segment Query: Dist(%f) Normal%s", cpSegmentQueryHitDist(start, end, info), cpvstr(info.n));
 	} else {
 		this.message += "Segment Query: (None)";

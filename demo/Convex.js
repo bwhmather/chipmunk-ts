@@ -63,12 +63,12 @@ Convex.prototype.update = function(dt) {
 		// Recalculate the body properties to match the updated shape.
 		var mass = cp.areaForPoly(verts)*DENSITY;
 		body.setMass(mass);
-		body.setMoment(cp.momentForPoly(mass, verts, cp.v.neg(centroid)));
+		body.setMoment(cp.momentForPoly(mass, verts, cp.vneg(centroid)));
 		body.setPos(body.local2World(centroid));
 		
 		// Use the setter function from chipmunk_unsafe.h.
 		// You could also remove and recreate the shape if you wanted.
-		shape.setVerts(verts, cp.v.neg(centroid));
+		shape.setVerts(verts, cp.vneg(centroid));
 	}
 	
 	var steps = 1;

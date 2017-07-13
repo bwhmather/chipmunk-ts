@@ -262,8 +262,8 @@ Demo.prototype.step = function(dt) {
 	}
 
 	// Move mouse body toward the mouse
-	var newPoint = v.lerp(this.mouseBody.p, this.mouse, 0.25);
-	this.mouseBody.v = v.mult(v.sub(newPoint, this.mouseBody.p), 60);
+	var newPoint = cp.vlerp(this.mouseBody.p, this.mouse, 0.25);
+	this.mouseBody.v = cp.vmult(cp.vsub(newPoint, this.mouseBody.p), 60);
 	this.mouseBody.p = newPoint;
 
 	var lastNumActiveShapes = this.space.activeShapes.count;
@@ -323,7 +323,7 @@ var drawLine = function(ctx, point2canvas, a, b) {
 
 var drawRect = function(ctx, point2canvas, pos, size) {
 	var pos_ = point2canvas(pos);
-	var size_ = cp.v.sub(point2canvas(cp.v.add(pos, size)), pos_);
+	var size_ = cp.vsub(point2canvas(cp.vadd(pos, size)), pos_);
 	ctx.fillRect(pos_.x, pos_.y, size_.x, size_.y);
 };
 
@@ -351,15 +351,15 @@ var drawSpring = function(ctx, scale, point2canvas, a, b) {
 	ctx.beginPath();
 	ctx.moveTo(a.x, a.y);
 
-	var delta = v.sub(b, a);
-	var len = v.len(delta);
-	var rot = v.mult(delta, 1/len);
+	var delta = cp.vsub(b, a);
+	var len = cp.vlen(delta);
+	var rot = cp.vmult(delta, 1/len);
 
 	for(var i = 1; i < springPoints.length; i++) {
 
-		var p = v.add(a, v.rotate(v(springPoints[i].x * len, springPoints[i].y * scale), rot));
+		var p = cp.vadd(a, cp.vrotate(v(springPoints[i].x * len, springPoints[i].y * scale), rot));
 
-		//var p = v.add(a, v.rotate(springPoints[i], delta));
+		//var p = cp.vadd(a, cp.vrotate(springPoints[i], delta));
 		
 		ctx.lineTo(p.x, p.y);
 	}
@@ -398,7 +398,7 @@ cp.CircleShape.prototype.draw = function(ctx, scale, point2canvas) {
 	drawCircle(ctx, scale, point2canvas, this.tc, this.r);
 
 	// And draw a little radian so you can see the circle roll.
-	drawLine(ctx, point2canvas, this.tc, cp.v.mult(this.body.rot, this.r).add(this.tc));
+	drawLine(ctx, point2canvas, this.tc, cp.vmult(this.body.rot, this.r).add(this.tc));
 };
 
 
@@ -416,7 +416,7 @@ cp.PinJoint.prototype.draw = function(ctx, scale, point2canvas) {
 cp.SlideJoint.prototype.draw = function(ctx, scale, point2canvas) {
 	var a = this.a.local2World(this.anchr1);
 	var b = this.b.local2World(this.anchr2);
-	var midpoint = v.add(a, v.clamp(v.sub(b, a), this.min));
+	var midpoint = cp.vadd(a, cp.vclamp(cp.vsub(b, a), this.min));
 
 	ctx.lineWidth = 2;
 	ctx.strokeStyle = "grey";

@@ -30,7 +30,7 @@ var Joints = function() {
 		var radius = 15;
 		var mass = 1;
 		var body = space.addBody(new cp.Body(mass, cp.momentForCircle(mass, 0, radius, v(0,0))));
-		body.setPos(v.add(pos, boxOffset));
+		body.setPos(cp.vadd(pos, boxOffset));
 		
 		var shape = space.addShape(new cp.CircleShape(body, radius, v(0,0)));
 		shape.setElasticity(0);
@@ -46,7 +46,7 @@ var Joints = function() {
 		var b = v(0, -15);
 		
 		var body = space.addBody(new cp.Body(mass, cp.momentForSegment(mass, a, b)));
-		body.setPos(v.add(pos, v.add(boxOffset, v(0, -15))));
+		body.setPos(cp.vadd(pos, cp.vadd(boxOffset, v(0, -15))));
 		
 		var shape = space.addShape(new cp.SegmentShape(body, a, b, 5));
 		shape.setElasticity(0);
@@ -62,7 +62,7 @@ var Joints = function() {
 		var b = v(0, -30);
 		
 		var body = space.addBody(new cp.Body(mass, cp.momentForSegment(mass, a, b)));
-		body.setPos(v.add(pos, boxOffset));
+		body.setPos(cp.vadd(pos, boxOffset));
 		
 		var shape = space.addShape(new cp.SegmentShape(body, a, b, 5));
 		shape.setElasticity(0);
@@ -76,7 +76,7 @@ var Joints = function() {
 		var radius = 15;
 		var mass = 1;
 		var body = space.addBody(new cp.Body(mass, cp.momentForCircle(mass, 0, radius, v(0,0))));
-		body.setPos(v.add(pos, boxOffset));
+		body.setPos(cp.vadd(pos, boxOffset));
 		
 		var shape = space.addShape(new cp.CircleShape(body, radius, v(0,0)));
 		shape.setElasticity(0);
@@ -93,7 +93,7 @@ var Joints = function() {
 		var height = 30;
 		
 		var body = space.addBody(new cp.Body(mass, cp.momentForBox(mass, width, height)));
-		body.setPos(v.add(pos, boxOffset));
+		body.setPos(cp.vadd(pos, boxOffset));
 		
 		var shape = space.addShape(new cp.BoxShape(body, width, height));
 		shape.setElasticity(0);
@@ -129,8 +129,8 @@ var Joints = function() {
 	var posA = v( 50, 60);
 	var posB = v(110, 60);
 	
-	var POS_A = function() { return v.add(boxOffset, posA); };
-	var POS_B = function() { return v.add(boxOffset, posB); };
+	var POS_A = function() { return cp.vadd(boxOffset, posA); };
+	var POS_B = function() { return cp.vadd(boxOffset, posB); };
 	//#define POS_A vadd(boxOffset, posA)
 	//#define POS_B vadd(boxOffset, posB)
 	
@@ -165,7 +165,7 @@ var Joints = function() {
 	body2.setAngle(Math.PI);
 	// cp.PivotJoint(a, b, v) takes it's anchor parameter in world coordinates. The anchors are calculated from that
 	// Alternately, specify two anchor points using cp.PivotJoint(a, b, anch1, anch2)
-	space.addConstraint(new cp.PivotJoint(body1, body2, v.add(boxOffset, v(80,60))));
+	space.addConstraint(new cp.PivotJoint(body1, body2, cp.vadd(boxOffset, v(80,60))));
 	
 	// Groove Joints - Like a pivot joint, but one of the anchors is a line segment that the pivot can slide in
 	boxOffset = v(480, 0);
@@ -259,7 +259,7 @@ Joints.prototype.draw = function() {
 
 	for(var i = 0; i < this.labels.length; i++) {
 		var l = this.labels[i];
-		var p = this.point2canvas(v.add(l.pos, v(80, 115)));
+		var p = this.point2canvas(cp.vadd(l.pos, v(80, 115)));
 		this.ctx.fillText(l.text, p.x, p.y);
 	}
 };

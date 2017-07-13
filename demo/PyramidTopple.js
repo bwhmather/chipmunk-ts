@@ -56,16 +56,16 @@ var PyramidTopple = function()
 		for(var j=0; j<(n - i); j++){
 			var offset = v(320 + (j - (n - 1 - i)*0.5)*1.5*HEIGHT, (i + 0.5)*(HEIGHT + 2*WIDTH) - WIDTH);
 			add_domino(offset, false);
-			add_domino(cp.v.add(offset, v(0, (HEIGHT + WIDTH)/2)), true);
+			add_domino(cp.vadd(offset, v(0, (HEIGHT + WIDTH)/2)), true);
 			
 			if(j === 0){
-				add_domino(cp.v.add(offset, v(0.5*(WIDTH - HEIGHT), HEIGHT + WIDTH)), false);
+				add_domino(cp.vadd(offset, v(0.5*(WIDTH - HEIGHT), HEIGHT + WIDTH)), false);
 			}
 			
 			if(j != n - i - 1){
-				add_domino(cp.v.add(offset, v(HEIGHT*0.75, (HEIGHT + 3*WIDTH)/2)), true);
+				add_domino(cp.vadd(offset, v(HEIGHT*0.75, (HEIGHT + 3*WIDTH)/2)), true);
 			} else {
-				add_domino(cp.v.add(offset, v(0.5*(HEIGHT - WIDTH), HEIGHT + WIDTH)), false);
+				add_domino(cp.vadd(offset, v(0.5*(HEIGHT - WIDTH), HEIGHT + WIDTH)), false);
 			}
 		}
 	}

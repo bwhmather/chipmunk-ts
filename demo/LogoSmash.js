@@ -145,7 +145,7 @@ LogoSmash.prototype.draw = function()
 			shape.draw(ctx, self.scale, self.point2canvas);
 		} else {
 			ctx.fillStyle = 'black';
-			drawRect(ctx, self.point2canvas, cp.v.sub(shape.tc, cp.v(1, 1)), cp.v(2, 2));
+			drawRect(ctx, self.point2canvas, cp.vsub(shape.tc, cp.v(1, 1)), cp.v(2, 2));
 		}
 	});
 
