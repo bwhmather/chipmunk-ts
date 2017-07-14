@@ -28,7 +28,7 @@ import { Shape, SegmentQueryInfo } from './base'
 
 
 export function circleSegmentQuery(
-    shape: Shape, center: Vect, r: number, a: Vect, b: Vect, info?,
+    shape: Shape, center: Vect, r: number, a: Vect, b: Vect,
 ) {
     // offset the line to be relative to the circle
     a = vsub(a, center);
