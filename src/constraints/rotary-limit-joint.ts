@@ -21,7 +21,7 @@
 import { Constraint } from './constraint';
 import { bias_coef } from './util';
 import { clamp } from '../util';
-
+import { Body } from '../body';
 
 class RotaryLimitJoint extends Constraint {
     min: number;
@@ -32,7 +32,7 @@ class RotaryLimitJoint extends Constraint {
     bias: number;
     jMax: number;
 
-    constructor(a, b, min, max) {
+    constructor(a: Body, b: Body, min: number, max: number) {
         super(a, b);
 
         this.min = min;
@@ -43,7 +43,7 @@ class RotaryLimitJoint extends Constraint {
         this.iSum = this.bias = this.jMax = 0;
     }
 
-    preStep(dt) {
+    preStep(dt: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -69,7 +69,7 @@ class RotaryLimitJoint extends Constraint {
         if (!this.bias) this.jAcc = 0;
     }
 
-    applyCachedImpulse(dt_coef) {
+    applyCachedImpulse(dt_coef: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -102,7 +102,7 @@ class RotaryLimitJoint extends Constraint {
         b.w += j * b.i_inv;
     }
 
-    getImpulse() {
+    getImpulse(): number {
         return Math.abs(this.jAcc);
     }
 }

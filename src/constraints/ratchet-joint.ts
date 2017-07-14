@@ -21,20 +21,19 @@
 import { Constraint } from './constraint';
 import { bias_coef } from './util';
 import { clamp } from '../util';
-
+import { Body } from '../body';
 
 export class RatchetJoint extends Constraint {
     angle: number;
     phase: number;
 
-    // TODO
-    ratchet;
+    ratchet: number;
     iSum: number;
     bias: number;
     jAcc: number;
     jMax: number;
 
-    constructor(a, b, phase, ratchet) {
+    constructor(a: Body, b: Body, phase: number, ratchet: number) {
         super(a, b);
 
         this.phase = phase;
@@ -46,7 +45,7 @@ export class RatchetJoint extends Constraint {
         this.iSum = this.bias = this.jAcc = this.jMax = 0;
     }
 
-    preStep(dt) {
+    preStep(dt: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -78,7 +77,7 @@ export class RatchetJoint extends Constraint {
         if (!this.bias) this.jAcc = 0;
     }
 
-    applyCachedImpulse(dt_coef) {
+    applyCachedImpulse(dt_coef: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -87,7 +86,7 @@ export class RatchetJoint extends Constraint {
         b.w += j * b.i_inv;
     }
 
-    applyImpulse() {
+    applyImpulse(): void {
         if (!this.bias) return; // early exit
 
         const a = this.a;
@@ -108,7 +107,7 @@ export class RatchetJoint extends Constraint {
         b.w += j * b.i_inv;
     }
 
-    getImpulse() {
+    getImpulse(): number {
         return Math.abs(this.jAcc);
     }
 }
