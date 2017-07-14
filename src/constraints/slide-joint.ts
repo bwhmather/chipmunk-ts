@@ -34,6 +34,7 @@ import {
     vnormalize_safe,
 } from '../vect';
 import { clamp } from '../util';
+import { Body } from '../body'; s
 
 
 export class SlideJoint extends Constraint {
@@ -52,7 +53,11 @@ export class SlideJoint extends Constraint {
 
     bias: number;
 
-    constructor(a, b, anchr1, anchr2, min, max) {
+    constructor(
+        a: Body, b: Body,
+        anchr1: Vect, anchr2: Vect,
+        min: number, max: number,
+    ) {
         super(a, b);
 
         this.anchr1 = anchr1;
@@ -67,7 +72,7 @@ export class SlideJoint extends Constraint {
         this.bias = 0;
     }
 
-    preStep(dt) {
+    preStep(dt: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -99,12 +104,12 @@ export class SlideJoint extends Constraint {
         this.jnMax = this.maxForce * dt;
     }
 
-    applyCachedImpulse(dt_coef) {
+    applyCachedImpulse(dt_coef: number): void {
         const jn = this.jnAcc * dt_coef;
         apply_impulses(this.a, this.b, this.r1, this.r2, this.n.x * jn, this.n.y * jn);
     }
 
-    applyImpulse() {
+    applyImpulse(): void {
         if (this.n.x === 0 && this.n.y === 0) return;  // early exit
 
         const a = this.a;
@@ -128,7 +133,7 @@ export class SlideJoint extends Constraint {
         apply_impulses(a, b, this.r1, this.r2, n.x * jn, n.y * jn);
     }
 
-    getImpulse() {
+    getImpulse(): number {
         return Math.abs(this.jnAcc);
     }
 }
