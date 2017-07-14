@@ -20,6 +20,7 @@
  */
 import { Constraint } from './constraint';
 import { clamp } from '../util';
+import { Body } from '../body';
 
 
 export class SimpleMotor extends Constraint {
@@ -28,7 +29,7 @@ export class SimpleMotor extends Constraint {
     iSum: number;
     jMax: number;
 
-    constructor(a, b, rate) {
+    constructor(a: Body, b: Body, rate: number) {
         super(a, b);
 
         this.rate = rate;
@@ -38,7 +39,7 @@ export class SimpleMotor extends Constraint {
         this.iSum = this.jMax = 0;
     }
 
-    preStep(dt) {
+    preStep(dt: number): void {
         // calculate moment of inertia coefficient.
         this.iSum = 1 / (this.a.i_inv + this.b.i_inv);
 
@@ -46,7 +47,7 @@ export class SimpleMotor extends Constraint {
         this.jMax = this.maxForce * dt;
     }
 
-    applyCachedImpulse(dt_coef) {
+    applyCachedImpulse(dt_coef: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -55,7 +56,7 @@ export class SimpleMotor extends Constraint {
         b.w += j * b.i_inv;
     }
 
-    applyImpulse() {
+    applyImpulse(): void {
         const a = this.a;
         const b = this.b;
 
@@ -73,7 +74,7 @@ export class SimpleMotor extends Constraint {
         b.w += j * b.i_inv;
     }
 
-    getImpulse() {
+    getImpulse(): number {
         return Math.abs(this.jAcc);
     }
 }
