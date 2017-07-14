@@ -32,6 +32,7 @@ import {
     vclamp, vlength,
     vmult,
 } from '../vect';
+import { Body } from '../body';
 
 
 // Pivot joints can also be created with (a, b, pivot);
@@ -49,7 +50,7 @@ export class PivotJoint extends Constraint {
 
     jMaxLen: number;
     bias: Vect;
-    constructor(a, b, anchr1, anchr2) {
+    constructor(a: Body, b: Body, anchr1: Vect, anchr2: Vect) {
         super(a, b);
 
         if (typeof anchr2 === 'undefined') {
@@ -72,7 +73,7 @@ export class PivotJoint extends Constraint {
         this.bias = vzero;
     }
 
-    preStep(dt) {
+    preStep(dt: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -90,11 +91,11 @@ export class PivotJoint extends Constraint {
         this.bias = vclamp(vmult(delta, -bias_coef(this.errorBias, dt) / dt), this.maxBias);
     }
 
-    applyCachedImpulse(dt_coef) {
+    applyCachedImpulse(dt_coef: number): void {
         apply_impulses(this.a, this.b, this.r1, this.r2, this.jAcc.x * dt_coef, this.jAcc.y * dt_coef);
     }
 
-    applyImpulse() {
+    applyImpulse(): void {
         const a = this.a;
         const b = this.b;
 
@@ -113,7 +114,7 @@ export class PivotJoint extends Constraint {
         apply_impulses(a, b, this.r1, this.r2, this.jAcc.x - jOld.x, this.jAcc.y - jOld.y);
     }
 
-    getImpulse() {
+    getImpulse(): number {
         return vlength(this.jAcc);
     }
 }
