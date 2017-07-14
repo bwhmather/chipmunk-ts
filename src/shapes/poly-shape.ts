@@ -32,7 +32,7 @@ import {
 } from '../vect';
 
 /// Check that a set of vertexes is convex and has a clockwise winding.
-function polyValidate(verts) {
+function polyValidate(verts: number[]): boolean {
     const len = verts.length;
     for (let i = 0; i < len; i += 2) {
         const ax = verts[i];
@@ -55,7 +55,7 @@ class SplittingPlane {
     n: Vect;
     d: number;
 
-    constructor(n, d) {
+    constructor(n: Vect, d: number) {
         this.n = n;
         this.d = d;
     }
@@ -71,16 +71,16 @@ export class PolyShape extends Shape {
     verts: number[]
     tVerts: number[]
     // TODO
-    planes;
-    tPlanes;
+    planes: SplittingPlane[];
+    tPlanes: SplittingPlane[];
 
-    constructor(body, verts, offset) {
+    constructor(body: Body, verts: number[], offset: Vect) {
         super(body);
         this.setVerts(verts, offset);
         this.type = 'poly';
     }
 
-    setVerts(verts, { x, y }) {
+    setVerts(verts: number[], offset: Vect): void {
         assert(verts.length >= 4, "Polygons require some verts");
         assert(typeof (verts[0]) === 'number',
             'Polygon verticies should be specified in a flattened list (eg [x1,y1,x2,y2,x3,y3,...])');
@@ -101,10 +101,10 @@ export class PolyShape extends Shape {
         for (let i = 0; i < len; i += 2) {
             //var a = vadd(offset, verts[i]);
             //var b = vadd(offset, verts[(i+1)%numVerts]);
-            const ax = verts[i] + x;
-            const ay = verts[i + 1] + y;
-            const bx = verts[(i + 2) % len] + x;
-            const by = verts[(i + 3) % len] + y;
+            const ax = verts[i] + offset.x;
+            const ay = verts[i + 1] + offset.y;
+            const bx = verts[(i + 2) % len] + offset.x;
+            const by = verts[(i + 3) % len] + offset.y;
 
             // Inefficient, but only called during object initialization.
             const n = vnormalize(vperp(new Vect(bx - ax, by - ay)));
@@ -116,7 +116,7 @@ export class PolyShape extends Shape {
         }
     }
 
-    transformVerts(p: Vect, rot: Vect) {
+    transformVerts(p: Vect, rot: Vect): void {
         const src = this.verts;
         const dst = this.tVerts;
 
@@ -150,7 +150,7 @@ export class PolyShape extends Shape {
         this.bb_t = t;
     }
 
-    transformAxes(p, rot) {
+    transformAxes(p: Vect, rot: Vect) {
         const src = this.planes;
         const dst = this.tPlanes;
 
@@ -161,12 +161,12 @@ export class PolyShape extends Shape {
         }
     }
 
-    cacheData(p, rot) {
+    cacheData(p: Vect, rot: Vect) {
         this.transformAxes(p, rot);
         this.transformVerts(p, rot);
     }
 
-    nearestPointQuery(p) {
+    nearestPointQuery(p: Vect): NearestPointQueryInfo {
         const planes = this.tPlanes;
         const verts = this.tVerts;
 
@@ -196,7 +196,7 @@ export class PolyShape extends Shape {
         return new NearestPointQueryInfo(this, closestPoint, (outside ? minDist : -minDist));
     }
 
-    segmentQuery(a, b) {
+    segmentQuery(a: Vect, b: Vect): SegmentQueryInfo {
         const axes = this.tPlanes;
         const verts = this.tVerts;
         const numVerts = axes.length;
@@ -225,18 +225,18 @@ export class PolyShape extends Shape {
         }
     }
 
-    valueOnAxis({ x, y }, d) {
+    valueOnAxis(n: Vect, d: number): number {
         const verts = this.tVerts;
-        let m = vdot2(x, y, verts[0], verts[1]);
+        let m = vdot2(n.x, n.y, verts[0], verts[1]);
 
         for (let i = 2; i < verts.length; i += 2) {
-            m = Math.min(m, vdot2(x, y, verts[i], verts[i + 1]));
+            m = Math.min(m, vdot2(n.x, n.y, verts[i], verts[i + 1]));
         }
 
         return m - d;
     }
 
-    containsVert(vx, vy) {
+    containsVert(vx: number, vy: number): boolean {
         const planes = this.tPlanes;
 
         for (let i = 0; i < planes.length; i++) {
@@ -248,7 +248,7 @@ export class PolyShape extends Shape {
         return true;
     }
 
-    containsVertPartial(vx, vy, n) {
+    containsVertPartial(vx: number, vy: number, n: Vect) {
         const planes = this.tPlanes;
 
         for (let i = 0; i < planes.length; i++) {
@@ -263,9 +263,11 @@ export class PolyShape extends Shape {
 
     // These methods are provided for API compatibility with Chipmunk. I recommend against using
     // them - just access the poly.verts list directly.
-    getNumVerts() { return this.verts.length / 2; }
+    getNumVerts(): number {
+        return this.verts.length / 2;
+    }
 
-    getVert(i) {
+    getVert(i: number): Vect {
         return new Vect(this.verts[i * 2], this.verts[i * 2 + 1]);
     }
 }
