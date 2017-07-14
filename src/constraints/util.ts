@@ -27,10 +27,12 @@
 
 import { assertSoft } from '../util';
 import { Vect, vdot, vdot2, vcross, vcross2 } from '../vect';
+import { Body } from '../body';
 
 
 // a and b are bodies.
-export function relative_velocity(a, b, r1, r2) {
+export function relative_velocity(
+    a: Body, b: Body, r1: Vect, r2: Vect) {
     //var v1_sum = vadd(a.v, vmult(vperp(r1), a.w));
     const v1_sumx = a.vx + (-r1.y) * a.w;
     const v1_sumy = a.vy + (r1.x) * a.w;
@@ -43,7 +45,10 @@ export function relative_velocity(a, b, r1, r2) {
     return new Vect(v2_sumx - v1_sumx, v2_sumy - v1_sumy);
 };
 
-export function normal_relative_velocity(a, b, r1, r2, n) {
+export function normal_relative_velocity(
+    a: Body, b: Body,
+    r1: Vect, r2,: Vect,
+    n: Vect) {
     //return vdot(relative_velocity(a, b, r1, r2), n);
     const v1_sumx = a.vx + (-r1.y) * a.w;
     const v1_sumy = a.vy + (r1.x) * a.w;
@@ -53,20 +58,9 @@ export function normal_relative_velocity(a, b, r1, r2, n) {
     return vdot2(v2_sumx - v1_sumx, v2_sumy - v1_sumy, n.x, n.y);
 };
 
-/*
-function apply_impulse(body, j, r){
-	body.v = vadd(body.v, vmult(j, body.m_inv));
-	body.w += body.i_inv*vcross(r, j);
-};
-
-function apply_impulses(a, b, r1, r2, j)
-{
-	apply_impulse(a, vneg(j), r1);
-	apply_impulse(b, j, r2);
-};
-*/
-
-export function apply_impulse(body, jx, jy, r) {
+export function apply_impulse(
+    body: Body, jx: number, jy: number, r: number,
+) {
     //	body.v = body.v.add(vmult(j, body.m_inv));
     body.vx += jx * body.m_inv;
     body.vy += jy * body.m_inv;
@@ -74,31 +68,30 @@ export function apply_impulse(body, jx, jy, r) {
     body.w += body.i_inv * (r.x * jy - r.y * jx);
 };
 
-export function apply_impulses(a, b, r1, r2, jx, jy) {
+export function apply_impulses(
+    a: Body, b: Body, r1: number, r2: number, jx: number, jy: number,
+) {
     apply_impulse(a, -jx, -jy, r1);
     apply_impulse(b, jx, jy, r2);
 };
 
-export function apply_bias_impulse(body, jx, jy, r) {
+export function apply_bias_impulse(
+    body: Body, jx: number, jy: number, r: Vect,
+) {
     //body.v_bias = vadd(body.v_bias, vmult(j, body.m_inv));
     body.v_biasx += jx * body.m_inv;
     body.v_biasy += jy * body.m_inv;
     body.w_bias += body.i_inv * vcross2(r.x, r.y, jx, jy);
 };
 
-/*
-function apply_bias_impulses(a, b, r1, r2, j)
-{
-	apply_bias_impulse(a, vneg(j), r1);
-	apply_bias_impulse(b, j, r2);
-};*/
-
-export function k_scalar_body(body, r, n) {
+export function k_scalar_body(body: Body, r: Vect, n: Vect) {
     const rcn = vcross(r, n);
     return body.m_inv + body.i_inv * rcn * rcn;
 };
 
-export function k_scalar(a, b, r1, r2, n) {
+export function k_scalar(
+    a: Body, b: Body, r1: Vect, r2: Vect, n: Vect,
+): number {
     const value = k_scalar_body(a, r1, n) + k_scalar_body(b, r2, n);
     assertSoft(value !== 0, "Unsolvable collision or constraint.");
 
@@ -106,7 +99,11 @@ export function k_scalar(a, b, r1, r2, n) {
 };
 
 // k1 and k2 are modified by the function to contain the outputs.
-export function k_tensor(a, b, r1, r2, k1, k2) {
+export function k_tensor(
+    a: Body, b: Body,
+    r1:Vect, r2: Vect,
+    k1: Vect, k2: Vect,
+): void {
     // calculate mass matrix
     // If I wasn't lazy and wrote a proper matrix class, this wouldn't be so gross...
     let k11;
@@ -146,11 +143,11 @@ export function k_tensor(a, b, r1, r2, k1, k2) {
     k2.x = -k21 * det_inv; k2.y = k11 * det_inv;
 };
 
-export function mult_k(vr, k1, k2) {
+export function mult_k(vr: Vect, k1: Vect, k2:Vect): Vect {
     return new Vect(vdot(vr, k1), vdot(vr, k2));
 };
 
-export function bias_coef(errorBias, dt) {
+export function bias_coef(errorBias: number, dt: number) {
     return 1 - errorBias ** dt;
 };
 
