@@ -21,7 +21,7 @@
 
 import { Vect, vlength2, vrotate } from '../vect';
 import { Body } from '../body';
-import { Shape, NearestPointQueryInfo } from './base';
+import { Shape, NearestPointQueryInfo, SegmentQueryInfo } from './base';
 import { circleSegmentQuery } from './util';
 
 
@@ -66,7 +66,7 @@ export class CircleShape extends Shape {
         return new NearestPointQueryInfo(this, nearestp, d - r);
     }
 
-    segmentQuery(a, b) {
+    segmentQuery(a: Vect, b: Vect): SegmentQueryInfo {
         return circleSegmentQuery(this, this.tc, this.r, a, b);
     }
 }
