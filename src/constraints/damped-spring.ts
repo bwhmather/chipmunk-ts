@@ -29,11 +29,12 @@ import {
     vadd, vsub, vmult,
     vlength, vrotate,
 } from '../vect';
+import { Body } from '../body';
 
-function defaultSpringForce(spring, dist) {
+
+function defaultSpringForce(spring: DampedSpring, dist: number): number {
     return (spring.restLength - dist) * spring.stiffness;
 };
-
 
 
 export class DampedSpring extends Constraint {
@@ -45,7 +46,9 @@ export class DampedSpring extends Constraint {
     damping: number;
 
     // TODO
-    springForceFunc;
+    springForceFunc: (
+        spring: DampedSpring, dist: number,
+    ) => number;
 
     target_vrn: number;
     v_coef: number;
@@ -56,7 +59,13 @@ export class DampedSpring extends Constraint {
     nMass: number;
     n: Vect;
 
-    constructor(a, b, anchr1, anchr2, restLength, stiffness, damping) {
+    constructor(
+        a: Body, b: Body,
+        anchr1: Vect, anchr2: Vect,
+        restLength: number,
+        stiffness: number,
+        damping: number,
+    ) {
         super(a, b);
 
         this.anchr1 = anchr1;
@@ -74,7 +83,7 @@ export class DampedSpring extends Constraint {
         this.n = null;
     }
 
-    preStep(dt) {
+    preStep(dt: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -97,9 +106,9 @@ export class DampedSpring extends Constraint {
         apply_impulses(a, b, this.r1, this.r2, this.n.x * f_spring * dt, this.n.y * f_spring * dt);
     }
 
-    applyCachedImpulse(dt_coef) { }
+    applyCachedImpulse(dt_coef: number): void { }
 
-    applyImpulse() {
+    applyImpulse(): void {
         const a = this.a;
         const b = this.b;
 
@@ -118,7 +127,7 @@ export class DampedSpring extends Constraint {
         apply_impulses(a, b, this.r1, this.r2, this.n.x * v_damp, this.n.y * v_damp);
     }
 
-    getImpulse() {
+    getImpulse(): number {
         return 0;
     }
 }
