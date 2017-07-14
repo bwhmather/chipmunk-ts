@@ -146,12 +146,12 @@ export class SegmentShape extends Shape {
         }
     }
 
-    setNeighbors(prev, next) {
+    setNeighbors(prev: Vect, next: Vect): void {
         this.a_tangent = vsub(prev, this.a);
         this.b_tangent = vsub(next, this.b);
     }
 
-    setEndpoints(a, b) {
+    setEndpoints(a: Vect, b: Vect): void {
         this.a = a;
         this.b = b;
         this.n = vperp(vnormalize(vsub(b, a)));
