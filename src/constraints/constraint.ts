@@ -32,15 +32,15 @@ export abstract class Constraint {
 
     space: Space;
 
-    next_a;
-    next_b;
+    next_a: Constraint;
+    next_b: Constraint;
 
     maxForce: number;
 
     errorBias: number;
     maxBias: number;
 
-    constructor(a, b) {
+    constructor(a: Body, b: Body) {
         /// The first body connected to this constraint.
         this.a = a;
         /// The second body connected to this constraint.
@@ -61,32 +61,32 @@ export abstract class Constraint {
         this.maxBias = Infinity;
     }
 
-    activateBodies() {
+    activateBodies(): void {
         if (this.a) this.a.activate();
         if (this.b) this.b.activate();
     }
 
     /// These methods are overridden by the constraint itself.
-    preStep(dt) { }
+    preStep(dt: number): void { }
 
-    applyCachedImpulse(dt_coef) { }
-    applyImpulse() { }
+    applyCachedImpulse(dt_coef: number): void { }
+    applyImpulse(): void { }
 
-    getImpulse() {
+    getImpulse(): number {
         return 0;
     }
 
     /// Function called before the solver runs. This can be overridden by the user
     /// to customize the constraint.
     /// Animate your joint anchors, update your motor torque, etc.
-    preSolve(space) { }
+    preSolve(space: Space) { }
 
     /// Function called after the solver runs. This can be overridden by the user
     /// to customize the constraint.
     /// Use the applied impulse to perform effects like breakable joints.
-    postSolve(space) { }
+    postSolve(space: Space) { }
 
-    next(body) {
+    next(body: Body) {
         return (this.a === body ? this.next_a : this.next_b);
     }
 }
