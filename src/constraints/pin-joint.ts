@@ -32,6 +32,7 @@ import {
     vlength,
     vmult,
 } from '../vect';
+import { Body } from '../body';
 
 
 export class PinJoint extends Constraint {
@@ -51,7 +52,7 @@ export class PinJoint extends Constraint {
     jnMax: number;
     bias: number;
 
-    constructor(a, b, anchr1, anchr2) {
+    constructor(a: Body, b: Body, anchr1: Vect, anchr2: Vect) {
         super(a, b);
 
         this.anchr1 = anchr1;
@@ -72,7 +73,7 @@ export class PinJoint extends Constraint {
         this.bias = 0;
     }
 
-    preStep(dt) {
+    preStep(dt: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -94,12 +95,12 @@ export class PinJoint extends Constraint {
         this.jnMax = this.maxForce * dt;
     }
 
-    applyCachedImpulse(dt_coef) {
+    applyCachedImpulse(dt_coef: number): void {
         const j = vmult(this.n, this.jnAcc * dt_coef);
         apply_impulses(this.a, this.b, this.r1, this.r2, j.x, j.y);
     }
 
-    applyImpulse() {
+    applyImpulse(): void {
         const a = this.a;
         const b = this.b;
         const n = this.n;
@@ -117,7 +118,7 @@ export class PinJoint extends Constraint {
         apply_impulses(a, b, this.r1, this.r2, n.x * jn, n.y * jn);
     }
 
-    getImpulse() {
+    getImpulse(): number {
         return Math.abs(this.jnAcc);
     }
 }
