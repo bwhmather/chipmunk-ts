@@ -32,6 +32,7 @@ import {
     vlength,
     vrotate,
 } from '../vect';
+import { Body } from '../body';
 
 
 export class GrooveJoint extends Constraint {
@@ -53,7 +54,11 @@ export class GrooveJoint extends Constraint {
     bias: Vect;
 
 
-    constructor(a, b, groove_a, groove_b, anchr2) {
+    constructor(
+        a: Body, b: Body,
+        groove_a: Vect, groove_b: Vect,
+        anchr2: Vect,
+    ) {
         super(a, b);
 
         this.grv_a = groove_a;
@@ -73,7 +78,7 @@ export class GrooveJoint extends Constraint {
         this.bias = null;
     }
 
-    preStep(dt) {
+    preStep(dt: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -110,14 +115,22 @@ export class GrooveJoint extends Constraint {
 
         // calculate bias velocity
         const delta = vsub(vadd(b.p, this.r2), vadd(a.p, this.r1));
-        this.bias = vclamp(vmult(delta, -bias_coef(this.errorBias, dt) / dt), this.maxBias);
+        this.bias = vclamp(
+            vmult(delta, -bias_coef(this.errorBias, dt) / dt),
+            this.maxBias,
+        );
     }
 
-    applyCachedImpulse(dt_coef) {
-        apply_impulses(this.a, this.b, this.r1, this.r2, this.jAcc.x * dt_coef, this.jAcc.y * dt_coef);
+    applyCachedImpulse(dt_coef: number): void {
+        apply_impulses(
+            this.a, this.b,
+            this.r1, this.r2,
+            this.jAcc.x * dt_coef,
+            this.jAcc.y * dt_coef,
+        );
     }
 
-    grooveConstrain(j) {
+    grooveConstrain(j: Vect): Vect {
         const n = this.grv_tn;
         const jClamp = (this.clamp * vcross(j, n) > 0) ? j : vproject(j, n);
         return vclamp(jClamp, this.jMaxLen);
@@ -138,21 +151,25 @@ export class GrooveJoint extends Constraint {
         this.jAcc = this.grooveConstrain(vadd(jOld, j));
 
         // apply impulse
-        apply_impulses(a, b, this.r1, this.r2, this.jAcc.x - jOld.x, this.jAcc.y - jOld.y);
+        apply_impulses(
+            a, b, this.r1, this.r2,
+            this.jAcc.x - jOld.x,
+            this.jAcc.y - jOld.y,
+        );
     }
 
-    getImpulse() {
+    getImpulse(): number {
         return vlength(this.jAcc);
     }
 
-    setGrooveA(value) {
+    setGrooveA(value: Vect): void {
         this.grv_a = value;
         this.grv_n = vperp(vnormalize(vsub(this.grv_b, value)));
 
         this.activateBodies();
     }
 
-    setGrooveB(value) {
+    setGrooveB(value: Vect): void {
         this.grv_b = value;
         this.grv_n = vperp(vnormalize(vsub(value, this.grv_a)));
 
