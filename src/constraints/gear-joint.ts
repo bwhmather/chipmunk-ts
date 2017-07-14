@@ -21,7 +21,7 @@
 import { Constraint } from './constraint';
 import { bias_coef } from './util';
 import { clamp } from '../util';
-
+import { Body } from '../body';
 
 
 export class GearJoint extends Constraint {
@@ -34,7 +34,7 @@ export class GearJoint extends Constraint {
     bias: number;
     jMax: number;
 
-    constructor(a, b, phase, ratio) {
+    constructor(a: Body, b: Body, phase: number, ratio: number) {
         super(a, b);
 
         this.phase = phase;
@@ -46,7 +46,7 @@ export class GearJoint extends Constraint {
         this.iSum = this.bias = this.jMax = 0;
     }
 
-    preStep(dt) {
+    preStep(dt: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -61,7 +61,7 @@ export class GearJoint extends Constraint {
         this.jMax = this.maxForce * dt;
     }
 
-    applyCachedImpulse(dt_coef) {
+    applyCachedImpulse(dt_coef: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -70,7 +70,7 @@ export class GearJoint extends Constraint {
         b.w += j * b.i_inv;
     }
 
-    applyImpulse() {
+    applyImpulse(): void {
         const a = this.a;
         const b = this.b;
 
@@ -88,11 +88,11 @@ export class GearJoint extends Constraint {
         b.w += j * b.i_inv;
     }
 
-    getImpulse() {
+    getImpulse(): number {
         return Math.abs(this.jAcc);
     }
 
-    setRatio(value) {
+    setRatio(value: number): void {
         this.ratio = value;
         this.ratio_inv = 1 / value;
         this.activateBodies();
