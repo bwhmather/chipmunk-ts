@@ -20,9 +20,12 @@
  */
 import { Constraint } from './constraint';
 import { assertSoft } from '../util';
+import { Body } from '../body';
 
 
-function defaultSpringTorque(spring, relativeAngle) {
+function defaultSpringTorque(
+    spring: DampedRotarySpring, relativeAngle: number,
+): number {
     return (relativeAngle - spring.restAngle) * spring.stiffness;
 }
 
@@ -32,14 +35,17 @@ export class DampedRotarySpring extends Constraint {
     stiffness: number;
     damping: number;
 
-    // TODO
-    springTorqueFunc;
+    springTorqueFunc: (
+        spring: DampedRotarySpring, relativeAngle: number,
+    ) => number;
 
     target_wrn: number;
     w_coef: number;
     iSum: number;
 
-    constructor(a, b, restAngle, stiffness, damping) {
+    constructor(
+        a: Body, b: Body, restAngle: number, stiffness: number, damping: number,
+    ) {
         super(a, b);
 
         this.restAngle = restAngle;
@@ -52,7 +58,7 @@ export class DampedRotarySpring extends Constraint {
         this.iSum = 0;
     }
 
-    preStep(dt) {
+    preStep(dt: number): void {
         const a = this.a;
         const b = this.b;
 
@@ -69,9 +75,7 @@ export class DampedRotarySpring extends Constraint {
         b.w += j_spring * b.i_inv;
     }
 
-    // DampedRotarySpring.prototype.applyCachedImpulse = function(dt_coef){};
-
-    applyImpulse() {
+    applyImpulse(): void {
         const a = this.a;
         const b = this.b;
 
@@ -88,7 +92,5 @@ export class DampedRotarySpring extends Constraint {
         a.w += j_damp * a.i_inv;
         b.w -= j_damp * b.i_inv;
     }
-
-    // DampedRotarySpring.prototype.getImpulse = function(){ return 0; };
 }
 
