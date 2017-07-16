@@ -92,7 +92,7 @@ export abstract class Shape {
 
     space: Space;
 
-    constructor(body) {
+    constructor(body: Body) {
         /// The rigid body this collision shape is attached to.
         this.body = body;
 

@@ -32,7 +32,7 @@ export class BB {
     r: number;
     t: number;
 
-    constructor(l, b, r, t) {
+    constructor(l: number, b: number, r: number, t: number) {
         this.l = l;
         this.b = b;
         this.r = r;
@@ -42,29 +42,32 @@ export class BB {
     }
 }
 
-export function bb(l, b, r, t) {
+export function bb(l: number, b: number, r: number, t: number): BB {
     return new BB(l, b, r, t);
 }
 
-export function bbNewForCircle({ x, y }, r) {
+export function bbNewForCircle(c: Vect, r: number) {
     return new BB(
-        x - r,
-        y - r,
-        x + r,
-        y + r
+        c.x - r,
+        c.y - r,
+        c.x + r,
+        c.y + r
     );
 };
 
 /// Returns true if @c a and @c b intersect.
-export function bbIntersects(a, b) {
+export function bbIntersects(a: BB, b: BB): boolean {
     return (a.l <= b.r && b.l <= a.r && a.b <= b.t && b.b <= a.t);
 };
-export function bbIntersects2(bb, l, b, r, t) {
+export function bbIntersects2(
+    bb: BB,
+    l: number, b: number, r: number, t: number,
+): boolean {
     return (bb.l <= r && l <= bb.r && bb.b <= t && b <= bb.t);
 };
 
 /// Returns true if @c other lies completely within @c bb.
-export function bbContainsBB(bb, other) {
+export function bbContainsBB(bb: BB, other: BB): boolean {
     return (
         bb.l <= other.l &&
         bb.r >= other.r &&
@@ -74,16 +77,29 @@ export function bbContainsBB(bb, other) {
 };
 
 /// Returns true if @c bb contains @c v.
-export function bbContainsVect(bb, v) {
-    return (bb.l <= v.x && bb.r >= v.x && bb.b <= v.y && bb.t >= v.y);
+export function bbContainsVect(bb: BB, v: Vect): boolean {
+    return (
+        bb.l <= v.x &&
+        bb.r >= v.x &&
+        bb.b <= v.y &&
+        bb.t >= v.y
+    );
 };
 
-export function bbContainsVect2(l, b, r, t, v) {
-    return (l <= v.x && r >= v.x && b <= v.y && t >= v.y);
+export function bbContainsVect2(
+    l: number, b: number, r: number, t: number,
+    v: Vect,
+): boolean {
+    return (
+        l <= v.x &&
+        r >= v.x &&
+        b <= v.y &&
+        t >= v.y
+    );
 };
 
 /// Returns a bounding box that holds both bounding boxes.
-export function bbMerge(a, b) {
+export function bbMerge(a: BB, b: BB): BB {
     return new BB(
         Math.min(a.l, b.l),
         Math.min(a.b, b.b),
@@ -93,7 +109,7 @@ export function bbMerge(a, b) {
 };
 
 /// Returns a bounding box that holds both @c bb and @c v.
-export function bbExpand(bb, v) {
+export function bbExpand(bb: BB, v: Vect): BB {
     return new BB(
         Math.min(bb.l, v.x),
         Math.min(bb.b, v.y),
@@ -103,19 +119,22 @@ export function bbExpand(bb, v) {
 };
 
 /// Returns the area of the bounding box.
-export function bbArea(bb) {
+export function bbArea(bb: BB): number {
     return (bb.r - bb.l) * (bb.t - bb.b);
 };
 
 /// Merges @c a and @c b and returns the area of the merged bounding box.
-export function bbMergedArea(a, b) {
+export function bbMergedArea(a: BB, b: BB): number {
     return (
         (Math.max(a.r, b.r) - Math.min(a.l, b.l)) *
         (Math.max(a.t, b.t) - Math.min(a.b, b.b))
     );
 };
 
-export function bbMergedArea2(bb, l, b, r, t) {
+export function bbMergedArea2(
+    bb: BB,
+    l: number, b: number, r: number, t: number,
+): number {
     return (
         (Math.max(bb.r, r) - Math.min(bb.l, l)) *
         (Math.max(bb.t, t) - Math.min(bb.b, b))
@@ -123,7 +142,7 @@ export function bbMergedArea2(bb, l, b, r, t) {
 };
 
 /// Clamp a vector to a bounding box.
-export function bbClampVect(bb, v) {
+export function bbClampVect(bb: BB, v: Vect): Vect {
     const x = Math.min(Math.max(bb.l, v.x), bb.r);
     const y = Math.min(Math.max(bb.b, v.y), bb.t);
     return new Vect(x, y);
@@ -131,14 +150,14 @@ export function bbClampVect(bb, v) {
 
 // TODO edge case issue
 /// Wrap a vector to a bounding box.
-export function bbWrapVect({ r, l, t, b }, v) {
-    const ix = Math.abs(r - l);
-    const modx = (v.x - l) % ix;
+export function bbWrapVect(bb: BB, v: Vect): Vect {
+    const ix = Math.abs(bb.r - bb.l);
+    const modx = (v.x - bb.l) % ix;
     const x = (modx > 0) ? modx : modx + ix;
 
-    const iy = Math.abs(t - b);
-    const mody = (v.y - b) % iy;
+    const iy = Math.abs(bb.t - bb.b);
+    const mody = (v.y - bb.b) % iy;
     const y = (mody > 0) ? mody : mody + iy;
 
-    return new Vect(x + l, y + b);
+    return new Vect(x + bb.l, y + bb.b);
 };

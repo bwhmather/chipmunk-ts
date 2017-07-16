@@ -22,6 +22,7 @@
 import { BB } from '../bb';
 import { Shape, NearestPointQueryInfo, SegmentQueryInfo } from './base'
 import { assert, closestPointOnSegment2 } from '../util';
+import { Body } from '../body';
 import {
     Vect, vzero,
     vcross, vcross2,
@@ -51,7 +52,7 @@ function polyValidate(verts: number[]): boolean {
     return true;
 }
 
-class SplittingPlane {
+export class SplittingPlane {
     n: Vect;
     d: number;
 

@@ -18,7 +18,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { CircleShape, SegmentShape, PolyShape } from './shapes';
+import { Shape, CircleShape, SegmentShape, PolyShape } from './shapes';
+import { SplittingPlane } from './shapes/poly-shape';
 import { assert, clamp01, hashPair } from './util';
 import {
     Vect, vzero, vneg,
@@ -48,7 +49,7 @@ export class Contact {
 
     hash: any;
 
-    constructor (p: Vect, n: Vect, dist: number, hash: any) {
+    constructor(p: Vect, n: Vect, dist: number, hash: any) {
         this.p = p;
         this.n = n;
         this.dist = dist;
@@ -60,11 +61,12 @@ export class Contact {
     }
 }
 
-const NONE = [];
 
 // Add contact points for circle to circle collisions.
 // Used by several collision tests.
-function circle2circleQuery(p1, p2, r1, r2) {
+function circle2circleQuery(
+    p1: Vect, p2: Vect, r1: number, r2: number,
+): Contact {
     const mindist = r1 + r2;
     const delta = vsub(p2, p1);
     const distsq = vlengthsq(delta);
@@ -82,12 +84,12 @@ function circle2circleQuery(p1, p2, r1, r2) {
 };
 
 // Collide circle shapes.
-function circle2circle(circ1, circ2) {
+function circle2circle(circ1: CircleShape, circ2: CircleShape) {
     const contact = circle2circleQuery(circ1.tc, circ2.tc, circ1.r, circ2.r);
-    return contact ? [contact] : NONE;
+    return contact ? [contact] : [];
 };
 
-function circle2segment(circleShape, segmentShape) {
+function circle2segment(circleShape: CircleShape, segmentShape: SegmentShape) {
     const seg_a = segmentShape.ta;
     const seg_b = segmentShape.tb;
     const center = circleShape.tc;
@@ -104,11 +106,16 @@ function circle2segment(circleShape, segmentShape) {
         return (
             (closest_t === 0 && vdot(n, segmentShape.a_tangent) < 0) ||
             (closest_t === 1 && vdot(n, segmentShape.b_tangent) < 0)
-        ) ? NONE : [contact];
+        ) ? [] : [contact];
     } else {
-        return NONE;
+        return [];
     }
 }
+
+function segment2segment(seg1: SegmentShape, seg2: SegmentShape): Contact[] {
+    return [];
+}
+
 
 // Find the minimum separating axis for the given poly and axis list.
 //
@@ -118,7 +125,7 @@ function circle2segment(circleShape, segmentShape) {
 //
 // See: http://jsperf.com/return-two-values-from-function/2
 let last_MSA_min = 0;
-function findMSA(poly, planes) {
+function findMSA(poly: PolyShape, planes: SplittingPlane[]) {
     let min_index = 0;
     let min = poly.valueOnAxis(planes[0].n, planes[0].d);
     if (min > 0) return -1;
@@ -140,7 +147,9 @@ function findMSA(poly, planes) {
 // Add contacts for probably penetrating vertexes.
 // This handles the degenerate case where an overlap was detected, but no vertexes fall inside
 // the opposing polygon. (like a star of david)
-function findVertsFallback(poly1, poly2, n, dist) {
+function findVertsFallback(
+    poly1: PolyShape, poly2: PolyShape, n: Vect, dist: number,
+): Contact[] {
     const arr = [];
 
     const verts1 = poly1.tVerts;
@@ -165,7 +174,9 @@ function findVertsFallback(poly1, poly2, n, dist) {
 };
 
 // Add contacts for penetrating vertexes.
-function findVerts(poly1, poly2, n, dist) {
+function findVerts(
+    poly1: PolyShape, poly2: PolyShape, n: Vect, dist: number,
+): Contact[] {
     const arr = [];
 
     const verts1 = poly1.tVerts;
@@ -190,13 +201,13 @@ function findVerts(poly1, poly2, n, dist) {
 };
 
 // Collide poly shapes together.
-function poly2poly(poly1, poly2) {
+function poly2poly(poly1: PolyShape, poly2: PolyShape): Contact[] {
     const mini1 = findMSA(poly2, poly1.tPlanes);
-    if (mini1 == -1) return NONE;
+    if (mini1 == -1) return [];
     const min1 = last_MSA_min;
 
     const mini2 = findMSA(poly1, poly2.tPlanes);
-    if (mini2 == -1) return NONE;
+    if (mini2 == -1) return [];
     const min2 = last_MSA_min;
 
     // There is overlap, find the penetrating verts
@@ -207,14 +218,17 @@ function poly2poly(poly1, poly2) {
 };
 
 // Like cpPolyValueOnAxis(), but for segments.
-function segValueOnAxis(seg, n, d) {
+function segValueOnAxis(seg: SegmentShape, n: Vect, d: number) {
     const a = vdot(n, seg.ta) - seg.r;
     const b = vdot(n, seg.tb) - seg.r;
     return Math.min(a, b) - d;
 };
 
 // Identify vertexes that have penetrated the segment.
-function findPointsBehindSeg(arr, seg, poly, pDist, coef) {
+function findPointsBehindSeg(
+    arr: Contact[], seg: SegmentShape, poly: PolyShape,
+    pDist: number, coef: number,
+): void {
     const dta = vcross(seg.tn, seg.ta);
     const dtb = vcross(seg.tn, seg.tb);
     const n = vmult(seg.tn, coef);
@@ -234,7 +248,7 @@ function findPointsBehindSeg(arr, seg, poly, pDist, coef) {
 
 // This one is complicated and gross. Just don't go there...
 // TODO: Comment me!
-function seg2poly(seg, poly) {
+function segment2poly(seg: SegmentShape, poly: PolyShape): Contact[] {
     const arr = [];
 
     const planes = poly.tPlanes;
@@ -243,15 +257,15 @@ function seg2poly(seg, poly) {
     const segD = vdot(seg.tn, seg.ta);
     const minNorm = poly.valueOnAxis(seg.tn, segD) - seg.r;
     const minNeg = poly.valueOnAxis(vneg(seg.tn), -segD) - seg.r;
-    if (minNeg > 0 || minNorm > 0) return NONE;
+    if (minNeg > 0 || minNorm > 0) return [];
 
     let mini = 0;
     let poly_min = segValueOnAxis(seg, planes[0].n, planes[0].d);
-    if (poly_min > 0) return NONE;
+    if (poly_min > 0) return [];
     for (let i = 0; i < numVerts; i++) {
         const dist = segValueOnAxis(seg, planes[i].n, planes[i].d);
         if (dist > 0) {
-            return NONE;
+            return [];
         } else if (dist > poly_min) {
             poly_min = dist;
             mini = i;
@@ -302,7 +316,7 @@ function seg2poly(seg, poly) {
 
 // This one is less gross, but still gross.
 // TODO: Comment me!
-function circle2poly(circ, poly) {
+function circle2poly(circ: CircleShape, poly: PolyShape): Contact[] {
     const planes = poly.tPlanes;
 
     let mini = 0;
@@ -310,7 +324,7 @@ function circle2poly(circ, poly) {
     for (let i = 0; i < planes.length; i++) {
         const dist = vdot(planes[i].n, circ.tc) - planes[i].d - circ.r;
         if (dist > 0) {
-            return NONE;
+            return [];
         } else if (dist > min) {
             min = dist;
             mini = i;
@@ -334,7 +348,7 @@ function circle2poly(circ, poly) {
 
     if (dt < dtb) {
         const con = circle2circleQuery(circ.tc, new Vect(bx, by), circ.r, 0);
-        return con ? [con] : NONE;
+        return con ? [con] : [];
     } else if (dt < dta) {
         return [new Contact(
             vsub(circ.tc, vmult(n, circ.r + min / 2)),
@@ -344,7 +358,7 @@ function circle2poly(circ, poly) {
         )];
     } else {
         const con = circle2circleQuery(circ.tc, new Vect(ax, ay), circ.r, 0);
-        return con ? [con] : NONE;
+        return con ? [con] : [];
     }
 };
 
@@ -366,17 +380,17 @@ CircleShape.prototype.collisionTable = [
 
 SegmentShape.prototype.collisionTable = [
     null,
-    (segA, segB) => NONE,
-    seg2poly
+    segment2segment,
+    segment2poly,
 ];
 
 PolyShape.prototype.collisionTable = [
     null,
     null,
-    poly2poly
+    poly2poly,
 ];
 
-export function collideShapes(a, b) {
+export function collideShapes(a: Shape, b: Shape) {
     assert(a.collisionCode <= b.collisionCode, 'Collided shapes must be sorted by type');
     return a.collisionTable[b.collisionCode](a, b);
 };

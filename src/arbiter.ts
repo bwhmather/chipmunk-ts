@@ -117,18 +117,18 @@ export class Arbiter {
     b: Shape;
     body_b: Body;
 
-    thread_a_next;
-    thread_a_prev;
-    thread_b_next;
-    thread_b_prev;
+    thread_a_next: Arbiter;
+    thread_a_prev: Arbiter;
+    thread_b_next: Arbiter;
+    thread_b_prev: Arbiter;
 
-    contacts;
-    stamp;
-    handler;
-    swappedColl;
+    contacts: Contact[];
+    stamp: number;
+    handler: CollisionHandler;
+    swappedColl: boolean;
     state: ArbiterState;
 
-    constructor(a, b) {
+    constructor(a: Shape, b: Shape) {
         this.a = a; this.body_a = a.body;
         this.b = b; this.body_b = b.body;
 
@@ -253,19 +253,20 @@ export class Arbiter {
     }
 
     /// Get the depth of the @c ith contact point.
-    getDepth(i: number): Vect {
+    getDepth(i: number): number {
         return this.contacts[i].dist;
     }
 
-    unthread() {
-        console.log(this.thread_a_prev)
+    unthread(): void {
         unthreadHelper(this, this.body_a, this.thread_a_prev, this.thread_a_next);
         unthreadHelper(this, this.body_b, this.thread_b_prev, this.thread_b_next);
         this.thread_a_prev = this.thread_a_next = null;
         this.thread_b_prev = this.thread_b_next = null;
     }
 
-    update(contacts: Contact[], handler: CollisionHandler, a: Shape, b: Shape) {
+    update(
+        contacts: Contact[], handler: CollisionHandler, a: Shape, b: Shape,
+    ): void {
         // Arbiters without contact data may exist if a collision function rejected the collision.
         if (this.contacts) {
             // Iterate over the possible pairs to look for hash value matches.
@@ -298,7 +299,7 @@ export class Arbiter {
         if (this.state == 'cached') this.state = 'first-coll';
     }
 
-    preStep(dt: number, slop: number, bias: number) {
+    preStep(dt: number, slop: number, bias: number): void {
         const a = this.body_a;
         const b = this.body_b;
 
@@ -316,11 +317,13 @@ export class Arbiter {
             con.jBias = 0;
 
             // Calculate the target bounce velocity.
-            con.bounce = normal_relative_velocity(a, b, con.r1, con.r2, con.n) * this.e;
+            con.bounce = normal_relative_velocity(
+                a, b, con.r1, con.r2, con.n,
+            ) * this.e;
         }
     }
 
-    applyCachedImpulse(dt_coef: number) {
+    applyCachedImpulse(dt_coef: number): void {
         if (this.isFirstContact()) return;
 
         const a = this.body_a;
@@ -360,12 +363,23 @@ export class Arbiter {
             //var vb2 = vadd(vmult(vperp(r2), b.w_bias), b.v_bias);
             //var vbn = vdot(vsub(vb2, vb1), n);
 
-            const vbn = n.x * (b.v_biasx - r2.y * b.w_bias - a.v_biasx + r1.y * a.w_bias) +
-                n.y * (r2.x * b.w_bias + b.v_biasy - r1.x * a.w_bias - a.v_biasy);
+            const vbn = (
+                n.x * (
+                    b.v_biasx - r2.y * b.w_bias -
+                    a.v_biasx + r1.y * a.w_bias
+                ) +
+                n.y * (
+                    r2.x * b.w_bias + b.v_biasy -
+                    r1.x * a.w_bias - a.v_biasy
+                )
+            );
 
             const vrn = vdot2(vrx, vry, n.x, n.y);
             //var vrt = vdot(vadd(vr, surface_vr), vperp(n));
-            const vrt = vdot2(vrx + surface_vr.x, vry + surface_vr.y, -n.y, n.x);
+            const vrt = vdot2(
+                vrx + surface_vr.x, vry + surface_vr.y,
+                -n.y, n.x
+            );
 
             const jbn = (con.bias - vbn) * nMass;
             const jbnOld = con.jBias;
@@ -391,7 +405,11 @@ export class Arbiter {
             const rot_y = con.jtAcc - jtOld;
 
             // Inlining apply_impulses decreases speed for some reason :/
-            apply_impulses(a, b, r1, r2, n.x * rot_x - n.y * rot_y, n.x * rot_y + n.y * rot_x);
+            apply_impulses(
+                a, b, r1, r2,
+                n.x * rot_x - n.y * rot_y,
+                n.x * rot_y + n.y * rot_x,
+            );
         });
     }
 

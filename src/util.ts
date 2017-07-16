@@ -327,4 +327,3 @@ export function lerp(f1, f2, t) {
 export function lerpconst(f1, f2, d) {
     return f1 + clamp(f2 - f1, -d, d);
 }
-

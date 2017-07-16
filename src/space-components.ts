@@ -18,15 +18,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
+import { Body } from './body';
 import { assert, assertSoft, deleteObjFromList } from './util';
 
 /// **** Sleeping Functions
-export function componentRoot(body) {
+export function componentRoot(body: Body) {
     return (body ? body.nodeRoot : null);
 };
 
-export function componentActivate(root) {
+export function componentActivate(root): void {
     if (!root || !root.isSleeping(root)) return;
     assert(!root.isRogue(), "Internal Error: componentActivate() called on a rogue body.");
 
@@ -45,7 +45,7 @@ export function componentActivate(root) {
 
     deleteObjFromList(space.sleepingComponents, root);
 };
-export function componentAdd(root, body) {
+export function componentAdd(root, body: Body) {
     body.nodeRoot = root;
 
     if (body !== root) {

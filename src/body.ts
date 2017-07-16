@@ -29,6 +29,8 @@
 import { Shape } from './shapes';
 import { Space } from './space';
 import { apply_impulse } from './constraints/util';
+import { Constraint } from './constraints';
+import { Arbiter } from './arbiter';
 import {
     assert, assertSoft,
     clamp, deleteObjFromList,
@@ -89,9 +91,9 @@ export class Body {
     space: Space;
 
     shapeList: Shape[];
-    // TODO
-    arbiterList; // These are both wacky linked lists.
-    constraintList;
+    // These are both wacky linked lists.
+    arbiterList: Arbiter;
+    constraintList: Constraint;
 
     // This stuff is used to track information on the collision graph.
     // TODO
@@ -110,7 +112,7 @@ export class Body {
     // Set this.a and this.rot
     rot: Vect;
 
-    constructor(m, i) {
+    constructor(m: number, i: number) {
         /// Mass of the body.
         /// Must agree with cpBody.m_inv! Use body.setMass() when changing the mass for this reason.
         //this.m;
@@ -173,28 +175,34 @@ export class Body {
         this.setAngle(0);
     }
 
-    getPos() { return this.p; }
-    getVel() { return new Vect(this.vx, this.vy); }
-    getAngVel() { return this.w; }
+    getPos(): Vect {
+        return this.p;
+    }
+    getVel(): Vect {
+        return new Vect(this.vx, this.vy);
+    }
+    getAngVel(): number {
+        return this.w;
+    }
 
     /// Returns true if the body is sleeping.
-    isSleeping() {
+    isSleeping(): boolean {
         return this.nodeRoot !== null;
     }
 
     /// Returns true if the body is static.
-    isStatic() {
+    isStatic(): boolean {
         return this.nodeIdleTime === Infinity;
     }
 
     /// Returns true if the body has not been added to a space.
-    isRogue() {
+    isRogue(): boolean {
         return this.space === null;
     }
 
     // It would be nicer to use defineProperty for this, but its about 30x slower:
     // http://jsperf.com/defineproperty-vs-setter
-    setMass(mass) {
+    setMass(mass: number): void {
         assert(mass > 0, "Mass must be positive and non-zero.");
 
         //activate is defined in cpSpaceComponent
@@ -203,7 +211,7 @@ export class Body {
         this.m_inv = 1 / mass;
     }
 
-    setMoment(moment) {
+    setMoment(moment: number): void {
         assert(moment > 0, "Moment of Inertia must be positive and non-zero.");
 
         this.activate();
@@ -211,11 +219,11 @@ export class Body {
         this.i_inv = 1 / moment;
     }
 
-    addShape(shape) {
+    addShape(shape: Shape): void {
         this.shapeList.push(shape);
     }
 
-    removeShape(shape) {
+    removeShape(shape: Shape): void {
         // This implementation has a linear time complexity with the number of shapes.
         // The original implementation used linked lists instead, which might be faster if
         // you're constantly editing the shape of a body. I expect most bodies will never
@@ -223,12 +231,12 @@ export class Body {
         deleteObjFromList(this.shapeList, shape);
     }
 
-    removeConstraint(constraint) {
+    removeConstraint(constraint: Constraint): void {
         // The constraint must be in the constraints list when this is called.
         this.constraintList = filterConstraints(this.constraintList, this, constraint);
     }
 
-    setPos(pos) {
+    setPos(pos: Vect): void {
         this.activate();
         this.sanityCheck();
         // If I allow the position to be set to vzero, vzero will get changed.
@@ -238,18 +246,18 @@ export class Body {
         this.p = pos;
     }
 
-    setVel({ x, y }) {
+    setVel(vel: Vect): void {
         this.activate();
-        this.vx = x;
-        this.vy = y;
+        this.vx = vel.x;
+        this.vy = vel.y;
     }
 
-    setAngVel(w) {
+    setAngVel(w: number): void {
         this.activate();
         this.w = w;
     }
 
-    setAngleInternal(angle) {
+    setAngleInternal(angle: number): void {
         assert(!isNaN(angle), "Internal Error: Attempting to set body's angle to NaN");
         this.a = angle;//fmod(a, (cpFloat)M_PI*2.0f);
 
@@ -258,16 +266,16 @@ export class Body {
         this.rot.y = Math.sin(angle);
     }
 
-    setAngle(angle) {
+    setAngle(angle: number) {
         this.activate();
         this.sanityCheck();
         this.setAngleInternal(angle);
     }
 
-    velocity_func({ x, y }, damping, dt) {
+    velocity_func(gravity: Vect, damping: number, dt: number): void {
         //this.v = vclamp(vadd(vmult(this.v, damping), vmult(vadd(gravity, vmult(this.f, this.m_inv)), dt)), this.v_limit);
-        const vx = this.vx * damping + (x + this.f.x * this.m_inv) * dt;
-        const vy = this.vy * damping + (y + this.f.y * this.m_inv) * dt;
+        const vx = this.vx * damping + (gravity.x + this.f.x * this.m_inv) * dt;
+        const vy = this.vy * damping + (gravity.y + this.f.y * this.m_inv) * dt;
 
         //var v = vclamp(new Vect(vx, vy), this.v_limit);
         //this.vx = v.x; this.vy = v.y;
@@ -283,7 +291,7 @@ export class Body {
         this.sanityCheck();
     }
 
-    position_func(dt) {
+    position_func(dt: number): void {
         //this.p = vadd(this.p, vmult(vadd(this.v, this.v_bias), dt));
 
         //this.p = this.p + (this.v + this.v_bias) * dt;
@@ -298,44 +306,44 @@ export class Body {
         this.sanityCheck();
     }
 
-    resetForces() {
+    resetForces(): void {
         this.activate();
         this.f = new Vect(0, 0);
         this.t = 0;
     }
 
-    applyForce(force, r) {
+    applyForce(force: Vect, r: Vect): void {
         this.activate();
         this.f = vadd(this.f, force);
         this.t += vcross(r, force);
     }
 
-    applyImpulse({ x, y }, r) {
+    applyImpulse(impulse: Vect, r: Vect) {
         this.activate();
-        apply_impulse(this, x, y, r);
+        apply_impulse(this, impulse.x, impulse.y, r);
     }
 
-    getVelAtPoint(r) {
+    getVelAtPoint(r: Vect): Vect {
         return vadd(new Vect(this.vx, this.vy), vmult(vperp(r), this.w));
     }
 
     /// Get the velocity on a body (in world units) at a point on the body in world coordinates.
-    getVelAtWorldPoint(point) {
+    getVelAtWorldPoint(point: Vect): Vect {
         return this.getVelAtPoint(vsub(point, this.p));
     }
 
     /// Get the velocity on a body (in world units) at a point on the body in local coordinates.
-    getVelAtLocalPoint(point) {
+    getVelAtLocalPoint(point: Vect): Vect {
         return this.getVelAtPoint(vrotate(point, this.rot));
     }
 
-    eachShape(func) {
+    eachShape(func: (shape: Shape) => void) {
         for (let i = 0, len = this.shapeList.length; i < len; i++) {
             func(this.shapeList[i]);
         }
     }
 
-    eachConstraint(func) {
+    eachConstraint(func: (constraint: Constraint) => void) {
         let constraint = this.constraintList;
         while (constraint) {
             const next = constraint.next(this);
@@ -344,7 +352,7 @@ export class Body {
         }
     }
 
-    eachArbiter(func) {
+    eachArbiter(func: (arbiter: Arbiter) => void) {
         let arb = this.arbiterList;
         while (arb) {
             const next = arb.next(this);
@@ -357,24 +365,24 @@ export class Body {
     }
 
     /// Convert body relative/local coordinates to absolute/world coordinates.
-    local2World(v) {
+    local2World(v: Vect): Vect {
         return vadd(this.p, vrotate(v, this.rot));
     }
 
     /// Convert body absolute/world coordinates to	relative/local coordinates.
-    world2Local(v) {
+    world2Local(v: Vect): Vect {
         return vunrotate(vsub(v, this.p), this.rot);
     }
 
     /// Get the kinetic energy of a body.
-    kineticEnergy() {
+    kineticEnergy(): number {
         // Need to do some fudging to avoid NaNs
         const vsq = this.vx * this.vx + this.vy * this.vy;
         const wsq = this.w * this.w;
         return (vsq ? vsq * this.m : 0) + (wsq ? wsq * this.i : 0);
     }
 
-    sanityCheck() {
+    sanityCheck(): void {
         assert(this.m === this.m && this.m_inv === this.m_inv, "Body's mass is invalid.");
         assert(this.i === this.i && this.i_inv === this.i_inv, "Body's moment is invalid.");
 
@@ -393,14 +401,14 @@ export class Body {
         assert(this.w_limit === this.w_limit, "Body's angular velocity limit is invalid.");
     }
 
-    activate() {
+    activate(): void {
         if (!this.isRogue()) {
             this.nodeIdleTime = 0;
             componentActivate(componentRoot(this));
         }
     };
 
-    activateStatic(filter) {
+    activateStatic(filter: Shape): void {
         assert(this.isStatic(), "Body.activateStatic() called on a non-static body.");
 
         for (let arb = this.arbiterList; arb; arb = arb.next(this)) {
@@ -412,7 +420,7 @@ export class Body {
         // TODO should also activate joints!
     }
 
-    pushArbiter(arb) {
+    pushArbiter(arb: Arbiter): void {
         assertSoft((arb.body_a === this ? arb.thread_a_next : arb.thread_b_next) === null,
             "Internal Error: Dangling contact graph pointers detected. (A)");
         assertSoft((arb.body_a === this ? arb.thread_a_prev : arb.thread_b_prev) === null,
@@ -438,11 +446,11 @@ export class Body {
         this.arbiterList = arb;
     }
 
-    sleep() {
+    sleep(): void {
         this.sleepWithGroup(null);
     }
 
-    sleepWithGroup(group) {
+    sleepWithGroup(group: Body): void {
         assert(!this.isStatic() && !this.isRogue(), "Rogue and static bodies cannot be put to sleep.");
 
         const space = this.space;
@@ -480,18 +488,22 @@ export class Body {
     }
 }
 
-
-
-
-// I wonder if this should use the constructor style like Body...
-export function createStaticBody() {
+export function createStaticBody(): Body {
     const body = new Body(Infinity, Infinity);
     body.nodeIdleTime = Infinity;
 
     return body;
 }
 
-function v_assert_nan({ x, y }, message) { assert(x == x && y == y, message); }
-function v_assert_infinite({ x, y }, message) { assert(Math.abs(x) !== Infinity && Math.abs(y) !== Infinity, message); }
-function v_assert_sane(v, message) { v_assert_nan(v, message); v_assert_infinite(v, message); }
+function v_assert_nan(v: Vect, message: string): void {
+    assert(v.x == v.x && v.y == v.y, message);
+}
+
+function v_assert_infinite(v: Vect, message: string): void {
+    assert(Math.abs(v.x) !== Infinity && Math.abs(v.y) !== Infinity, message);
+}
+
+function v_assert_sane(v: Vect, message: string): void {
+     v_assert_nan(v, message); v_assert_infinite(v, message); 
+    }
 

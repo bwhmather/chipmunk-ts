@@ -34,7 +34,7 @@ import {
     vnormalize_safe,
 } from '../vect';
 import { clamp } from '../util';
-import { Body } from '../body'; s
+import { Body } from '../body';
 
 
 export class SlideJoint extends Constraint {

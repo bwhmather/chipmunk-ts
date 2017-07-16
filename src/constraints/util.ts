@@ -32,7 +32,8 @@ import { Body } from '../body';
 
 // a and b are bodies.
 export function relative_velocity(
-    a: Body, b: Body, r1: Vect, r2: Vect) {
+    a: Body, b: Body, r1: Vect, r2: Vect,
+) {
     //var v1_sum = vadd(a.v, vmult(vperp(r1), a.w));
     const v1_sumx = a.vx + (-r1.y) * a.w;
     const v1_sumy = a.vy + (r1.x) * a.w;
@@ -47,8 +48,9 @@ export function relative_velocity(
 
 export function normal_relative_velocity(
     a: Body, b: Body,
-    r1: Vect, r2,: Vect,
-    n: Vect) {
+    r1: Vect, r2: Vect,
+    n: Vect,
+) {
     //return vdot(relative_velocity(a, b, r1, r2), n);
     const v1_sumx = a.vx + (-r1.y) * a.w;
     const v1_sumy = a.vy + (r1.x) * a.w;
@@ -59,7 +61,7 @@ export function normal_relative_velocity(
 };
 
 export function apply_impulse(
-    body: Body, jx: number, jy: number, r: number,
+    body: Body, jx: number, jy: number, r: Vect,
 ) {
     //	body.v = body.v.add(vmult(j, body.m_inv));
     body.vx += jx * body.m_inv;
@@ -69,7 +71,7 @@ export function apply_impulse(
 };
 
 export function apply_impulses(
-    a: Body, b: Body, r1: number, r2: number, jx: number, jy: number,
+    a: Body, b: Body, r1: Vect, r2: Vect, jx: number, jy: number,
 ) {
     apply_impulse(a, -jx, -jy, r1);
     apply_impulse(b, jx, jy, r2);
@@ -150,5 +152,3 @@ export function mult_k(vr: Vect, k1: Vect, k2:Vect): Vect {
 export function bias_coef(errorBias: number, dt: number) {
     return 1 - errorBias ** dt;
 };
-
-

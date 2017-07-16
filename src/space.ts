@@ -26,26 +26,27 @@ import { Arbiter, CollisionHandler, ContactPoint } from './arbiter';
 import { Constraint } from './constraints/constraint';
 import { hashPair, deleteObjFromList, assert, assertSoft } from './util';
 // import { SpaceHash } from '???';
-import { collideShapes } from './collision';
+import { Contact, collideShapes } from './collision';
 import { Vect, vlengthsq, vneg, vzero } from './vect';
 import {
     componentRoot, componentActive, floodFillComponent,
 } from './space-components';
+import { Shape } from './shapes';
 
 
 const defaultCollisionHandler = new CollisionHandler();
 
-function assertSpaceUnlocked({ locked }) {
-    assert(!locked, "This addition/removal cannot be done safely during a call to cpSpaceStep() \
+function assertSpaceUnlocked(space: Space): void {
+    assert(!space.locked, "This addition/removal cannot be done safely during a call to cpSpaceStep() \
  or during a query. Put these calls into a post-step callback.");
 }
 
 // **** All Important cpSpaceStep() Function
-
-function updateFunc(shape) {
+function updateFunc(shape: Shape) {
     const body = shape.body;
     shape.update(body.p, body.rot);
 }
+
 /// Basic Unit of Simulation in Chipmunk
 export class Space {
 
@@ -201,12 +202,16 @@ export class Space {
         this.collideShapes = this.makeCollideShapes();
     }
 
-    getCurrentTimeStep() { return this.curr_dt; }
-    setIterations(iter) { this.iterations = iter; }
+    getCurrentTimeStep(): number {
+        return this.curr_dt;
+    }
+    setIterations(iter: number): void {
+        this.iterations = iter;
+    }
 
     /// returns true from inside a callback and objects cannot be added/removed.
-    isLocked() {
-        return this.locked;
+    isLocked(): boolean {
+        return !!this.locked;
     }
 
     // **** Collision handler function management
@@ -231,7 +236,7 @@ export class Space {
     }
 
     /// Unset a collision handler.
-    removeCollisionHandler(a, b) {
+    removeCollisionHandler(a: Shape, b: Shape) {
         assertSpaceUnlocked(this);
 
         delete this.collisionHandlers[hashPair(a, b)];
@@ -253,7 +258,7 @@ export class Space {
         this.defaultHandler = handler;
     }
 
-    lookupHandler(a, b) {
+    lookupHandler(a: number, b: number): CollisionHandler {
         return this.collisionHandlers[hashPair(a, b)] || this.defaultHandler;
     }
 
@@ -261,7 +266,7 @@ export class Space {
 
     /// Add a collision shape to the simulation.
     /// If the shape is attached to a static body, it will be added as a static shape.
-    addShape(shape) {
+    addShape(shape: Shape): Shape {
         const body = shape.body;
         if (body.isStatic()) return this.addStaticShape(shape);
 
@@ -279,7 +284,7 @@ export class Space {
     }
 
     /// Explicity add a shape as a static shape to the simulation.
-    addStaticShape(shape) {
+    addStaticShape(shape: Shape): Shape {
         assert(!shape.space, "This shape is already added to a space and cannot be added to another.");
         assertSpaceUnlocked(this);
 
@@ -294,7 +299,7 @@ export class Space {
     }
 
     /// Add a rigid body to the simulation.
-    addBody(body) {
+    addBody(body: Body): Body {
         assert(!body.isStatic(), "Static bodies cannot be added to a space as they are not meant to be simulated.");
         assert(!body.space, "This body is already added to a space and cannot be added to another.");
         assertSpaceUnlocked(this);
@@ -306,7 +311,7 @@ export class Space {
     }
 
     /// Add a constraint to the simulation.
-    addConstraint(constraint) {
+    addConstraint(constraint: Constraint): Constraint {
         assert(!constraint.space, "This shape is already added to a space and cannot be added to another.");
         assertSpaceUnlocked(this);
 
@@ -325,7 +330,7 @@ export class Space {
         return constraint;
     }
 
-    filterArbiters(body, filter) {
+    filterArbiters(body: Body, filter: Shape): void {
         for (const hash in this.cachedArbiters) {
             const arb = this.cachedArbiters[hash];
 
@@ -348,7 +353,7 @@ export class Space {
     }
 
     /// Remove a collision shape from the simulation.
-    removeShape(shape) {
+    removeShape(shape: Shape): void {
         const body = shape.body;
         if (body.isStatic()) {
             this.removeStaticShape(shape);
@@ -366,7 +371,7 @@ export class Space {
     }
 
     /// Remove a collision shape added using addStaticShape() from the simulation.
-    removeStaticShape(shape) {
+    removeStaticShape(shape: Shape): void {
         assert(this.containsShape(shape),
             "Cannot remove a static or sleeping shape that was not added to the space. (Removed twice maybe?)");
         assertSpaceUnlocked(this);
@@ -380,7 +385,7 @@ export class Space {
     }
 
     /// Remove a rigid body from the simulation.
-    removeBody(body) {
+    removeBody(body: Body): void {
         assert(this.containsBody(body),
             "Cannot remove a body that was not added to the space. (Removed twice maybe?)");
         assertSpaceUnlocked(this);
@@ -392,7 +397,7 @@ export class Space {
     }
 
     /// Remove a constraint from the simulation.
-    removeConstraint(constraint) {
+    removeConstraint(constraint: Constraint): void {
         assert(this.containsConstraint(constraint),
             "Cannot remove a constraint that was not added to the space. (Removed twice maybe?)");
         assertSpaceUnlocked(this);
@@ -407,21 +412,21 @@ export class Space {
     }
 
     /// Test if a collision shape has been added to the space.
-    containsShape({ space }) {
-        return space === this;
+    containsShape(shape: Shape): boolean {
+        return shape.space === this;
     }
 
     /// Test if a rigid body has been added to the space.
-    containsBody({ space }) {
-        return space == this;
+    containsBody(body: Body): boolean {
+        return body.space == this;
     }
 
     /// Test if a constraint has been added to the space.
-    containsConstraint({ space }) {
-        return space == this;
+    containsConstraint(constraint: Constraint): boolean {
+        return constraint.space == this;
     }
 
-    uncacheArbiter(arb) {
+    uncacheArbiter(arb: Arbiter): void {
         delete this.cachedArbiters[hashPair(arb.a.hashid, arb.b.hashid)];
         deleteObjFromList(this.arbiters, arb);
     }
@@ -429,7 +434,7 @@ export class Space {
     // **** Iteration
 
     /// Call @c func for each body in the space.
-    eachBody(func) {
+    eachBody(func: (body: Body) => any): void {
         this.lock(); {
             const bodies = this.bodies;
 
@@ -452,7 +457,7 @@ export class Space {
     }
 
     /// Call @c func for each shape in the space.
-    eachShape(func) {
+    eachShape(func: (shape: Shape) => any): void {
         this.lock(); {
             this.activeShapes.each(func);
             this.staticShapes.each(func);
@@ -460,7 +465,7 @@ export class Space {
     }
 
     /// Call @c func for each shape in the space.
-    eachConstraint(func) {
+    eachConstraint(func: (constraint: Constraint) => any): void {
         this.lock(); {
             const constraints = this.constraints;
 
@@ -473,10 +478,10 @@ export class Space {
     // **** Spatial Index Management
 
     /// Update the collision detection info for the static shapes in the space.
-    reindexStatic() {
+    reindexStatic(): void {
         assert(!this.locked, "You cannot manually reindex objects while the space is locked. Wait until the current query or step is complete.");
 
-        this.staticShapes.each(shape => {
+        this.staticShapes.each((shape: Shape) => {
             const body = shape.body;
             shape.update(body.p, body.rot);
         });
@@ -484,7 +489,7 @@ export class Space {
     }
 
     /// Update the collision detection data for a specific shape in the space.
-    reindexShape(shape) {
+    reindexShape(shape: Shape): void {
         assert(!this.locked, "You cannot manually reindex objects while the space is locked. Wait until the current query or step is complete.");
 
         const body = shape.body;
@@ -496,13 +501,13 @@ export class Space {
     }
 
     /// Update the collision detection data for all shapes attached to a body.
-    reindexShapesForBody({ shapeList }) {
-        for (let shape = shapeList; shape; shape = shape.next) {
+    reindexShapesForBody(body: Body): void {
+        body.eachShape((shape) => {
             this.reindexShape(shape);
-        }
+        });
     }
 
-    activateBody(body) {
+    activateBody(body: Body): void {
         assert(!body.isRogue(), "Internal error: Attempting to activate a rogue body.");
 
         if (this.locked) {
@@ -511,13 +516,13 @@ export class Space {
         } else {
             this.bodies.push(body);
 
-            for (const shape of body.shapeList) {
+            body.eachShape((shape) => {
                 this.staticShapes.remove(shape, shape.hashid);
                 this.activeShapes.insert(shape, shape.hashid);
-            }
+            });
 
-            for (let arb = body.arbiterList; arb; arb = arb.next(body)) {
-                var bodyA = arb.body_a;
+            body.eachArbiter((arbiter) => {
+                var bodyA = arbiter.body_a;
                 if (body === bodyA || bodyA.isStatic()) {
                     //var contacts = arb.contacts;
 
@@ -527,39 +532,41 @@ export class Space {
                     //cpSpacePushContacts(this, numContacts);
 
                     // Reinsert the arbiter into the arbiter cache
-                    const a = arb.a;
+                    const a = arbiter.a;
 
-                    const b = arb.b;
-                    this.cachedArbiters[hashPair(a.hashid, b.hashid)] = arb;
+                    const b = arbiter.b;
+                    this.cachedArbiters[hashPair(a.hashid, b.hashid)] = arbiter;
 
                     // Update the arbiter's state
-                    arb.stamp = this.stamp;
-                    arb.handler = this.lookupHandler(a.collision_type, b.collision_type);
-                    this.arbiters.push(arb);
+                    arbiter.stamp = this.stamp;
+                    arbiter.handler = this.lookupHandler(a.collision_type, b.collision_type);
+                    this.arbiters.push(arbiter);
                 }
-            }
+            });
 
-            for (let constraint = body.constraintList; constraint; constraint = constraint.nodeNext) {
+            body.eachConstraint((constraint) => {
                 var bodyA = constraint.a;
-                if (body === bodyA || bodyA.isStatic()) this.constraints.push(constraint);
-            }
+                if (body === bodyA || bodyA.isStatic()) {
+                    this.constraints.push(constraint);
+                }
+            });
         }
     }
 
-    deactivateBody(body) {
+    deactivateBody(body: Body): void {
         assert(!body.isRogue(), "Internal error: Attempting to deactivate a rogue body.");
 
         deleteObjFromList(this.bodies, body);
 
-        for (const shape of body.shapeList) {
+        body.eachShape((shape) => {
             this.activeShapes.remove(shape, shape.hashid);
             this.staticShapes.insert(shape, shape.hashid);
-        }
+        });
 
-        for (let arb = body.arbiterList; arb; arb = arb.next(body)) {
-            var bodyA = arb.body_a;
+        body.eachArbiter((arbiter) => {
+            var bodyA = arbiter.body_a;
             if (body === bodyA || bodyA.isStatic()) {
-                this.uncacheArbiter(arb);
+                this.uncacheArbiter(arbiter);
 
                 // Save contact values to a new block of memory so they won't time out
                 //size_t bytes = arb.numContacts*sizeof(cpContact);
@@ -567,21 +574,15 @@ export class Space {
                 //memcpy(contacts, arb.contacts, bytes);
                 //arb.contacts = contacts;
             }
-        }
+        });
 
-        for (let constraint = body.constraintList; constraint; constraint = constraint.nodeNext) {
+        body.eachConstraint((constraint) => {
             var bodyA = constraint.a;
             if (body === bodyA || bodyA.isStatic()) deleteObjFromList(this.constraints, constraint);
-        }
+        });
     }
 
-
-
-
-
-
-
-    processComponents(dt) {
+    processComponents(dt: number): void {
         var sleep = (this.sleepTimeThreshold !== Infinity);
         var bodies = this.bodies;
 
@@ -663,16 +664,14 @@ export class Space {
             }
         }
     }
+
     activateShapesTouchingShape(shape) {
         if (this.sleepTimeThreshold !== Infinity) {
-            this.shapeQuery(shape, function(shape, points) {
+            this.shapeQuery(shape, function (shape, points) {
                 shape.body.activate();
             });
         }
     }
-
-
-
 
     pointQuery(point, layers, group, func) {
         const helper = shape => {
@@ -789,8 +788,8 @@ export class Space {
 
     /// Perform a fast rectangle query on the space calling @c func for each shape found.
     /// Only the shape's bounding boxes are checked for overlap, not their full shape.
-    bbQuery(bb, layers, group, func) {
-        const helper = shape => {
+    bbQuery(bb: BB, layers, group, func): void {
+        const helper = (shape) => {
             if (
                 !(shape.group && group === shape.group) && (layers & shape.layers) &&
                 bbIntersects2(bb, shape.bb_l, shape.bb_b, shape.bb_r, shape.bb_t)
@@ -806,7 +805,10 @@ export class Space {
     }
 
     /// Query a space for any shapes overlapping the given shape and call @c func for each shape found.
-    shapeQuery(shape, func) {
+    shapeQuery(
+        shape: Shape,
+        func: (shape: Shape, contacts: Contact[]) => any,
+    ) {
         const body = shape.body;
 
         //var bb = (body ? shape.update(body.p, body.rot) : shape.bb);
@@ -859,17 +861,8 @@ export class Space {
         return anyCollision;
     }
 
-
-
-
-
-
-
-
-
-
     /// Schedule a post-step callback to be called when cpSpaceStep() finishes.
-    addPostStepCallback(func) {
+    addPostStepCallback(func: () => any): void {
         assertSoft(this.locked,
             "Adding a post-step callback when the space is not locked is unnecessary. " +
             "Post-step callbacks will not called until the end of the next call to cpSpaceStep() or the next query.");
@@ -877,7 +870,7 @@ export class Space {
         this.postStepCallbacks.push(func);
     }
 
-    runPostStepCallbacks() {
+    runPostStepCallbacks(): void {
         // Don't cache length because post step callbacks may add more post step callbacks
         // directly or indirectly.
         for (let i = 0; i < this.postStepCallbacks.length; i++) {
@@ -888,11 +881,11 @@ export class Space {
 
     // **** Locking Functions
 
-    lock() {
+    lock(): void {
         this.locked++;
     }
 
-    unlock(runPostStep) {
+    unlock(runPostStep: boolean): void {
         this.locked--;
         assert(this.locked >= 0, "Internal Error: Space lock underflow.");
 
@@ -908,99 +901,11 @@ export class Space {
         }
     }
 
-    // **** Contact Buffer Functions
-
-    /* josephg:
-     *
-     * This code might be faster in JS than just allocating objects each time - I'm
-     * really not sure. If the contact buffer solution is used, there will also
-     * need to be changes in cpCollision.js to fill a passed array instead of creating
-     * new arrays each time.
-     *
-     * TODO: Benchmark me once chipmunk is working.
-     */
-
-    /*
-    function ContactBuffer(stamp, splice)
-    {
-        this.stamp = stamp;
-        // Contact buffers are a circular linked list.
-        this.next = splice ? splice.next : this;
-        this.contacts = [];
-    };
-
-    Space.prototype.pushFreshContactBuffer = function()
-    {
-        var stamp = this.stamp;
-
-        var head = this.contactBuffersHead;
-
-        if(!head){
-            // No buffers have been allocated, make one
-            this.contactBuffersHead = new ContactBuffer(stamp, null);
-        } else if(stamp - head.next.stamp > this.collisionPersistence){
-            // The tail buffer is available, rotate the ring
-            var tail = head.next;
-            tail.stamp = stamp;
-            tail.contacts.length = 0;
-            this.contactBuffersHead = tail;
-        } else {
-            // Allocate a new buffer and push it into the ring
-            var buffer = new ContactBuffer(stamp, head);
-            this.contactBuffersHead = head.next = buffer;
-        }
-    };
-
-    cpContact *
-    cpContactBufferGetArray(cpSpace *space)
-    {
-        if(space.contactBuffersHead.numContacts + CP_MAX_CONTACTS_PER_ARBITER > CP_CONTACTS_BUFFER_SIZE){
-            // contact buffer could overflow on the next collision, push a fresh one.
-            space.pushFreshContactBuffer();
-        }
-
-        cpContactBufferHeader *head = space.contactBuffersHead;
-        return ((cpContactBuffer *)head)->contacts + head.numContacts;
-    }
-
-    void
-    cpSpacePushContacts(cpSpace *space, int count)
-    {
-        cpAssertHard(count <= CP_MAX_CONTACTS_PER_ARBITER, "Internal Error: Contact buffer overflow!");
-        space.contactBuffersHead.numContacts += count;
-    }
-
-    static void
-    cpSpacePopContacts(cpSpace *space, int count){
-        space.contactBuffersHead.numContacts -= count;
-    }
-    */
-
-    // **** Collision Detection Functions
-
-    /* Use this to re-enable object pools.
-    static void *
-    cpSpaceArbiterSetTrans(cpShape **shapes, cpSpace *space)
-    {
-        if(space.pooledArbiters.num == 0){
-            // arbiter pool is exhausted, make more
-            int count = CP_BUFFER_BYTES/sizeof(cpArbiter);
-            cpAssertHard(count, "Internal Error: Buffer size too small.");
-
-            cpArbiter *buffer = (cpArbiter *)cpcalloc(1, CP_BUFFER_BYTES);
-            cpArrayPush(space.allocatedBuffers, buffer);
-
-            for(int i=0; i<count; i++) cpArrayPush(space.pooledArbiters, buffer + i);
-        }
-
-        return cpArbiterInit((cpArbiter *)cpArrayPop(space.pooledArbiters), shapes[0], shapes[1]);
-    }*/
-
     // Callback from the spatial hash.
-    makeCollideShapes() {
+    makeCollideShapes(): (a: Shape, b: Shape) => any {
         // It would be nicer to use .bind() or something, but this is faster.
         const space_ = this;
-        return (a, b) => {
+        return (a: Shape, b: Shape) => {
             const space = space_;
 
             // Reject any of the simple cases
@@ -1075,7 +980,7 @@ export class Space {
     }
 
     // Hashset filter func to throw away old arbiters.
-    arbiterSetFilter(arb) {
+    arbiterSetFilter(arb: Arbiter): boolean {
         const ticks = this.stamp - arb.stamp;
 
         const a = arb.body_a;
@@ -1109,7 +1014,7 @@ export class Space {
     }
 
     /// Step the space forward in time by @c dt.
-    step(dt) {
+    step(dt: number): void {
         // don't step if the timestep is 0!
         if (dt === 0) return;
 
@@ -1215,11 +1120,4 @@ export class Space {
             }
         } this.unlock(true);
     }
-
-
-
-
 }
-
-
-

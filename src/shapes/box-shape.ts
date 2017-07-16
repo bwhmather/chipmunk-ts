@@ -26,12 +26,12 @@ import { vzero } from '../vect';
 
 
 export class BoxShape extends PolyShape {
-    constructor(body: Body, bb: BB) {
+    constructor(body: Body, width, height) {
         const verts = [
-            bb.l, bb.b,
-            bb.l, bb.t,
-            bb.r, bb.t,
-            bb.r, bb.b,
+            -0.5*width, -0.5*height,
+            -0.5*width, 0.5*height,
+            0.5*width, 0.5*height,
+            0.5*width, -0.5*height,
         ];
 
         super(body, verts, vzero);

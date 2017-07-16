@@ -23,6 +23,7 @@ import { SpatialIndex } from './spatial-index';
 import { BB } from './bb';
 import { vmult } from './vect';
 import { assertSoft } from './util';
+import { Shape } from './shapes';
 
 
 // This file implements a modified AABB tree for collision detection.
@@ -36,7 +37,7 @@ export class BBTree extends SpatialIndex {
     stamp;
     dynamicIndex;
 
-    constructor(staticIndex) {
+    constructor(staticIndex: SpatialIndex) {
         super(staticIndex);
 
         this.velocityFunc = null;
@@ -67,7 +68,7 @@ export class BBTree extends SpatialIndex {
         }
     }
 
-    getBB(obj, dest) {
+    getBB(obj: Shape, dest) {
         const velocityFunc = this.velocityFunc;
         if (velocityFunc) {
             const coef = 0.1;
@@ -133,7 +134,7 @@ export class BBTree extends SpatialIndex {
 
     // **** Insert/Remove
 
-    insert(obj, hashid) {
+    insert(obj: Shape, hashid: any) {
         const leaf = new Leaf(this, obj);
 
         this.leaves[hashid] = leaf;
@@ -145,7 +146,7 @@ export class BBTree extends SpatialIndex {
         this.incrementStamp();
     }
 
-    remove(obj, hashid) {
+    remove(obj: Shape, hashid: any) {
         const leaf = this.leaves[hashid];
 
         delete this.leaves[hashid];
@@ -156,7 +157,7 @@ export class BBTree extends SpatialIndex {
         leaf.recycle(this);
     }
 
-    contains(obj, hashid) {
+    contains(obj: Shape, hashid: any) {
         return this.leaves[hashid] != null;
     }
 
@@ -198,20 +199,26 @@ export class BBTree extends SpatialIndex {
 
     // This has since been removed from upstream Chipmunk - which recommends you just use query() below
     // directly.
-    pointQuery({ x, y }, func) {
-        this.query(new BB(x, y, x, y), func);
+    pointQuery(v, func) {
+        this.query(new BB(v.x, v.y, v.x, v.y), func);
     }
 
     segmentQuery(a, b, t_exit, func) {
-        if (this.root) subtreeSegmentQuery(this.root, a, b, t_exit, func);
+        if (this.root) {
+            subtreeSegmentQuery(this.root, a, b, t_exit, func);
+        }
     }
 
     query(bb, func) {
-        if (this.root) subtreeQuery(this.root, bb, func);
+        if (this.root) {
+            subtreeQuery(this.root, bb, func);
+        }
     }
 
     log() {
-        if (this.root) nodeRender(this.root, 0);
+        if (this.root) {
+            nodeRender(this.root, 0);
+        }
     }
 
     each(func) {
