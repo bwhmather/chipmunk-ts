@@ -43,9 +43,6 @@ typedef struct cpSegmentQueryInfo {
 	cpVect n;
 } cpSegmentQueryInfo;
 */
-
-
-
 let shapeIDCounter = 0;
 
 const CP_NO_GROUP = 0;
@@ -77,12 +74,11 @@ export abstract class Shape {
 
     surface_v: Vect;
 
-    // TODO
     collision_type: number;
+    collisionCode: number;
 
-    // TODO
-    collisionCode;
-    collisionTable;
+    // TODO TODO TODO should be a map
+    collisionTable: any;
 
     // TODO
     group: number;

@@ -28,48 +28,48 @@ export class Vect {
     x: number;
     y: number;
 
-    constructor(x, y) {
+    constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
     }
 
-    add(v2) {
+    add(v2: Vect): Vect {
         this.x += v2.x;
         this.y += v2.y;
         return this;
     }
 
-    sub(v2) {
+    sub(v2: Vect): Vect {
         this.x -= v2.x;
         this.y -= v2.y;
         return this;
     }
 
-    neg() {
+    neg(): Vect {
         this.x = -this.x;
         this.y = -this.y;
         return this;
     }
 
-    mult(s) {
+    mult(s: number): Vect {
         this.x *= s;
         this.y *= s;
         return this;
     }
 
-    project(v2) {
+    project(v2: Vect): Vect {
         this.mult(vdot(this, v2) / vlengthsq(v2));
         return this;
     }
 
-    rotate(v2) {
+    rotate(v2: Vect): Vect {
         this.x = this.x * v2.x - this.y * v2.y;
         this.y = this.x * v2.y + this.y * v2.x;
         return this;
     }
 }
 
-export function v(x, y) {
+export function v(x: number, y: number): Vect {
     return new Vect(x, y);
 }
 
@@ -200,7 +200,7 @@ export function vdistsq(v1: Vect, v2: Vect): number {
 }
 
 /// Returns true if the distance between v1 and v2 is less than dist.
-export function vnear(v1: Vect, v2: Vect, dist): boolean {
+export function vnear(v1: Vect, v2: Vect, dist: number): boolean {
     return vdistsq(v1, v2) < dist * dist;
 }
 
@@ -217,7 +217,7 @@ export function vslerp(v1: Vect, v2: Vect, t: number): Vect {
 }
 
 /// Spherical linearly interpolate between v1 towards v2 by no more than angle a radians
-export function vslerpconst(v1: Vect, v2: Vect, a): Vect {
+export function vslerpconst(v1: Vect, v2: Vect, a: number): Vect {
     const angle = Math.acos(vdot(v1, v2));
     return vslerp(v1, v2, Math.min(a, angle) / angle);
 }
