@@ -71,8 +71,7 @@ export class Space {
     collisionHandlers: Map<string, CollisionHandler>;
     defaultHandler: CollisionHandler;
 
-    // TODO
-    postStepCallbacks;
+    postStepCallbacks: Array<() => any>;
 
     /// Number of iterations to use in the impulse solver to solve contacts.
     iterations: number;
