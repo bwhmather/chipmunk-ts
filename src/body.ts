@@ -43,9 +43,7 @@ import {
 } from './vect';
 import { componentActivate, componentRoot } from './space-components';
 
-
-
-function filterConstraints(node, body, filter) {
+function filterConstraints(node: Constraint, body: Body, filter: Constraint) {
     if (node === filter) {
         return node.next(body);
     } else if (node.a === body) {
