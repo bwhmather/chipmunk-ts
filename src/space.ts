@@ -62,8 +62,7 @@ export class Space {
     activeShapes: BBTree;
 
     arbiters: Arbiter[];
-    // TODO
-    cachedArbiters;
+    cachedArbiters: Map<string, Arbiter>;
 
     constraints: Constraint[];
 
@@ -123,7 +122,7 @@ export class Space {
 
     // Cache the collideShapes callback function for the space.
     // TODO
-    collideShapes;
+    collideShapes: (a: Shape, b: Shape) => void;
 
     constructor() {
         this.stamp = 0;
@@ -137,7 +136,7 @@ export class Space {
         this.activeShapes = new BBTree(this.staticShapes);
 
         this.arbiters = [];
-        this.cachedArbiters = {};
+        this.cachedArbiters = new Map();
         //this.pooledArbiters = [];
 
         this.constraints = [];
@@ -215,7 +214,13 @@ export class Space {
 
     /// Set a collision handler to be used whenever the two shapes with the given collision types collide.
     /// You can pass null for any function you don't want to implement.
-    addCollisionHandler(a, b, begin, preSolve, postSolve, separate) {
+    addCollisionHandler(
+        a: number, b: number,
+        begin: (arg: Arbiter, space: Space) => any,
+        preSolve: (arg: Arbiter, space: Space) => any,
+        postSolve: (arg: Arbiter, space: Space) => any,
+        separate: (arg: Arbiter, space: Space) => any,
+    ) {
         assertSpaceUnlocked(this);
 
         // Remove any old function so the new one will get added.
@@ -243,7 +248,12 @@ export class Space {
     /// The default collision handler is invoked for each colliding pair of shapes
     /// that isn't explicitly handled by a specific collision handler.
     /// You can pass null for any function you don't want to implement.
-    setDefaultCollisionHandler(begin, preSolve, postSolve, separate) {
+    setDefaultCollisionHandler(
+        begin: (arg: Arbiter, space: Space) => any,
+        preSolve: (arg: Arbiter, space: Space) => any,
+        postSolve: (arg: Arbiter, space: Space) => any,
+        separate: (arg: Arbiter, space: Space) => any,
+    ) {
         assertSpaceUnlocked(this);
 
         const handler = new CollisionHandler();
@@ -328,9 +338,7 @@ export class Space {
     }
 
     filterArbiters(body: Body, filter: Shape): void {
-        for (const hash in this.cachedArbiters) {
-            const arb = this.cachedArbiters[hash];
-
+        this.cachedArbiters.forEach((arb: Arbiter, hash: string) => {
             // Match on the filter shape, or if it's null the filter body
             if (
                 (body === arb.body_a && (filter === arb.a || filter === null)) ||
@@ -344,9 +352,9 @@ export class Space {
                 deleteObjFromList(this.arbiters, arb);
                 //this.pooledArbiters.push(arb);
 
-                delete this.cachedArbiters[hash];
+                this.cachedArbiters.delete(hash);
             }
-        }
+        });
     }
 
     /// Remove a collision shape from the simulation.
@@ -899,7 +907,7 @@ export class Space {
     }
 
     // Callback from the spatial hash.
-    makeCollideShapes(): (a: Shape, b: Shape) => any {
+    makeCollideShapes(): (a: Shape, b: Shape) => void {
         // It would be nicer to use .bind() or something, but this is faster.
         const space_ = this;
         return (a: Shape, b: Shape) => {
