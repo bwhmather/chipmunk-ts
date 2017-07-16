@@ -164,7 +164,9 @@ export abstract class Shape {
 
     protected abstract cacheData(pos: Vect, rot: Vect): void;
 
-    protected abstract nearestPointQuery(poing: Vect): NearestPointQueryInfo;
+    abstract nearestPointQuery(poing: Vect): NearestPointQueryInfo;
+
+    abstract segmentQuery(a: Vect, b: Vect): SegmentQueryInfo;
 }
 
 /// Extended point query info struct. Returned from calling pointQuery on a shape.
