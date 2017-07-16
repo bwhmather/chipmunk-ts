@@ -32,17 +32,8 @@ import {
 import { Body } from '../body';
 import { BB } from '../bb';
 import { Space } from '../space';
-/// Segment query info struct.
-/* These are created using literals where needed.
-typedef struct cpSegmentQueryInfo {
-	/// The shape that was hit, null if no collision occured.
-	cpShape *shape;
-	/// The normalized distance along the query segment in the range [0, 1].
-	cpFloat t;
-	/// The normal of the surface hit.
-	cpVect n;
-} cpSegmentQueryInfo;
-*/
+
+
 let shapeIDCounter = 0;
 
 const CP_NO_GROUP = 0;
@@ -84,7 +75,7 @@ export abstract class Shape {
     group: number;
 
     // TODO
-    layers;
+    layers: number;
 
     space: Space;
 
@@ -118,61 +109,63 @@ export abstract class Shape {
         this.space = null;
     }
 
-    setElasticity(e) { this.e = e; }
-    setFriction(u) { this.body.activate(); this.u = u; }
-    setLayers(layers) { this.body.activate(); this.layers = layers; }
-    setSensor(sensor) { this.body.activate(); this.sensor = sensor; }
-    setCollisionType(collision_type) { this.body.activate(); this.collision_type = collision_type; }
-    getBody() { return this.body; }
+    setElasticity(e: number): void {
+        this.e = e;
+    }
+
+    setFriction(u: number): void {
+        this.body.activate(); this.u = u;
+    }
+
+    setLayers(layers: number): void {
+        this.body.activate(); this.layers = layers;
+    }
+
+    setSensor(sensor: boolean): void {
+        this.body.activate(); this.sensor = sensor;
+    }
+
+    setCollisionType(collision_type: number): void {
+        this.body.activate(); this.collision_type = collision_type;
+    }
+
+    getBody() {
+        return this.body;
+    }
 
     active() {
         // return shape->prev || (shape->body && shape->body->shapeList == shape);
         return this.body && this.body.shapeList.indexOf(this) !== -1;
     }
 
-    setBody(body) {
+    setBody(body: Body): void {
         assert(!this.active(), "You cannot change the body on an active shape. You must remove the shape from the space before changing the body.");
         this.body = body;
     }
 
-    cacheBB() {
+    cacheBB(): void {
         return this.update(this.body.p, this.body.rot);
     }
 
-    update(pos, rot) {
+    update(pos: Vect, rot: Vect) {
         assert(!isNaN(rot.x), 'Rotation is NaN');
         assert(!isNaN(pos.x), 'Position is NaN');
         this.cacheData(pos, rot);
     }
 
-    pointQuery(p) {
+    pointQuery(p: Vect) {
         const info = this.nearestPointQuery(p);
         if (info.d < 0) return info;
     }
 
-    getBB() {
+    getBB(): BB {
         return new BB(this.bb_l, this.bb_b, this.bb_r, this.bb_t);
     }
 
     protected abstract cacheData(pos: Vect, rot: Vect): void;
 
-    protected abstract nearestPointQuery({ x, y });
+    protected abstract nearestPointQuery(poing: Vect): NearestPointQueryInfo;
 }
-
-/* Not implemented - all these getters and setters. Just edit the object directly.
-CP_DefineShapeStructGetter(cpBody*, body, Body);
-void cpShapeSetBody(cpShape *shape, cpBody *body);
-
-CP_DefineShapeStructGetter(cpBB, bb, BB);
-CP_DefineShapeStructProperty(cpBool, sensor, Sensor, cpTrue);
-CP_DefineShapeStructProperty(cpFloat, e, Elasticity, cpFalse);
-CP_DefineShapeStructProperty(cpFloat, u, Friction, cpTrue);
-CP_DefineShapeStructProperty(cpVect, surface_v, SurfaceVelocity, cpTrue);
-CP_DefineShapeStructProperty(cpDataPointer, data, UserData, cpFalse);
-CP_DefineShapeStructProperty(cpCollisionType, collision_type, CollisionType, cpTrue);
-CP_DefineShapeStructProperty(cpGroup, group, Group, cpTrue);
-CP_DefineShapeStructProperty(cpLayers, layers, Layers, cpTrue);
-*/
 
 /// Extended point query info struct. Returned from calling pointQuery on a shape.
 export class PointQueryExtendedInfo {
@@ -180,7 +173,7 @@ export class PointQueryExtendedInfo {
     d: number;
     n: Vect;
 
-    constructor(shape) {
+    constructor(shape: Shape) {
         /// Shape that was hit, NULL if no collision occurred.
         this.shape = shape;
         /// Depth of the point inside the shape.
@@ -195,7 +188,7 @@ export class NearestPointQueryInfo {
     p: Vect;
     d: number;
 
-    constructor(shape, p, d) {
+    constructor(shape: Shape, p: Vect, d: number) {
         /// The nearest shape, NULL if no shape was within range.
         this.shape = shape;
         /// The closest point on the shape's surface. (in world space coordinates)
@@ -210,7 +203,7 @@ export class SegmentQueryInfo {
     t: number;
     n: Vect;
 
-    constructor(shape, t, n) {
+    constructor(shape: Shape, t: number, n: Vect) {
         /// The shape that was hit, NULL if no collision occured.
         this.shape = shape;
         /// The normalized distance along the query segment in the range [0, 1].
@@ -220,12 +213,12 @@ export class SegmentQueryInfo {
     }
 
     /// Get the hit point for a segment query.
-    hitPoint(start, end) {
+    hitPoint(start: Vect, end: Vect): Vect {
         return vlerp(start, end, this.t);
     }
 
     /// Get the hit distance for a segment query.
-    hitDist(start, end) {
+    hitDist(start: Vect, end: Vect): number {
         return vdist(start, end) * this.t;
     }
 }
