@@ -2,7 +2,8 @@
   "compilerOptions": {
     "sourceMap": true,
     "moduleResolution": "node",
-    "module": "es2015",
-    "target": "es5"
+    "target": "es5",
+    "module": "es6",
+    "lib": ["es6", "dom"]
   }
 }
