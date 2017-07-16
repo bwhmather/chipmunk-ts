@@ -31,7 +31,7 @@ import { Vect, vlengthsq, vneg, vzero } from './vect';
 import {
     componentRoot, componentActive, floodFillComponent,
 } from './space-components';
-import { Shape } from './shapes';
+import { Shape, NearestPointQueryInfo, SegmentQueryInfo } from './shapes';
 
 
 const defaultCollisionHandler = new CollisionHandler();
@@ -430,7 +430,7 @@ export class Space {
     }
 
     uncacheArbiter(arb: Arbiter): void {
-        delete this.cachedArbiters[hashPair(arb.a.hashid, arb.b.hashid)];
+        this.cachedArbiters.delete(hashPair(arb.a.hashid, arb.b.hashid));
         deleteObjFromList(this.arbiters, arb);
     }
 
@@ -538,7 +538,7 @@ export class Space {
                     const a = arbiter.a;
 
                     const b = arbiter.b;
-                    this.cachedArbiters[hashPair(a.hashid, b.hashid)] = arbiter;
+                    this.cachedArbiters.set(hashPair(a.hashid, b.hashid), arbiter);
 
                     // Update the arbiter's state
                     arbiter.stamp = this.stamp;
@@ -668,7 +668,7 @@ export class Space {
         }
     }
 
-    activateShapesTouchingShape(shape) {
+    activateShapesTouchingShape(shape: Shape): void {
         if (this.sleepTimeThreshold !== Infinity) {
             this.shapeQuery(shape, function (shape, points) {
                 shape.body.activate();
@@ -676,8 +676,11 @@ export class Space {
         }
     }
 
-    pointQuery(point, layers, group, func) {
-        const helper = shape => {
+    pointQuery(
+        point: Vect, layers: number, group: number,
+        func: (shape: Shape) => any,
+    ) {
+        const helper = (shape: Shape) => {
             if (
                 !(shape.group && group === shape.group) && (layers & shape.layers) &&
                 shape.pointQuery(point)
@@ -694,7 +697,7 @@ export class Space {
     }
 
     /// Query the space at a point and return the first shape found. Returns null if no shapes were found.
-    pointQueryFirst(point, layers, group) {
+    pointQueryFirst(point: Vect, layers: number, group: number): Shape {
         let outShape = null;
         this.pointQuery(point, layers, group, shape => {
             if (!shape.sensor) outShape = shape;
@@ -705,8 +708,12 @@ export class Space {
 
     // Nearest point query functions
 
-    nearestPointQuery(point, maxDistance, layers, group, func) {
-        const helper = shape => {
+    nearestPointQuery(
+        point: Vect, maxDistance: number,
+        layers: number, group: number,
+        func: (shape: Shape, d: number, p: Vect) => any,
+    ): void {
+        const helper = (shape: Shape) => {
             if (!(shape.group && group === shape.group) && (layers & shape.layers)) {
                 const info = shape.nearestPointQuery(point);
 
@@ -724,10 +731,13 @@ export class Space {
 
     // Unlike the version in chipmunk, this returns a NearestPointQueryInfo object. Use its .shape
     // property to get the actual shape.
-    nearestPointQueryNearest(point, maxDistance, layers, group) {
-        let out;
+    nearestPointQueryNearest(
+        point: Vect, maxDistance: number,
+        layers: number, group: number,
+    ): NearestPointQueryInfo {
+        let out: NearestPointQueryInfo = null;
 
-        const helper = shape => {
+        const helper = (shape: Shape) => {
             if (!(shape.group && group === shape.group) && (layers & shape.layers) && !shape.sensor) {
                 const info = shape.nearestPointQuery(point);
 
@@ -743,8 +753,12 @@ export class Space {
     }
 
     /// Perform a directed line segment query (like a raycast) against the space calling @c func for each shape intersected.
-    segmentQuery(start, end, layers, group, func) {
-        const helper = shape => {
+    segmentQuery(
+        start: Vect, end: Vect,
+        layers: number, group: number,
+        func: (shape: Shape, t: number, n: Vect) => any,
+    ) {
+        const helper = (shape: Shape) => {
             let info;
 
             if (
@@ -765,10 +779,13 @@ export class Space {
 
     /// Perform a directed line segment query (like a raycast) against the space and return the first shape hit.
     /// Returns null if no shapes were hit.
-    segmentQueryFirst(start, end, layers, group) {
-        let out = null;
+    segmentQueryFirst(
+        start: Vect, end: Vect,
+        layers: number, group: number,
+    ): SegmentQueryInfo {
+        let out: SegmentQueryInfo = null;
 
-        const helper = shape => {
+        const helper = (shape: Shape) => {
             let info;
 
             if (
@@ -791,8 +808,12 @@ export class Space {
 
     /// Perform a fast rectangle query on the space calling @c func for each shape found.
     /// Only the shape's bounding boxes are checked for overlap, not their full shape.
-    bbQuery(bb: BB, layers, group, func): void {
-        const helper = (shape) => {
+    bbQuery(
+        bb: BB,
+        layers: number, group: number,
+        func: (shape: Shape) => any,
+    ): void {
+        const helper = (shape: Shape) => {
             if (
                 !(shape.group && group === shape.group) && (layers & shape.layers) &&
                 bbIntersects2(bb, shape.bb_l, shape.bb_b, shape.bb_r, shape.bb_t)
@@ -811,7 +832,7 @@ export class Space {
     shapeQuery(
         shape: Shape,
         func: (shape: Shape, contacts: Contact[]) => any,
-    ) {
+    ): boolean {
         const body = shape.body;
 
         //var bb = (body ? shape.update(body.p, body.rot) : shape.bb);
@@ -823,7 +844,7 @@ export class Space {
         //shapeQueryContext context = {func, data, false};
         let anyCollision = false;
 
-        const helper = b => {
+        const helper = (b: Shape) => {
             const a = shape;
             // Reject any of the simple cases
             if (
@@ -946,15 +967,16 @@ export class Space {
             // Get an arbiter from space.arbiterSet for the two shapes.
             // This is where the persistant contact magic comes from.
             const arbHash = hashPair(a.hashid, b.hashid);
-            let arb = space.cachedArbiters[arbHash];
+            let arb = space.cachedArbiters.get(arbHash);
             if (!arb) {
-                arb = space.cachedArbiters[arbHash] = new Arbiter(a, b);
+                arb = new Arbiter(a, b)
+                space.cachedArbiters.set(arbHash, arb);
             }
 
             arb.update(contacts, handler, a, b);
 
             // Call the begin function first if it's the first step
-            if (arb.state == 'first coll' && !handler.begin(arb, space)) {
+            if (arb.state == 'first-coll' && !handler.begin(arb, space)) {
                 arb.ignore(); // permanently ignore the collision until separation
             }
 
@@ -1065,8 +1087,8 @@ export class Space {
         this.lock(); {
             // Clear out old cached arbiters and call separate callbacks
             for (hash in this.cachedArbiters) {
-                if (!this.arbiterSetFilter(this.cachedArbiters[hash])) {
-                    delete this.cachedArbiters[hash];
+                if (!this.arbiterSetFilter(this.cachedArbiters.get(hash))) {
+                    this.cachedArbiters.delete(hash);
                 }
             }
 
