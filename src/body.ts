@@ -97,8 +97,8 @@ export class Body {
 
     // This stuff is used to track information on the collision graph.
     // TODO
-    nodeRoot;
-    nodeNext;
+    nodeRoot: Body;
+    nodeNext: Body;
     nodeIdleTime: number;
 
     // Mass and one-over-mass.
