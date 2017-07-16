@@ -68,8 +68,7 @@ export class Space {
 
     locked: number;
 
-    // TODO
-    collisionHandlers;
+    collisionHandlers: Map<string, CollisionHandler>;
     defaultHandler: CollisionHandler;
 
     // TODO
@@ -143,7 +142,7 @@ export class Space {
 
         this.locked = 0;
 
-        this.collisionHandlers = {};
+        this.collisionHandlers = new Map();
         this.defaultHandler = defaultCollisionHandler;
 
         this.postStepCallbacks = [];
@@ -234,14 +233,14 @@ export class Space {
         if (postSolve) handler.postSolve = postSolve;
         if (separate) handler.separate = separate;
 
-        this.collisionHandlers[hashPair(a, b)] = handler;
+        this.collisionHandlers.set(hashPair(a, b), handler);
     }
 
     /// Unset a collision handler.
     removeCollisionHandler(a: number, b: number) {
         assertSpaceUnlocked(this);
 
-        delete this.collisionHandlers[hashPair(a, b)];
+        this.collisionHandlers.delete(hashPair(a, b));
     }
 
     /// Set a default collision handler for this space.
@@ -266,7 +265,7 @@ export class Space {
     }
 
     lookupHandler(a: number, b: number): CollisionHandler {
-        return this.collisionHandlers[hashPair(a, b)] || this.defaultHandler;
+        return this.collisionHandlers.get(hashPair(a, b)) || this.defaultHandler;
     }
 
     // **** Body, Shape, and Joint Management
