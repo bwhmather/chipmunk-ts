@@ -56,14 +56,12 @@ export class Space {
     bodies: Body[];
     rousedBodies: Body[];
     // TODO
-    sleepingComponents;
+    sleepingComponents: Body[];
 
     staticShapes: BBTree;
     activeShapes: BBTree;
 
     arbiters: Arbiter[];
-    // TODO
-    contactBuffersHead;
     // TODO
     cachedArbiters;
 
@@ -139,7 +137,6 @@ export class Space {
         this.activeShapes = new BBTree(this.staticShapes);
 
         this.arbiters = [];
-        this.contactBuffersHead = null;
         this.cachedArbiters = {};
         //this.pooledArbiters = [];
 
@@ -236,7 +233,7 @@ export class Space {
     }
 
     /// Unset a collision handler.
-    removeCollisionHandler(a: Shape, b: Shape) {
+    removeCollisionHandler(a: number, b: number) {
         assertSpaceUnlocked(this);
 
         delete this.collisionHandlers[hashPair(a, b)];

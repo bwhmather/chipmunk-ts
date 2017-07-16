@@ -26,8 +26,8 @@ export function componentRoot(body: Body) {
     return (body ? body.nodeRoot : null);
 };
 
-export function componentActivate(root): void {
-    if (!root || !root.isSleeping(root)) return;
+export function componentActivate(root: Body): void {
+    if (!root || !root.isSleeping()) return;
     assert(!root.isRogue(), "Internal Error: componentActivate() called on a rogue body.");
 
     var space = root.space;
@@ -45,7 +45,8 @@ export function componentActivate(root): void {
 
     deleteObjFromList(space.sleepingComponents, root);
 };
-export function componentAdd(root, body: Body) {
+
+export function componentAdd(root: Body, body: Body): void {
     body.nodeRoot = root;
 
     if (body !== root) {
@@ -54,7 +55,7 @@ export function componentAdd(root, body: Body) {
     }
 };
 
-export function floodFillComponent(root, body) {
+export function floodFillComponent(root: Body, body: Body): void {
     // Rogue bodies cannot be put to sleep and prevent bodies they are touching from sleeping anyway.
     // Static bodies (which are a type of rogue body) are effectively sleeping all the time.
     if (!body.isRogue()) {
@@ -73,11 +74,10 @@ export function floodFillComponent(root, body) {
     }
 };
 
-export function componentActive(root, threshold) {
+export function componentActive(root: Body, threshold: number): boolean {
     for (var body = root; body; body = body.nodeNext) {
         if (body.nodeIdleTime < threshold) return true;
     }
 
     return false;
 };
-
