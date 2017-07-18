@@ -36,6 +36,8 @@
 	This means you shouldn't be reading any of the fields directly.
  */
 import { BB } from './bb';
+import { Vect } from './vect';
+import { Shape } from './shapes';
 
 
 export abstract class SpatialIndex {
@@ -48,7 +50,6 @@ export abstract class SpatialIndex {
     constructor(staticIndex) {
         this.staticIndex = staticIndex;
 
-
         if (staticIndex) {
             if (staticIndex.dynamicIndex) {
                 throw new Error("This static index is already associated with a dynamic index.");
@@ -58,53 +59,64 @@ export abstract class SpatialIndex {
     }
 
     // Collide the objects in an index against the objects in a staticIndex using the query callback function.
-    collideStatic(staticIndex, func) {
+    protected collideStatic(
+        staticIndex: SpatialIndex,
+        func: (obj: Shape) => any,
+    ) {
         if (staticIndex.count > 0) {
-            var query = staticIndex.query;
-
-            this.each(function(obj) {
-                query(obj, new BB(obj.bb_l, obj.bb_b, obj.bb_r, obj.bb_t), func);
+            this.each((obj) => {
+                staticIndex.query(
+                    new BB(obj.bb_l, obj.bb_b, obj.bb_r, obj.bb_t), func,
+                );
             });
         }
     }
 
-    // Iterate the objects in the spatial index. @c func will be called once for each object.
-    abstract each(f);
-
     // Returns true if the spatial index contains the given object.
     // Most spatial indexes use hashed storage, so you must provide a hash value too.
-    abstract contains(obj, hashid);
+    abstract contains(obj: Shape): boolean;
 
     // Add an object to a spatial index.
-    abstract insert(obj, hashid);
+    abstract insert(obj: Shape): void;
 
     // Remove an object from a spatial index.
-    abstract remove(obj, hashid);
+    abstract remove(obj: Shape): void;
 
     // Perform a full reindex of a spatial index.
-    reindex() { }
+    reindex(): void { }
 
     // Reindex a single object in the spatial index.
-    reindexObject(obj, hashid) { }
+    reindexObject(obj: Shape): void { }
 
     // Perform a point query against the spatial index, calling @c func for each potential match.
     // A pointer to the point will be passed as @c obj1 of @c func.
     // func(shape);
-    abstract pointQuery(point, func);
+    abstract pointQuery(
+        point: Vect,
+        func: (shape: Shape) => any,
+    ): void;
 
     // Perform a segment query against the spatial index, calling @c func for each potential match.
     // func(shape);
-    abstract segmentQuery(vect_a, vect_b, t_exit, func);
+    abstract segmentQuery(
+        vect_a: Vect, vect_b: Vect, t_exit,
+        func: (shape: Shape) => any,
+    );
 
     // Perform a rectangle query against the spatial index, calling @c func for each potential match.
     // func(shape);
-    abstract query(bb, func);
+    abstract query(
+        bb: BB,
+        func: (shape: Shape) => any,
+    );
 
     // Simultaneously reindex and find all colliding objects.
     // @c func will be called once for each potentially overlapping pair of objects found.
     // If the spatial index was initialized with a static index, it will collide it's objects against that as well.
     abstract reindexQuery(func);
 
+    // Iterate the objects in the spatial index. @c func will be called once for each object.
+    abstract each(f: (obj: Shape) => any);
 }
 
 

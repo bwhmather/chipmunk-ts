@@ -134,10 +134,10 @@ export class BBTree extends SpatialIndex {
 
     // **** Insert/Remove
 
-    insert(obj: Shape, hashid: any) {
+    insert(obj: Shape) {
         const leaf = new Leaf(this, obj);
 
-        this.leaves[hashid] = leaf;
+        this.leaves[obj.hashid] = leaf;
         this.root = subtreeInsert(this.root, leaf, this);
         this.count++;
 
@@ -146,10 +146,10 @@ export class BBTree extends SpatialIndex {
         this.incrementStamp();
     }
 
-    remove(obj: Shape, hashid: any) {
-        const leaf = this.leaves[hashid];
+    remove(obj: Shape) {
+        const leaf = this.leaves[obj.hashid];
 
-        delete this.leaves[hashid];
+        delete this.leaves[obj.hashid];
         this.root = subtreeRemove(this.root, leaf, this);
         this.count--;
 
@@ -157,8 +157,8 @@ export class BBTree extends SpatialIndex {
         leaf.recycle(this);
     }
 
-    contains(obj: Shape, hashid: any) {
-        return this.leaves[hashid] != null;
+    contains(obj: Shape) {
+        return this.leaves[obj.hashid] != null;
     }
 
     reindexQuery(func) {
@@ -187,8 +187,8 @@ export class BBTree extends SpatialIndex {
         this.reindexQuery(voidQueryFunc);
     }
 
-    reindexObject(obj, hashid) {
-        const leaf = this.leaves[hashid];
+    reindexObject(obj) {
+        const leaf = this.leaves[obj.hashid];
         if (leaf) {
             if (leaf.update(this)) leaf.addPairs(this);
             this.incrementStamp();

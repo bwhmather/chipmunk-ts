@@ -282,7 +282,7 @@ export class Space {
         body.addShape(shape);
 
         shape.update(body.p, body.rot);
-        this.activeShapes.insert(shape, shape.hashid);
+        this.activeShapes.insert(shape);
         shape.space = this;
 
         return shape;
@@ -297,7 +297,7 @@ export class Space {
         body.addShape(shape);
 
         shape.update(body.p, body.rot);
-        this.staticShapes.insert(shape, shape.hashid);
+        this.staticShapes.insert(shape);
         shape.space = this;
 
         return shape;
@@ -368,7 +368,7 @@ export class Space {
             body.activate();
             body.removeShape(shape);
             this.filterArbiters(body, shape);
-            this.activeShapes.remove(shape, shape.hashid);
+            this.activeShapes.remove(shape);
             shape.space = null;
         }
     }
@@ -383,7 +383,7 @@ export class Space {
         if (body.isStatic()) body.activateStatic(shape);
         body.removeShape(shape);
         this.filterArbiters(body, shape);
-        this.staticShapes.remove(shape, shape.hashid);
+        this.staticShapes.remove(shape);
         shape.space = null;
     }
 
@@ -499,8 +499,8 @@ export class Space {
         shape.update(body.p, body.rot);
 
         // attempt to rehash the shape in both hashes
-        this.activeShapes.reindexObject(shape, shape.hashid);
-        this.staticShapes.reindexObject(shape, shape.hashid);
+        this.activeShapes.reindexObject(shape);
+        this.staticShapes.reindexObject(shape);
     }
 
     /// Update the collision detection data for all shapes attached to a body.
@@ -520,8 +520,8 @@ export class Space {
             this.bodies.push(body);
 
             body.eachShape((shape) => {
-                this.staticShapes.remove(shape, shape.hashid);
-                this.activeShapes.insert(shape, shape.hashid);
+                this.staticShapes.remove(shape);
+                this.activeShapes.insert(shape);
             });
 
             body.eachArbiter((arbiter) => {
@@ -562,8 +562,8 @@ export class Space {
         deleteObjFromList(this.bodies, body);
 
         body.eachShape((shape) => {
-            this.activeShapes.remove(shape, shape.hashid);
-            this.staticShapes.insert(shape, shape.hashid);
+            this.activeShapes.remove(shape);
+            this.staticShapes.insert(shape);
         });
 
         body.eachArbiter((arbiter) => {
