@@ -60,16 +60,12 @@ export class Pair {
 }
 
 
-
-
-
-
-
 function voidQueryFunc(obj1, obj2) { }
 
 var numNodes = 0;
 
-export class Node {
+
+export class Branch {
     isLeaf: boolean;
     obj;
     bb_l: number;
@@ -326,15 +322,15 @@ export class BBTree extends SpatialIndex {
         this.stamp = 0;
     }
 
-    makeNode(a, b) {
-        const node = this.pooledNodes;
-        if (node) {
-            this.pooledNodes = node.parent;
-            node.constructor(this, a, b);
-            return node;
+    makeBranch(a, b) {
+        const branch = this.pooledNodes;
+        if (branch) {
+            this.pooledNodes = branch.parent;
+            branch.constructor(this, a, b);
+            return branch;
         } else {
             numNodes++;
-            return new Node(this, a, b);
+            return new Branch(this, a, b);
         }
     }
 
@@ -538,7 +534,7 @@ function bbTreeMergedArea(a, b) {
 
 // **** Subtree Functions
 
-// Would it be better to make these functions instance methods on Node and Leaf?
+// Would it be better to make these functions instance methods on Branch and Leaf?
 
 function bbProximity(a, b) {
     return (
@@ -556,7 +552,7 @@ function subtreeInsert(subtree, leaf, tree) {
     if (subtree == null) {
         return leaf;
     } else if (subtree.isLeaf) {
-        return tree.makeNode(leaf, subtree);
+        return tree.makeBranch(leaf, subtree);
     } else {
         let cost_a = subtree.B.bbArea() + bbTreeMergedArea(subtree.A, leaf);
         let cost_b = subtree.A.bbArea() + bbTreeMergedArea(subtree.B, leaf);
@@ -594,16 +590,16 @@ function subtreeQuery(subtree, bb, func) {
 }
 
 /// Returns the fraction along the segment query the node hits. Returns Infinity if it doesn't hit.
-function nodeSegmentQuery(node, a, b) {
+function branchSegmentQuery(branch, a, b) {
     const idx = 1 / (b.x - a.x);
-    const tx1 = (node.bb_l == a.x ? -Infinity : (node.bb_l - a.x) * idx);
-    const tx2 = (node.bb_r == a.x ? Infinity : (node.bb_r - a.x) * idx);
+    const tx1 = (branch.bb_l == a.x ? -Infinity : (branch.bb_l - a.x) * idx);
+    const tx2 = (branch.bb_r == a.x ? Infinity : (branch.bb_r - a.x) * idx);
     const txmin = Math.min(tx1, tx2);
     const txmax = Math.max(tx1, tx2);
 
     const idy = 1 / (b.y - a.y);
-    const ty1 = (node.bb_b == a.y ? -Infinity : (node.bb_b - a.y) * idy);
-    const ty2 = (node.bb_t == a.y ? Infinity : (node.bb_t - a.y) * idy);
+    const ty1 = (branch.bb_b == a.y ? -Infinity : (branch.bb_b - a.y) * idy);
+    const ty2 = (branch.bb_t == a.y ? Infinity : (branch.bb_t - a.y) * idy);
     const tymin = Math.min(ty1, ty2);
     const tymax = Math.max(ty1, ty2);
 
@@ -622,8 +618,8 @@ function subtreeSegmentQuery(subtree, a, b, t_exit, func) {
     if (subtree.isLeaf) {
         return func(subtree.obj);
     } else {
-        const t_a = nodeSegmentQuery(subtree.A, a, b);
-        const t_b = nodeSegmentQuery(subtree.B, a, b);
+        const t_a = branchSegmentQuery(subtree.A, a, b);
+        const t_b = branchSegmentQuery(subtree.B, a, b);
 
         if (t_a < t_b) {
             if (t_a < t_exit) {
