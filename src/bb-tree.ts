@@ -62,10 +62,19 @@ export class Pair {
 
 function voidQueryFunc(obj1, obj2) { }
 
+
+interface Node {
+    parent: Branch;
+
+    bb_l: number;
+    bb_b: number;
+    bb_r: number;
+    bb_t: number;
+}
+
 var numNodes = 0;
 
-
-export class Branch {
+export class Branch implements Node {
     isLeaf: boolean;
     obj;
     bb_l: number;
@@ -160,7 +169,7 @@ export class Branch {
 
 let numLeaves = 0;
 
-export class Leaf {
+export class Leaf implements Node {
     isLeaf: boolean;
     bb_l: number;
     bb_b: number;
