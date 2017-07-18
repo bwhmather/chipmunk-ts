@@ -26,14 +26,6 @@ import { assertSoft } from './util';
 import { Shape } from './shapes';
 
 
-// This file implements a modified AABB tree for collision detection.
-
-
-// **** Pair/Thread Functions
-
-var numPairs = 0;
-
-// Objects created with constructors are faster than object literals. :(
 export class Pair {
     // TODO
     prevA;
@@ -71,8 +63,6 @@ interface Node {
     bb_r: number;
     bb_t: number;
 }
-
-var numNodes = 0;
 
 export class Branch implements Node {
     isLeaf: boolean;
@@ -167,8 +157,6 @@ export class Branch implements Node {
 }
 
 
-let numLeaves = 0;
-
 export class Leaf implements Node {
     isLeaf: boolean;
     bb_l: number;
@@ -189,7 +177,6 @@ export class Leaf implements Node {
 
         this.stamp = 1;
         this.pairs = null;
-        numLeaves++;
     }
 
     clearPairs(tree) {
@@ -338,7 +325,6 @@ export class BBTree extends SpatialIndex {
             branch.constructor(this, a, b);
             return branch;
         } else {
-            numNodes++;
             return new Branch(this, a, b);
         }
     }
@@ -394,7 +380,6 @@ export class BBTree extends SpatialIndex {
             //pair.constructor(leafA, nextA, leafB, nextB);
             return pair;
         } else {
-            numPairs++;
             return new Pair(leafA, nextA, leafB, nextB);
         }
     }
