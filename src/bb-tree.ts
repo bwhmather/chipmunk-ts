@@ -44,11 +44,6 @@ export class Pair {
         this.leafB = leafB;
         this.nextB = nextB;
     }
-
-    recycle(tree) {
-        this.prevA = tree.pooledPairs;
-        tree.pooledPairs = this;
-    }
 }
 
 
@@ -89,11 +84,6 @@ export class Branch implements Node {
         this.setB(b);
     }
 
-    recycle(tree) {
-        this.parent = tree.pooledNodes;
-        tree.pooledNodes = this;
-    }
-
     setA(value) {
         this.A = value;
         value.parent = this;
@@ -112,10 +102,8 @@ export class Branch implements Node {
         assertSoft(child == this.A || child == this.B, "Node is not a child of parent.");
 
         if (this.A == child) {
-            this.A.recycle(tree);
             this.setA(value);
         } else {
-            this.B.recycle(tree);
             this.setB(value);
         }
 
@@ -193,13 +181,8 @@ export class Leaf implements Node {
                 next = pair.nextB;
                 unlinkThread(pair.prevA, pair.leafA, pair.nextA);
             }
-            pair.recycle(tree);
             pair = next;
         }
-    }
-
-    recycle(tree) {
-        // Its not worth the overhead to recycle leaves.
     }
 
     markLeafQuery(leaf, left, tree, func) {
@@ -294,8 +277,6 @@ export class BBTree extends SpatialIndex {
     velocityFunc;
     leaves;
     root;
-    pooledNodes;
-    pooledPairs;
     stamp;
     dynamicIndex;
 
@@ -311,22 +292,7 @@ export class BBTree extends SpatialIndex {
 
         this.root = null;
 
-        // A linked list containing an object pool of tree nodes and pairs.
-        this.pooledNodes = null;
-        this.pooledPairs = null;
-
         this.stamp = 0;
-    }
-
-    makeBranch(a, b) {
-        const branch = this.pooledNodes;
-        if (branch) {
-            this.pooledNodes = branch.parent;
-            branch.constructor(this, a, b);
-            return branch;
-        } else {
-            return new Branch(this, a, b);
-        }
     }
 
     getBB(obj: Shape, dest) {
@@ -364,31 +330,13 @@ export class BBTree extends SpatialIndex {
     }
 
     makePair(leafA, nextA, leafB, nextB) {
-        //return new Pair(leafA, nextA, leafB, nextB);
-        const pair = this.pooledPairs;
-        if (pair) {
-            this.pooledPairs = pair.prevA;
-
-            pair.prevA = null;
-            pair.leafA = leafA;
-            pair.nextA = nextA;
-
-            pair.prevB = null;
-            pair.leafB = leafB;
-            pair.nextB = nextB;
-
-            //pair.constructor(leafA, nextA, leafB, nextB);
-            return pair;
-        } else {
-            return new Pair(leafA, nextA, leafB, nextB);
-        }
+        return new Pair(leafA, nextA, leafB, nextB);
     }
 
     subtreeRecycle(node) {
         if (node.isLeaf) {
             this.subtreeRecycle(node.A);
             this.subtreeRecycle(node.B);
-            node.recycle(this);
         }
     }
 
@@ -414,7 +362,6 @@ export class BBTree extends SpatialIndex {
         this.count--;
 
         leaf.clearPairs(this);
-        leaf.recycle(this);
     }
 
     contains(obj: Shape) {
@@ -505,7 +452,8 @@ function unlinkThread(prev, leaf, next) {
 function pairInsert(a, b, tree) {
     const nextA = a.pairs;
     const nextB = b.pairs;
-    const pair = tree.makePair(a, nextA, b, nextB);
+    const pair = new Pair(a, nextA, b, nextB);
+    
     a.pairs = b.pairs = pair;
 
     if (nextA) {
@@ -546,7 +494,7 @@ function subtreeInsert(subtree, leaf, tree) {
     if (subtree == null) {
         return leaf;
     } else if (subtree.isLeaf) {
-        return tree.makeBranch(leaf, subtree);
+        return new Branch(this, leaf, subtree);
     } else {
         let cost_a = subtree.B.bbArea() + bbTreeMergedArea(subtree.A, leaf);
         let cost_b = subtree.A.bbArea() + bbTreeMergedArea(subtree.B, leaf);
@@ -652,7 +600,6 @@ function subtreeRemove(subtree, leaf, tree) {
         if (parent == subtree) {
             const other = subtree.otherChild(leaf);
             other.parent = subtree.parent;
-            subtree.recycle(tree);
             return other;
         } else {
             parent.parent.replaceChild(parent, parent.otherChild(leaf), tree);
