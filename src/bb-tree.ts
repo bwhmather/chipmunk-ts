@@ -28,6 +28,276 @@ import { Shape } from './shapes';
 
 // This file implements a modified AABB tree for collision detection.
 
+
+// **** Pair/Thread Functions
+
+var numPairs = 0;
+
+// Objects created with constructors are faster than object literals. :(
+export class Pair {
+    // TODO
+    prevA;
+    leafA;
+    nextA;
+    prevB;
+    leafB;
+    nextB;
+
+    constructor(leafA, nextA, leafB, nextB) {
+        this.prevA = null;
+        this.leafA = leafA;
+        this.nextA = nextA;
+
+        this.prevB = null;
+        this.leafB = leafB;
+        this.nextB = nextB;
+    }
+
+    recycle(tree) {
+        this.prevA = tree.pooledPairs;
+        tree.pooledPairs = this;
+    }
+}
+
+
+
+
+
+
+
+function voidQueryFunc(obj1, obj2) { }
+
+var numNodes = 0;
+
+export class Node {
+    isLeaf: boolean;
+    obj;
+    bb_l: number;
+    bb_b: number;
+    bb_r: number;
+    bb_t: number;
+    parent;
+
+    A;
+    B;
+
+    constructor(tree, a, b) {
+        this.isLeaf = false;
+        this.obj = null;
+        this.bb_l = Math.min(a.bb_l, b.bb_l);
+        this.bb_b = Math.min(a.bb_b, b.bb_b);
+        this.bb_r = Math.max(a.bb_r, b.bb_r);
+        this.bb_t = Math.max(a.bb_t, b.bb_t);
+        this.parent = null;
+
+        this.setA(a);
+        this.setB(b);
+    }
+
+    recycle(tree) {
+        this.parent = tree.pooledNodes;
+        tree.pooledNodes = this;
+    }
+
+    setA(value) {
+        this.A = value;
+        value.parent = this;
+    }
+
+    setB(value) {
+        this.B = value;
+        value.parent = this;
+    }
+
+    otherChild(child) {
+        return (this.A == child ? this.B : this.A);
+    }
+
+    replaceChild(child, value, tree) {
+        assertSoft(child == this.A || child == this.B, "Node is not a child of parent.");
+
+        if (this.A == child) {
+            this.A.recycle(tree);
+            this.setA(value);
+        } else {
+            this.B.recycle(tree);
+            this.setB(value);
+        }
+
+        for (let node = this; node; node = node.parent) {
+            //node.bb = bbMerge(node.A.bb, node.B.bb);
+            const a = node.A;
+            const b = node.B;
+            node.bb_l = Math.min(a.bb_l, b.bb_l);
+            node.bb_b = Math.min(a.bb_b, b.bb_b);
+            node.bb_r = Math.max(a.bb_r, b.bb_r);
+            node.bb_t = Math.max(a.bb_t, b.bb_t);
+        }
+    }
+
+    markLeafQuery(leaf, left, tree, func) {
+        if (bbTreeIntersectsNode(leaf, this)) {
+            this.A.markLeafQuery(leaf, left, tree, func);
+            this.B.markLeafQuery(leaf, left, tree, func);
+        }
+    }
+
+    markSubtree(tree, staticRoot, func) {
+        this.A.markSubtree(tree, staticRoot, func);
+        this.B.markSubtree(tree, staticRoot, func);
+    }
+
+    intersectsBB(bb) {
+        return (
+            this.bb_l <= bb.r &&
+            bb.l <= this.bb_r &&
+            this.bb_b <= bb.t &&
+            bb.b <= this.bb_t
+        );
+    }
+
+    bbArea() {
+        return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
+    }
+}
+
+
+let numLeaves = 0;
+
+export class Leaf {
+    isLeaf: boolean;
+    bb_l: number;
+    bb_b: number;
+    bb_r: number;
+    bb_t: number;
+    obj;
+    parent;
+    stamp;
+    pairs;
+
+    constructor(tree, obj) {
+        this.isLeaf = true;
+        this.obj = obj;
+        tree.getBB(obj, this);
+
+        this.parent = null;
+
+        this.stamp = 1;
+        this.pairs = null;
+        numLeaves++;
+    }
+
+    clearPairs(tree) {
+        let pair = this.pairs;
+        let next;
+
+        this.pairs = null;
+
+        while (pair) {
+            if (pair.leafA === this) {
+                next = pair.nextA;
+                unlinkThread(pair.prevB, pair.leafB, pair.nextB);
+            } else {
+                next = pair.nextB;
+                unlinkThread(pair.prevA, pair.leafA, pair.nextA);
+            }
+            pair.recycle(tree);
+            pair = next;
+        }
+    }
+
+    recycle(tree) {
+        // Its not worth the overhead to recycle leaves.
+    }
+
+    markLeafQuery(leaf, left, tree, func) {
+        if (bbTreeIntersectsNode(leaf, this)) {
+            if (left) {
+                pairInsert(leaf, this, tree);
+            } else {
+                if (this.stamp < leaf.stamp) pairInsert(this, leaf, tree);
+                if (func) func(leaf.obj, this.obj);
+            }
+        }
+    }
+
+    markSubtree(tree, staticRoot, func) {
+        if (this.stamp == tree.getStamp()) {
+            if (staticRoot) staticRoot.markLeafQuery(this, false, tree, func);
+
+            for (let node = this; node.parent; node = node.parent) {
+                if (node == node.parent.A) {
+                    node.parent.B.markLeafQuery(this, true, tree, func);
+                } else {
+                    node.parent.A.markLeafQuery(this, false, tree, func);
+                }
+            }
+        } else {
+            let pair = this.pairs;
+            while (pair) {
+                if (this === pair.leafB) {
+                    if (func) func(pair.leafA.obj, this.obj);
+                    pair = pair.nextB;
+                } else {
+                    pair = pair.nextA;
+                }
+            }
+        }
+    }
+
+    // **** Leaf Functions
+    containsObj({ bb_l, bb_r, bb_b, bb_t }) {
+        return this.bb_l <= bb_l && this.bb_r >= bb_r && this.bb_b <= bb_b && this.bb_t >= bb_t;
+    }
+
+    update(tree) {
+        let root = tree.root;
+        const obj = this.obj;
+
+        //if(!bbContainsBB(this.bb, bb)){
+        if (!this.containsObj(obj)) {
+            tree.getBB(this.obj, this);
+
+            root = subtreeRemove(root, this, tree);
+            tree.root = subtreeInsert(root, this, tree);
+
+            this.clearPairs(tree);
+            this.stamp = tree.getStamp();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    addPairs(tree) {
+        const dynamicIndex = tree.dynamicIndex;
+        if (dynamicIndex) {
+            const dynamicRoot = dynamicIndex.root;
+            if (dynamicRoot) {
+                dynamicRoot.markLeafQuery(this, true, dynamicIndex, null);
+            }
+        } else {
+            const staticRoot = tree.staticIndex.root;
+            this.markSubtree(tree, staticRoot, null);
+        }
+    }
+
+    intersectsBB(bb) {
+        return (
+            this.bb_l <= bb.r &&
+            bb.l <= this.bb_r &&
+            this.bb_b <= bb.t &&
+            bb.b <= this.bb_t
+        );
+    }
+
+    bbArea() {
+        return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
+    }
+}
+
+
 export class BBTree extends SpatialIndex {
     velocityFunc;
     leaves;
@@ -228,297 +498,6 @@ export class BBTree extends SpatialIndex {
         }
     }
 }
-
-
-
-
-// **** Reindex
-function voidQueryFunc(obj1, obj2) { }
-
-
-
-
-var numNodes = 0;
-
-export class Node {
-    isLeaf: boolean;
-    obj;
-    bb_l: number;
-    bb_b: number;
-    bb_r: number;
-    bb_t: number;
-    parent;
-
-    A;
-    B;
-
-    constructor(tree, a, b) {
-        this.isLeaf = false;
-        this.obj = null;
-        this.bb_l = Math.min(a.bb_l, b.bb_l);
-        this.bb_b = Math.min(a.bb_b, b.bb_b);
-        this.bb_r = Math.max(a.bb_r, b.bb_r);
-        this.bb_t = Math.max(a.bb_t, b.bb_t);
-        this.parent = null;
-
-        this.setA(a);
-        this.setB(b);
-    }
-
-    recycle(tree) {
-        this.parent = tree.pooledNodes;
-        tree.pooledNodes = this;
-    }
-
-    setA(value) {
-        this.A = value;
-        value.parent = this;
-    }
-
-    setB(value) {
-        this.B = value;
-        value.parent = this;
-    }
-
-    otherChild(child) {
-        return (this.A == child ? this.B : this.A);
-    }
-
-    replaceChild(child, value, tree) {
-        assertSoft(child == this.A || child == this.B, "Node is not a child of parent.");
-
-        if (this.A == child) {
-            this.A.recycle(tree);
-            this.setA(value);
-        } else {
-            this.B.recycle(tree);
-            this.setB(value);
-        }
-
-        for (let node = this; node; node = node.parent) {
-            //node.bb = bbMerge(node.A.bb, node.B.bb);
-            const a = node.A;
-            const b = node.B;
-            node.bb_l = Math.min(a.bb_l, b.bb_l);
-            node.bb_b = Math.min(a.bb_b, b.bb_b);
-            node.bb_r = Math.max(a.bb_r, b.bb_r);
-            node.bb_t = Math.max(a.bb_t, b.bb_t);
-        }
-    }
-
-    markLeafQuery(leaf, left, tree, func) {
-        if (bbTreeIntersectsNode(leaf, this)) {
-            this.A.markLeafQuery(leaf, left, tree, func);
-            this.B.markLeafQuery(leaf, left, tree, func);
-        }
-    }
-
-    markSubtree(tree, staticRoot, func) {
-        this.A.markSubtree(tree, staticRoot, func);
-        this.B.markSubtree(tree, staticRoot, func);
-    }
-
-    intersectsBB(bb) {
-        return (
-            this.bb_l <= bb.r &&
-            bb.l <= this.bb_r &&
-            this.bb_b <= bb.t &&
-            bb.b <= this.bb_t
-        );
-    }
-
-    bbArea() {
-        return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-let numLeaves = 0;
-
-export class Leaf {
-    isLeaf: boolean;
-    bb_l: number;
-    bb_b: number;
-    bb_r: number;
-    bb_t: number;
-    obj;
-    parent;
-    stamp;
-    pairs;
-
-    constructor(tree, obj) {
-        this.isLeaf = true;
-        this.obj = obj;
-        tree.getBB(obj, this);
-
-        this.parent = null;
-
-        this.stamp = 1;
-        this.pairs = null;
-        numLeaves++;
-    }
-
-    clearPairs(tree) {
-        let pair = this.pairs;
-        let next;
-
-        this.pairs = null;
-
-        while (pair) {
-            if (pair.leafA === this) {
-                next = pair.nextA;
-                unlinkThread(pair.prevB, pair.leafB, pair.nextB);
-            } else {
-                next = pair.nextB;
-                unlinkThread(pair.prevA, pair.leafA, pair.nextA);
-            }
-            pair.recycle(tree);
-            pair = next;
-        }
-    }
-
-    recycle(tree) {
-        // Its not worth the overhead to recycle leaves.
-    }
-
-    markLeafQuery(leaf, left, tree, func) {
-        if (bbTreeIntersectsNode(leaf, this)) {
-            if (left) {
-                pairInsert(leaf, this, tree);
-            } else {
-                if (this.stamp < leaf.stamp) pairInsert(this, leaf, tree);
-                if (func) func(leaf.obj, this.obj);
-            }
-        }
-    }
-
-    markSubtree(tree, staticRoot, func) {
-        if (this.stamp == tree.getStamp()) {
-            if (staticRoot) staticRoot.markLeafQuery(this, false, tree, func);
-
-            for (let node = this; node.parent; node = node.parent) {
-                if (node == node.parent.A) {
-                    node.parent.B.markLeafQuery(this, true, tree, func);
-                } else {
-                    node.parent.A.markLeafQuery(this, false, tree, func);
-                }
-            }
-        } else {
-            let pair = this.pairs;
-            while (pair) {
-                if (this === pair.leafB) {
-                    if (func) func(pair.leafA.obj, this.obj);
-                    pair = pair.nextB;
-                } else {
-                    pair = pair.nextA;
-                }
-            }
-        }
-    }
-
-    // **** Leaf Functions
-
-    containsObj({ bb_l, bb_r, bb_b, bb_t }) {
-        return this.bb_l <= bb_l && this.bb_r >= bb_r && this.bb_b <= bb_b && this.bb_t >= bb_t;
-    }
-
-    update(tree) {
-        let root = tree.root;
-        const obj = this.obj;
-
-        //if(!bbContainsBB(this.bb, bb)){
-        if (!this.containsObj(obj)) {
-            tree.getBB(this.obj, this);
-
-            root = subtreeRemove(root, this, tree);
-            tree.root = subtreeInsert(root, this, tree);
-
-            this.clearPairs(tree);
-            this.stamp = tree.getStamp();
-
-            return true;
-        }
-
-        return false;
-    }
-
-    addPairs(tree) {
-        const dynamicIndex = tree.dynamicIndex;
-        if (dynamicIndex) {
-            const dynamicRoot = dynamicIndex.root;
-            if (dynamicRoot) {
-                dynamicRoot.markLeafQuery(this, true, dynamicIndex, null);
-            }
-        } else {
-            const staticRoot = tree.staticIndex.root;
-            this.markSubtree(tree, staticRoot, null);
-        }
-    }
-
-    intersectsBB(bb) {
-        return (
-            this.bb_l <= bb.r &&
-            bb.l <= this.bb_r &&
-            this.bb_b <= bb.t &&
-            bb.b <= this.bb_t
-        );
-    }
-
-    bbArea() {
-        return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
-    }
-}
-
-
-
-// **** Pair/Thread Functions
-
-var numPairs = 0;
-
-// Objects created with constructors are faster than object literals. :(
-export class Pair {
-    // TODO
-    prevA;
-    leafA;
-    nextA;
-    prevB;
-    leafB;
-    nextB;
-
-    constructor(leafA, nextA, leafB, nextB) {
-        this.prevA = null;
-        this.leafA = leafA;
-        this.nextA = nextA;
-
-        this.prevB = null;
-        this.leafB = leafB;
-        this.nextB = nextB;
-    }
-
-    recycle(tree) {
-        this.prevA = tree.pooledPairs;
-        tree.pooledPairs = this;
-    }
-}
-
-
-
-
-
-
-
-
-
-
 
 
 function unlinkThread(prev, leaf, next) {
