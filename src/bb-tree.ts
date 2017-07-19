@@ -60,8 +60,6 @@ interface Node {
 }
 
 export class Branch implements Node {
-    isLeaf: boolean;
-
     bb_l: number;
     bb_b: number;
     bb_r: number;
@@ -72,7 +70,6 @@ export class Branch implements Node {
     B: Node;
 
     constructor(a: Node, b: Node) {
-        this.isLeaf = false;
         this.bb_l = Math.min(a.bb_l, b.bb_l);
         this.bb_b = Math.min(a.bb_b, b.bb_b);
         this.bb_r = Math.max(a.bb_r, b.bb_r);
@@ -245,7 +242,6 @@ export class Branch implements Node {
 }
 
 export class Leaf implements Node {
-    isLeaf: boolean;
     bb_l: number;
     bb_b: number;
     bb_r: number;
@@ -259,7 +255,6 @@ export class Leaf implements Node {
     touching_left: Set<Leaf>;
 
     constructor(tree: BBTree, obj: Shape) {
-        this.isLeaf = true;
         this.obj = obj;
         tree.getBB(obj, this);
 
