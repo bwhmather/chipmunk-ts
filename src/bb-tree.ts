@@ -58,9 +58,15 @@ interface Node {
     bb_r: number;
     bb_t: number;
 
-    markLeafQuery(leaf: Leaf, left: Node, tree, func);
+    markLeafQuery(
+        leaf: Leaf, left: boolean, tree: BBTree,
+        func: (a: Shape, b: Shape) => any,
+    );
 
-    markSubtree(tree: Node, staticRoot: SpatialIndex, func);
+    markSubtree(
+        tree: BBTree, staticRoot: Node,
+        func: (a: Shape, b: Shape) => any,
+    );
 }
 
 export class Branch implements Node {
@@ -70,7 +76,7 @@ export class Branch implements Node {
     bb_b: number;
     bb_r: number;
     bb_t: number;
-    parent;
+    parent: Branch;
 
     A: Node;
     B: Node;
@@ -87,21 +93,21 @@ export class Branch implements Node {
         this.setB(b);
     }
 
-    setA(value) {
+    setA(value: Node): void {
         this.A = value;
         value.parent = this;
     }
 
-    setB(value) {
+    setB(value: Node): void {
         this.B = value;
         value.parent = this;
     }
 
-    otherChild(child) {
+    otherChild(child: Node): Node {
         return (this.A == child ? this.B : this.A);
     }
 
-    replaceChild(child, value, tree) {
+    replaceChild(child: Node, value: Node): void {
         assertSoft(child == this.A || child == this.B, "Node is not a child of parent.");
 
         if (this.A == child) {
@@ -110,30 +116,36 @@ export class Branch implements Node {
             this.setB(value);
         }
 
-        for (let node = this; node; node = node.parent) {
+        for (let branch: Branch = this; branch; branch = branch.parent) {
             //node.bb = bbMerge(node.A.bb, node.B.bb);
-            const a = node.A;
-            const b = node.B;
-            node.bb_l = Math.min(a.bb_l, b.bb_l);
-            node.bb_b = Math.min(a.bb_b, b.bb_b);
-            node.bb_r = Math.max(a.bb_r, b.bb_r);
-            node.bb_t = Math.max(a.bb_t, b.bb_t);
+            const a = branch.A;
+            const b = branch.B;
+            branch.bb_l = Math.min(a.bb_l, b.bb_l);
+            branch.bb_b = Math.min(a.bb_b, b.bb_b);
+            branch.bb_r = Math.max(a.bb_r, b.bb_r);
+            branch.bb_t = Math.max(a.bb_t, b.bb_t);
         }
     }
 
-    markLeafQuery(leaf, left, tree, func) {
+    markLeafQuery(
+        leaf: Leaf, left: boolean, tree: BBTree,
+        func: (a: Shape, b: Shape) => any,
+    ) {
         if (bbTreeIntersectsNode(leaf, this)) {
             this.A.markLeafQuery(leaf, left, tree, func);
             this.B.markLeafQuery(leaf, left, tree, func);
         }
     }
 
-    markSubtree(tree, staticRoot, func) {
+    markSubtree(
+        tree: BBTree, staticRoot: Node,
+        func: (a: Shape, b: Shape) => any,
+    ) {
         this.A.markSubtree(tree, staticRoot, func);
         this.B.markSubtree(tree, staticRoot, func);
     }
 
-    intersectsBB(bb) {
+    intersectsBB(bb: BB): boolean {
         return (
             this.bb_l <= bb.r &&
             bb.l <= this.bb_r &&
@@ -142,7 +154,7 @@ export class Branch implements Node {
         );
     }
 
-    bbArea() {
+    bbArea(): number {
         return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
     }
 }
@@ -154,8 +166,8 @@ export class Leaf implements Node {
     bb_b: number;
     bb_r: number;
     bb_t: number;
-    obj;
-    parent;
+    obj: Shape;
+    parent: Branch;
     stamp;
     pairs;
 
@@ -188,7 +200,10 @@ export class Leaf implements Node {
         }
     }
 
-    markLeafQuery(leaf, left, tree, func) {
+    markLeafQuery(
+        leaf: Leaf, left: boolean, tree: BBTree,
+        func: (a: Shape, b: Shape) => any,
+    ) {
         if (bbTreeIntersectsNode(leaf, this)) {
             if (left) {
                 pairInsert(leaf, this, tree);
@@ -199,11 +214,14 @@ export class Leaf implements Node {
         }
     }
 
-    markSubtree(tree, staticRoot, func) {
+    markSubtree(
+        tree: BBTree, staticRoot: Node,
+        func: (a: Shape, b: Shape) => any,
+    ) {
         if (this.stamp == tree.getStamp()) {
             if (staticRoot) staticRoot.markLeafQuery(this, false, tree, func);
 
-            for (let node = this; node.parent; node = node.parent) {
+            for (let node: Node = this; node.parent; node = node.parent) {
                 if (node == node.parent.A) {
                     node.parent.B.markLeafQuery(this, true, tree, func);
                 } else {
@@ -224,11 +242,16 @@ export class Leaf implements Node {
     }
 
     // **** Leaf Functions
-    containsObj({ bb_l, bb_r, bb_b, bb_t }) {
-        return this.bb_l <= bb_l && this.bb_r >= bb_r && this.bb_b <= bb_b && this.bb_t >= bb_t;
+    containsObj(obj: Shape): boolean  {
+        return (
+            this.bb_l <= obj.bb_l &&
+            this.bb_r >= obj.bb_r &&
+            this.bb_b <= obj.bb_b &&
+            this.bb_t >= obj.bb_t
+        );
     }
 
-    update(tree) {
+    update(tree: BBTree): boolean {
         let root = tree.root;
         const obj = this.obj;
 
@@ -248,7 +271,7 @@ export class Leaf implements Node {
         return false;
     }
 
-    addPairs(tree) {
+    addPairs(tree: BBTree) {
         const dynamicIndex = tree.dynamicIndex;
         if (dynamicIndex) {
             const dynamicRoot = dynamicIndex.root;
@@ -261,7 +284,7 @@ export class Leaf implements Node {
         }
     }
 
-    intersectsBB(bb) {
+    intersectsBB(bb): boolean {
         return (
             this.bb_l <= bb.r &&
             bb.l <= this.bb_r &&
@@ -270,7 +293,7 @@ export class Leaf implements Node {
         );
     }
 
-    bbArea() {
+    bbArea(): number {
         return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
     }
 }
