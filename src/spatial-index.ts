@@ -43,7 +43,7 @@ import { Shape } from './shapes';
 export abstract class SpatialIndex {
 
     // The number of objects in the spatial index.
-    count: number;
+    count: number = 0;
 
     staticIndex: SpatialIndex;
     dynamicIndex: SpatialIndex;

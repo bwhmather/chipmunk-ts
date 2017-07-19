@@ -405,27 +405,19 @@ export class Leaf implements Node {
 
 
 export class BBTree extends SpatialIndex {
-    velocityFunc: (obj: Shape) => Vect;
+    velocityFunc: (obj: Shape) => Vect = null;
     leaves: Map<Shape, Leaf>;  // TODO TODO TODO
-    root: Node;
-    stamp: number;
+    root: Node = null;
+    stamp: number = 0;
 
     staticIndex: BBTree;
     dynamicIndex: BBTree;
 
-    constructor(staticIndex: SpatialIndex) {
+    constructor(staticIndex: BBTree) {
         super(staticIndex);
-
-        this.velocityFunc = null;
 
         // This is a hash from object ID -> object for the objects stored in the BBTree.
         this.leaves = new Map();
-        // A count of the number of leaves in the BBTree.
-        this.count = 0;
-
-        this.root = null;
-
-        this.stamp = 0;
     }
 
     getBB(obj: Shape, dest: Leaf): void {
