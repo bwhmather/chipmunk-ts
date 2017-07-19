@@ -65,7 +65,7 @@ interface Node {
 
 export class Branch implements Node {
     isLeaf: boolean;
-    obj;
+
     bb_l: number;
     bb_b: number;
     bb_r: number;
@@ -77,7 +77,6 @@ export class Branch implements Node {
 
     constructor(tree, a, b) {
         this.isLeaf = false;
-        this.obj = null;
         this.bb_l = Math.min(a.bb_l, b.bb_l);
         this.bb_b = Math.min(a.bb_b, b.bb_b);
         this.bb_r = Math.max(a.bb_r, b.bb_r);
