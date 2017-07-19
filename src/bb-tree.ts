@@ -72,8 +72,8 @@ export class Branch implements Node {
     bb_t: number;
     parent;
 
-    A;
-    B;
+    A: Node;
+    B: Node;
 
     constructor(tree, a, b) {
         this.isLeaf = false;
