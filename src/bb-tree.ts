@@ -59,6 +59,7 @@ interface Node {
     ): number;
 }
 
+
 export class Branch implements Node {
     bb_l: number;
     bb_b: number;
@@ -114,8 +115,6 @@ export class Branch implements Node {
         }
     }
 
-
-
     insert(leaf: Leaf): Node {
         let cost_a = this.B.bbArea() + bbTreeMergedArea(this.A, leaf);
         let cost_b = this.A.bbArea() + bbTreeMergedArea(this.B, leaf);
@@ -138,7 +137,6 @@ export class Branch implements Node {
 
         return this;
     }
-
 
     markLeafQuery(
         leaf: Leaf, left: boolean, tree: BBTree,
@@ -238,8 +236,8 @@ export class Branch implements Node {
 
         return t_exit;
     };
-
 }
+
 
 export class Leaf implements Node {
     bb_l: number;
@@ -383,7 +381,6 @@ export class Leaf implements Node {
         return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
     }
 
-
     query(bb: BB, func: (obj: Shape) => any): void {
         if (this.intersectsBB(bb)) {
             func(this.obj);
@@ -450,7 +447,6 @@ export class BBTree extends SpatialIndex {
     }
 
     // **** Insert/Remove
-
     insert(obj: Shape): void {
         const leaf = new Leaf(this, obj);
 
@@ -558,17 +554,12 @@ function bbTreeMergedArea(a: Node, b: Node): number {
 };
 
 
-// **** Subtree Functions
-
-// Would it be better to make these functions instance methods on Branch and Leaf?
-
 function bbProximity(a: Node, b: Node): number {
     return (
         Math.abs(a.bb_l + a.bb_r - b.bb_l - b.bb_r) +
         Math.abs(a.bb_b + a.bb_t - b.bb_b - b.bb_t)
     );
 };
-
 
 
 function subtreeInsert(subtree: Node, leaf: Leaf, tree: BBTree): Node {
@@ -579,12 +570,14 @@ function subtreeInsert(subtree: Node, leaf: Leaf, tree: BBTree): Node {
     }
 }
 
+
 function subtreeQuery(
     subtree: Node, bb: BB,
     func: (obj: Shape) => any,
 ): void {
     subtree.query(bb, func);
 }
+
 
 /// Returns the fraction along the segment query the node hits. Returns Infinity if it doesn't hit.
 function subtreeSegmentQuery(
