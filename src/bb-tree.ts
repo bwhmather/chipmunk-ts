@@ -26,27 +26,6 @@ import { assertSoft } from './util';
 import { Shape } from './shapes';
 
 
-export class Pair {
-    // TODO
-    prevA;
-    leafA;
-    nextA;
-    prevB;
-    leafB;
-    nextB;
-
-    constructor(leafA, nextA, leafB, nextB) {
-        this.prevA = null;
-        this.leafA = leafA;
-        this.nextA = nextA;
-
-        this.prevB = null;
-        this.leafB = leafB;
-        this.nextB = nextB;
-    }
-}
-
-
 function voidQueryFunc(obj1, obj2) { }
 
 
@@ -171,7 +150,6 @@ export class Leaf implements Node {
     parent: Branch;
     number: number;
     stamp;
-    pairs;
 
     touching_right: Set<Leaf>;
     touching_left: Set<Leaf>;
@@ -184,7 +162,6 @@ export class Leaf implements Node {
         this.parent = null;
 
         this.stamp = 1;
-        this.pairs = null;
         this.touching_left = new Set();
         this.touching_right = new Set();
         this.number = ++numLeaves;
@@ -200,22 +177,6 @@ export class Leaf implements Node {
 
         this.touching_left.clear();
         this.touching_right.clear();
-
-        let pair = this.pairs;
-        let next;
-
-        this.pairs = null;
-
-        while (pair) {
-            if (pair.leafA === this) {
-                next = pair.nextA;
-                unlinkThread(pair.prevB, pair.leafB, pair.nextB);
-            } else {
-                next = pair.nextB;
-                unlinkThread(pair.prevA, pair.leafA, pair.nextA);
-            }
-            pair = next;
-        }
     }
 
     markLeafQuery(
@@ -224,17 +185,14 @@ export class Leaf implements Node {
     ) {
         if (bbTreeIntersectsNode(leaf, this)) {
             if (left) {
-
                 leaf.touching_left.add(this);
                 this.touching_right.add(leaf);
-                pairInsert(leaf, this, tree);
             } else {
                 // we don't have to check if the other leaf has been updated
                 // as this operation is idempotent.
                 leaf.touching_right.add(this);
                 this.touching_left.add(leaf);
-
-                if (this.stamp < leaf.stamp) pairInsert(this, leaf, tree);
+                
                 if (func) func(leaf.obj, this.obj);
             }
         }
@@ -381,10 +339,6 @@ export class BBTree extends SpatialIndex {
         }
     }
 
-    makePair(leafA, nextA, leafB, nextB) {
-        return new Pair(leafA, nextA, leafB, nextB);
-    }
-
     subtreeRecycle(node) {
         if (node.isLeaf) {
             this.subtreeRecycle(node.A);
@@ -485,35 +439,6 @@ export class BBTree extends SpatialIndex {
         for (hashid in this.leaves) {
             func(this.leaves[hashid].obj);
         }
-    }
-}
-
-
-function unlinkThread(prev, leaf, next) {
-    if (next) {
-        if (next.leafA === leaf) next.prevA = prev; else next.prevB = prev;
-    }
-
-    if (prev) {
-        if (prev.leafA === leaf) prev.nextA = next; else prev.nextB = next;
-    } else {
-        leaf.pairs = next;
-    }
-}
-
-function pairInsert(a: Leaf, b: Leaf, tree: BBTree): void {
-    const nextA = a.pairs;
-    const nextB = b.pairs;
-    const pair = new Pair(a, nextA, b, nextB);
-
-    a.pairs = b.pairs = pair;
-
-    if (nextA) {
-        if (nextA.leafA === a) nextA.prevA = pair; else nextA.prevB = pair;
-    }
-
-    if (nextB) {
-        if (nextB.leafA === b) nextB.prevA = pair; else nextB.prevB = pair;
     }
 }
 
