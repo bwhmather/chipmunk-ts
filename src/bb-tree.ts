@@ -159,6 +159,7 @@ export class Branch implements Node {
     }
 }
 
+let numLeaves: number = 0;
 
 export class Leaf implements Node {
     isLeaf: boolean;
@@ -168,8 +169,12 @@ export class Leaf implements Node {
     bb_t: number;
     obj: Shape;
     parent: Branch;
+    number: number;
     stamp;
     pairs;
+
+    touching_right: Set<Leaf>;
+    touching_left: Set<Leaf>;
 
     constructor(tree, obj) {
         this.isLeaf = true;
@@ -180,9 +185,22 @@ export class Leaf implements Node {
 
         this.stamp = 1;
         this.pairs = null;
+        this.touching_left = new Set();
+        this.touching_right = new Set();
+        this.number = ++numLeaves;
     }
 
     clearPairs(tree) {
+        this.touching_left.forEach((other: Leaf) => {
+            other.touching_right.delete(this);
+        });
+        this.touching_right.forEach((other: Leaf) => {
+            other.touching_left.delete(this);
+        });
+
+        this.touching_left.clear();
+        this.touching_right.clear();
+
         let pair = this.pairs;
         let next;
 
@@ -206,8 +224,16 @@ export class Leaf implements Node {
     ) {
         if (bbTreeIntersectsNode(leaf, this)) {
             if (left) {
+
+                leaf.touching_left.add(this);
+                this.touching_right.add(leaf);
                 pairInsert(leaf, this, tree);
             } else {
+                // we don't have to check if the other leaf has been updated
+                // as this operation is idempotent.
+                leaf.touching_right.add(this);
+                this.touching_left.add(leaf);
+
                 if (this.stamp < leaf.stamp) pairInsert(this, leaf, tree);
                 if (func) func(leaf.obj, this.obj);
             }
@@ -219,6 +245,8 @@ export class Leaf implements Node {
         func: (a: Shape, b: Shape) => any,
     ) {
         if (this.stamp == tree.getStamp()) {
+            // Shape has been changed in the most recent step.  Rebuild the
+            // list of neighbours.
             if (staticRoot) staticRoot.markLeafQuery(this, false, tree, func);
 
             for (let node: Node = this; node.parent; node = node.parent) {
@@ -229,20 +257,18 @@ export class Leaf implements Node {
                 }
             }
         } else {
-            let pair = this.pairs;
-            while (pair) {
-                if (this === pair.leafB) {
-                    if (func) func(pair.leafA.obj, this.obj);
-                    pair = pair.nextB;
-                } else {
-                    pair = pair.nextA;
-                }
+            // Shape has not been changed in the most recent step.  Use the
+            // cached list of neighbours.
+            if (func) {
+                this.touching_right.forEach((other: Leaf) => {
+                    func(this.obj, other.obj);
+                });
             }
         }
     }
 
     // **** Leaf Functions
-    containsObj(obj: Shape): boolean  {
+    containsObj(obj: Shape): boolean {
         return (
             this.bb_l <= obj.bb_l &&
             this.bb_r >= obj.bb_r &&
@@ -475,7 +501,7 @@ function unlinkThread(prev, leaf, next) {
     }
 }
 
-function pairInsert(a, b, tree) {
+function pairInsert(a: Leaf, b: Leaf, tree: BBTree): void {
     const nextA = a.pairs;
     const nextB = b.pairs;
     const pair = new Pair(a, nextA, b, nextB);
