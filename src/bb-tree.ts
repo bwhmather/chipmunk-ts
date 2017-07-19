@@ -409,7 +409,7 @@ export class Leaf implements Node {
 
 export class BBTree extends SpatialIndex {
     velocityFunc: (obj: Shape) => Vect;
-    leaves: any;  // TODO TODO TODO
+    leaves: Map<Shape, Leaf>;  // TODO TODO TODO
     root: Node;
     stamp: number;
 
@@ -422,7 +422,7 @@ export class BBTree extends SpatialIndex {
         this.velocityFunc = null;
 
         // This is a hash from object ID -> object for the objects stored in the BBTree.
-        this.leaves = {};
+        this.leaves = new Map();
         // A count of the number of leaves in the BBTree.
         this.count = 0;
 
@@ -470,7 +470,7 @@ export class BBTree extends SpatialIndex {
     insert(obj: Shape): void {
         const leaf = new Leaf(this, obj);
 
-        this.leaves[obj.hashid] = leaf;
+        this.leaves.set(obj, leaf);
         this.root = subtreeInsert(this.root, leaf, this);
         this.count++;
 
@@ -480,9 +480,9 @@ export class BBTree extends SpatialIndex {
     }
 
     remove(obj: Shape) {
-        const leaf = this.leaves[obj.hashid];
+        const leaf = this.leaves.get(obj);
 
-        delete this.leaves[obj.hashid];
+        this.leaves.delete(obj);
         this.root = subtreeRemove(this.root, leaf, this);
         this.count--;
 
@@ -490,19 +490,15 @@ export class BBTree extends SpatialIndex {
     }
 
     contains(obj: Shape) {
-        return this.leaves[obj.hashid] != null;
+        return this.leaves.has(obj);
     }
 
     reindexQuery(func: (a: Shape, b: Shape) => any): void {
         if (!this.root) return;
 
-        // LeafUpdate() may modify this.root. Don't cache it.
-        let hashid;
-
-        const leaves = this.leaves;
-        for (hashid in leaves) {
-            leaves[hashid].update(this);
-        }
+        this.leaves.forEach((leaf: Leaf) => {
+            leaf.update(this);
+        });
 
         const staticIndex = this.staticIndex;
         const staticRoot = staticIndex && staticIndex.root;
@@ -520,7 +516,7 @@ export class BBTree extends SpatialIndex {
     }
 
     reindexObject(obj: Shape): void {
-        const leaf = this.leaves[obj.hashid];
+        const leaf = this.leaves.get(obj);
         if (leaf) {
             if (leaf.update(this)) leaf.addPairs(this);
             this.incrementStamp();
@@ -563,10 +559,9 @@ export class BBTree extends SpatialIndex {
     }
 
     each(func: (obj: Shape) => any) {
-        let hashid;
-        for (hashid in this.leaves) {
-            func(this.leaves[hashid].obj);
-        }
+        this.leaves.forEach((leaf: Leaf) => {
+            func(leaf.obj);
+        });
     }
 }
 
