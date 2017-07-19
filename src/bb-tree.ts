@@ -53,6 +53,8 @@ interface Node {
 
     query(bb: BB, func: (obj: Shape) => any): void;
 
+    /// Returns the fraction along the segment query the node hits. Returns
+    /// Infinity if it doesn't hit.
     segmentQuery(
         a: Vect, b: Vect, t_exit: number,
         func: (obj: Shape) => any,
@@ -344,7 +346,11 @@ export class Leaf implements Node {
             tree.getBB(this.obj, this);
 
             root = subtreeRemove(root, this, tree);
-            tree.root = subtreeInsert(root, this, tree);
+            if (tree.root) {
+                tree.root = tree.root.insert(this);
+            } else {
+                tree.root = this;
+            }
 
             this.clearPairs(tree);
             this.stamp = tree.getStamp();
@@ -451,7 +457,11 @@ export class BBTree extends SpatialIndex {
         const leaf = new Leaf(this, obj);
 
         this.leaves.set(obj, leaf);
-        this.root = subtreeInsert(this.root, leaf, this);
+        if (this.root) {
+            this.root = this.root.insert(leaf);
+        } else {
+            this.root = leaf
+        }
         this.count++;
 
         leaf.stamp = this.getStamp();
@@ -519,7 +529,7 @@ export class BBTree extends SpatialIndex {
         func: (obj: Shape) => any,
     ): void {
         if (this.root) {
-            subtreeSegmentQuery(this.root, a, b, t_exit, func);
+            this.root.segmentQuery(a, b, t_exit, func);
         }
     }
 
@@ -528,7 +538,7 @@ export class BBTree extends SpatialIndex {
         func: (obj: Shape) => any,
     ): void {
         if (this.root) {
-            subtreeQuery(this.root, bb, func);
+            this.root.query(bb, func);
         }
     }
 
@@ -561,32 +571,6 @@ function bbProximity(a: Node, b: Node): number {
     );
 };
 
-
-function subtreeInsert(subtree: Node, leaf: Leaf, tree: BBTree): Node {
-    if (subtree == null) {
-        return leaf;
-    } else {
-        return subtree.insert(leaf);
-    }
-}
-
-
-function subtreeQuery(
-    subtree: Node, bb: BB,
-    func: (obj: Shape) => any,
-): void {
-    subtree.query(bb, func);
-}
-
-
-/// Returns the fraction along the segment query the node hits. Returns Infinity if it doesn't hit.
-function subtreeSegmentQuery(
-    subtree: Node, a: Vect, b: Vect, t_exit: number,
-    func: (obj: Shape) => any,
-): number {
-    // TODO
-    return subtree.segmentQuery(a, b, t_exit, func);
-};
 
 
 function subtreeRemove(subtree: Node, leaf: Leaf, tree: BBTree): Node {
