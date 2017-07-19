@@ -45,9 +45,10 @@ export abstract class SpatialIndex {
     // The number of objects in the spatial index.
     count: number;
 
-    staticIndex;
+    staticIndex: SpatialIndex;
+    dynamicIndex: SpatialIndex;
 
-    constructor(staticIndex) {
+    constructor(staticIndex: SpatialIndex) {
         this.staticIndex = staticIndex;
 
         if (staticIndex) {
@@ -61,12 +62,13 @@ export abstract class SpatialIndex {
     // Collide the objects in an index against the objects in a staticIndex using the query callback function.
     protected collideStatic(
         staticIndex: SpatialIndex,
-        func: (obj: Shape) => any,
+        func: (a: Shape, b: Shape) => any,
     ) {
         if (staticIndex.count > 0) {
             this.each((obj) => {
                 staticIndex.query(
-                    new BB(obj.bb_l, obj.bb_b, obj.bb_r, obj.bb_t), func,
+                    new BB(obj.bb_l, obj.bb_b, obj.bb_r, obj.bb_t),
+                    (other: Shape) => { func(obj, other) },
                 );
             });
         }
@@ -93,30 +95,34 @@ export abstract class SpatialIndex {
     // func(shape);
     abstract pointQuery(
         point: Vect,
-        func: (shape: Shape) => any,
+        func: (obj: Shape) => any,
     ): void;
 
     // Perform a segment query against the spatial index, calling @c func for each potential match.
     // func(shape);
     abstract segmentQuery(
-        vect_a: Vect, vect_b: Vect, t_exit,
-        func: (shape: Shape) => any,
-    );
+        vect_a: Vect, vect_b: Vect, t_exit: number,
+        func: (obj: Shape) => any,
+    ): void;
 
     // Perform a rectangle query against the spatial index, calling @c func for each potential match.
     // func(shape);
     abstract query(
         bb: BB,
-        func: (shape: Shape) => any,
-    );
+        func: (obj: Shape) => any,
+    ): void;
 
     // Simultaneously reindex and find all colliding objects.
     // @c func will be called once for each potentially overlapping pair of objects found.
     // If the spatial index was initialized with a static index, it will collide it's objects against that as well.
-    abstract reindexQuery(func);
+    abstract reindexQuery(
+        func: (a: Shape, b: Shape) => any,
+    ): void;
 
     // Iterate the objects in the spatial index. @c func will be called once for each object.
-    abstract each(f: (obj: Shape) => any);
+    abstract each(
+        f: (obj: Shape) => any,
+    ): void;
 }
 
 
