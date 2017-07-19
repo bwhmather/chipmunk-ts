@@ -244,8 +244,6 @@ export class Branch implements Node {
 
 }
 
-let numLeaves: number = 0;
-
 export class Leaf implements Node {
     isLeaf: boolean;
     bb_l: number;
@@ -270,7 +268,6 @@ export class Leaf implements Node {
         this.stamp = 1;
         this.touching_left = new Set();
         this.touching_right = new Set();
-        this.number = ++numLeaves;
     }
 
     insert(leaf: Leaf): Node {
