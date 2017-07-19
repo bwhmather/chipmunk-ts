@@ -68,7 +68,7 @@ export abstract class SpatialIndex {
             this.each((obj) => {
                 staticIndex.query(
                     new BB(obj.bb_l, obj.bb_b, obj.bb_r, obj.bb_t),
-                    (other: Shape) => { func(obj, other) },
+                    func as any,  // TODO TODO TODO
                 );
             });
         }
