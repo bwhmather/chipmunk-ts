@@ -57,6 +57,10 @@ interface Node {
     bb_b: number;
     bb_r: number;
     bb_t: number;
+
+    markLeafQuery(leaf: Leaf, left: Node, tree, func);
+
+    markSubtree(tree: Node, staticRoot: SpatialIndex, func);
 }
 
 export class Branch implements Node {
@@ -453,7 +457,7 @@ function pairInsert(a, b, tree) {
     const nextA = a.pairs;
     const nextB = b.pairs;
     const pair = new Pair(a, nextA, b, nextB);
-    
+
     a.pairs = b.pairs = pair;
 
     if (nextA) {
