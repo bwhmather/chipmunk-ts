@@ -21,10 +21,9 @@
  * SOFTWARE.
  */
 
-import { Constraint } from './constraint';
-import { clamp } from '../util';
-import { Body } from '../body';
-
+import { Body } from "../body";
+import { clamp } from "../util";
+import { Constraint } from "./constraint";
 
 export class SimpleMotor extends Constraint {
     rate: number;
@@ -66,7 +65,7 @@ export class SimpleMotor extends Constraint {
         // compute relative rotational velocity
         const wr = b.w - a.w + this.rate;
 
-        // compute normal impulse	
+        // compute normal impulse
         let j = -wr * this.iSum;
         const jOld = this.jAcc;
         this.jAcc = clamp(jOld + j, -this.jMax, this.jMax);
@@ -81,4 +80,3 @@ export class SimpleMotor extends Constraint {
         return Math.abs(this.jAcc);
     }
 }
-

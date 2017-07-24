@@ -21,16 +21,16 @@
  * SOFTWARE.
  */
 
-import { Body } from './body';
-import { Space } from './space';
-import { Shape } from './shapes';
-import { Contact } from './collision';
+import { Body } from "./body";
+import { Contact } from "./collision";
 import {
     apply_bias_impulse, apply_impulses,
     k_scalar, normal_relative_velocity,
-} from './constraints/util';
-import { clamp } from './util';
-import { Vect, vdot2, vmult, vneg, vperp, vsub, vzero } from './vect';
+} from "./constraints/util";
+import { Shape } from "./shapes";
+import { Space } from "./space";
+import { clamp } from "./util";
+import { vdot2, Vect, vmult, vneg, vperp, vsub, vzero } from "./vect";
 
 /// @defgroup cpArbiter cpArbiter
 /// The cpArbiter struct controls pairs of colliding shapes.
@@ -38,7 +38,6 @@ import { Vect, vdot2, vmult, vneg, vperp, vsub, vzero } from './vect';
 /// allowing you to retrieve information on the collision and control it.
 
 const CP_MAX_CONTACTS_PER_ARBITER = 4;
-
 
 /// A struct that wraps up the important collision data for an arbiter.
 export class ContactPoint {
@@ -142,7 +141,7 @@ export class Arbiter {
         this.stamp = 0;
         this.handler = null;
         this.swappedColl = false;
-        this.state = 'first-coll';
+        this.state = "first-coll";
     }
 
     getShapes(): [Shape, Shape] {
@@ -209,7 +208,7 @@ export class Arbiter {
     /// If called from a pre-step callback, you will still need to return false
     /// if you want it to be ignored in the current step.
     ignore() {
-        this.state = 'ignore';
+        this.state = "ignore";
     }
 
     /// Return the colliding shapes involved for this arbiter.
@@ -226,7 +225,7 @@ export class Arbiter {
     /// Returns true if this is the first step a pair of objects started
     /// colliding.
     isFirstContact(): boolean {
-        return this.state === 'first-coll';
+        return this.state === "first-coll";
     }
 
     /// Return a contact set from an arbiter.
@@ -298,7 +297,7 @@ export class Arbiter {
         this.b = b; this.body_b = b.body;
 
         // mark it as new if it's been cached
-        if (this.state == 'cached') this.state = 'first-coll';
+        if (this.state == "cached") this.state = "first-coll";
     }
 
     preStep(dt: number, slop: number, bias: number): void {
@@ -380,7 +379,7 @@ export class Arbiter {
             //var vrt = vdot(vadd(vr, surface_vr), vperp(n));
             const vrt = vdot2(
                 vrx + surface_vr.x, vry + surface_vr.y,
-                -n.y, n.x
+                -n.y, n.x,
             );
 
             const jbn = (con.bias - vbn) * nMass;
@@ -458,7 +457,7 @@ function unthreadHelper(arb: Arbiter, body: Body, prev: Arbiter, next: Arbiter) 
             next.thread_b_prev = prev;
         }
     }
-};
+}
 
 // TODO is it worth splitting velocity/position correction?
 

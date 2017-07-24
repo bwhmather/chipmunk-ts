@@ -21,24 +21,22 @@
  * SOFTWARE.
  */
 
-import { Constraint } from './constraint';
+import { Body } from "../body";
+import { assertSoft } from "../util";
 import {
-    apply_impulses, normal_relative_velocity,
-    k_scalar,
-} from './util';
-import { assertSoft } from '../util';
+    vadd,
+    Vect, vlength, vmult,
+    vrotate, vsub,
+} from "../vect";
+import { Constraint } from "./constraint";
 import {
-    Vect,
-    vadd, vsub, vmult,
-    vlength, vrotate,
-} from '../vect';
-import { Body } from '../body';
-
+    apply_impulses, k_scalar,
+    normal_relative_velocity,
+} from "./util";
 
 function defaultSpringForce(spring: DampedSpring, dist: number): number {
     return (spring.restLength - dist) * spring.stiffness;
-};
-
+}
 
 export class DampedSpring extends Constraint {
     anchr1: Vect;
@@ -134,4 +132,3 @@ export class DampedSpring extends Constraint {
         return 0;
     }
 }
-

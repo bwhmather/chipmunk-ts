@@ -21,23 +21,22 @@
  * SOFTWARE.
  */
 
-import { Constraint } from './constraint';
+import { Body } from "../body";
+import { clamp } from "../util";
+import {
+    vadd, vdot,
+    Vect, vlength,
+    vneg, vnormalize_safe,
+    vrotate, vsub,
+    vzero,
+} from "../vect";
+import { Constraint } from "./constraint";
 import {
     apply_impulses,
     bias_coef,
     k_scalar,
     relative_velocity,
-} from './util';
-import {
-    Vect, vzero,
-    vadd, vsub,
-    vdot, vlength,
-    vneg, vrotate,
-    vnormalize_safe,
-} from '../vect';
-import { clamp } from '../util';
-import { Body } from '../body';
-
+} from "./util";
 
 export class SlideJoint extends Constraint {
     anchr1: Vect;
@@ -139,4 +138,3 @@ export class SlideJoint extends Constraint {
         return Math.abs(this.jnAcc);
     }
 }
-

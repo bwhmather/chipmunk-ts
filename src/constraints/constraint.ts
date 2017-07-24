@@ -21,9 +21,9 @@
  * SOFTWARE.
  */
 
-import { Body } from '../body';
-import { Shape } from '../shapes';
-import { Space } from '../space';
+import { Body } from "../body";
+import { Shape } from "../shapes";
+import { Space } from "../space";
 
 // TODO: Comment me!
 
@@ -92,4 +92,3 @@ export abstract class Constraint {
         return (this.a === body ? this.next_a : this.next_b);
     }
 }
-

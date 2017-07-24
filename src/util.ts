@@ -21,19 +21,19 @@
  * SOFTWARE.
  */
 
+import { BB } from "./bb";
 import {
-    Vect,
-    vadd, vsub, vmult,
-    vcross, vcross2,
-    vdist, vdistsq,
-    vdot, vdot2,
-    vlength, vlengthsq, vlengthsq2,
-} from './vect';
-import { BB } from './bb';
+    vadd,
+    vcross, vcross2, vdist,
+    vdistsq, vdot,
+    vdot2, Vect,
+    vlength, vlengthsq,
+    vlengthsq2, vmult, vsub,
+} from "./vect";
 
 export function assert(value: any, message: string): void {
     if (!value) {
-        throw new Error('Assertion failed: ' + message);
+        throw new Error("Assertion failed: " + message);
     }
 }
 
@@ -58,7 +58,7 @@ export function assertSoft(value: any, message: string): void {
  */
 export function hashPair(a: number, b: number): string {
     //assert(typeof(a) === 'number', "HashPair used on something not a number");
-    return a < b ? a + ' ' + b : b + ' ' + a;
+    return a < b ? a + " " + b : b + " " + a;
 }
 
 export function deleteObjFromList<T>(arr: T[], obj: T): void {
@@ -85,13 +85,13 @@ export function closestPointOnSegment2(
     const deltay = ay - by;
     const t = clamp01(
         vdot2(deltax, deltay, px - bx, py - by) /
-        vlengthsq2(deltax, deltay)
+        vlengthsq2(deltax, deltay),
     );
     return new Vect(bx + deltax * t, by + deltay * t);
 }
 
 export function momentForCircle(
-    m: number, r1: number, r2: number, offset: Vect
+    m: number, r1: number, r2: number, offset: Vect,
 ): number {
     return m * (0.5 * (r1 * r1 + r2 * r2) + vlengthsq(offset));
 }
@@ -174,7 +174,7 @@ export function momentForBox2(m: number, bb: BB): number {
     const height = bb.t - bb.b;
     const offset = vmult(new Vect(bb.l + bb.r, bb.b + bb.t), 0.5);
 
-    // TODO NaN when offset is 0 and m is INFINITY	
+    // TODO NaN when offset is 0 and m is INFINITY
     return momentForBox(m, width, height) + m * vlengthsq(offset);
 }
 

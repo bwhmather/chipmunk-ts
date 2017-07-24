@@ -21,22 +21,21 @@
  * SOFTWARE.
  */
 
-import { assert, closestPointOnSegment } from '../util'
+import { assert, closestPointOnSegment } from "../util";
 import {
-    Vect, vzero,
-    vadd, vsub,
-    vmult, vcross, vdot,
-    vdist, vlength2,
-    vlerp, vnormalize,
-    vneg, vperp, vrotate,
-} from '../vect';
+    vadd, vcross,
+    vdist, vdot,
+    Vect, vlength2, vlerp,
+    vmult, vneg,
+    vnormalize, vperp,
+    vrotate, vsub, vzero,
+} from "../vect";
 
-import { Body } from '../body';
-import { BB } from '../bb';
-import { Space } from '../space';
-import { Shape, NearestPointQueryInfo, SegmentQueryInfo } from './base';
-import { circleSegmentQuery } from './util';
-
+import { BB } from "../bb";
+import { Body } from "../body";
+import { Space } from "../space";
+import { NearestPointQueryInfo, SegmentQueryInfo, Shape } from "./base";
+import { circleSegmentQuery } from "./util";
 
 export class SegmentShape extends Shape {
     a: Vect;
@@ -67,7 +66,7 @@ export class SegmentShape extends Shape {
         this.a_tangent = vzero;
         this.b_tangent = vzero;
 
-        this.type = 'segment';
+        this.type = "segment";
     }
 
     cacheData(p: Vect, rot: Vect): void {
@@ -159,4 +158,3 @@ export class SegmentShape extends Shape {
         this.n = vperp(vnormalize(vsub(b, a)));
     }
 }
-

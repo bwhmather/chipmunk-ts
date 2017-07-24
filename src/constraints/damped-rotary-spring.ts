@@ -21,17 +21,15 @@
  * SOFTWARE.
  */
 
-import { Constraint } from './constraint';
-import { assertSoft } from '../util';
-import { Body } from '../body';
-
+import { Body } from "../body";
+import { assertSoft } from "../util";
+import { Constraint } from "./constraint";
 
 function defaultSpringTorque(
     spring: DampedRotarySpring, relativeAngle: number,
 ): number {
     return (relativeAngle - spring.restAngle) * spring.stiffness;
 }
-
 
 export class DampedRotarySpring extends Constraint {
     restAngle: number;
@@ -83,7 +81,7 @@ export class DampedRotarySpring extends Constraint {
         const b = this.b;
 
         // compute relative velocity
-        const wrn = a.w - b.w;//normal_relative_velocity(a, b, r1, r2, n) - this.target_vrn;
+        const wrn = a.w - b.w; //normal_relative_velocity(a, b, r1, r2, n) - this.target_vrn;
 
         // compute velocity loss from drag
         // not 100% certain spring is derived correctly, though it makes sense
@@ -96,4 +94,3 @@ export class DampedRotarySpring extends Constraint {
         b.w -= j_damp * b.i_inv;
     }
 }
-

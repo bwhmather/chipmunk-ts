@@ -21,10 +21,10 @@
  * SOFTWARE.
  */
 
-import { Constraint } from './constraint';
-import { bias_coef } from './util';
-import { clamp } from '../util';
-import { Body } from '../body';
+import { Body } from "../body";
+import { clamp } from "../util";
+import { Constraint } from "./constraint";
+import { bias_coef } from "./util";
 
 export class RatchetJoint extends Constraint {
     angle: number;
@@ -99,7 +99,7 @@ export class RatchetJoint extends Constraint {
         const wr = b.w - a.w;
         const ratchet = this.ratchet;
 
-        // compute normal impulse	
+        // compute normal impulse
         let j = -(this.bias + wr) * this.iSum;
         const jOld = this.jAcc;
         this.jAcc = clamp((jOld + j) * ratchet, 0, this.jMax * Math.abs(ratchet)) / ratchet;
@@ -114,4 +114,3 @@ export class RatchetJoint extends Constraint {
         return Math.abs(this.jAcc);
     }
 }
-

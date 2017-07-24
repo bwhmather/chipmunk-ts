@@ -21,22 +21,21 @@
  * SOFTWARE.
  */
 
-import { Constraint } from './constraint';
+import { Body } from "../body";
+import { assertSoft, clamp } from "../util";
+import {
+    vadd,
+    Vect, vlength,
+    vmult,
+    vrotate,
+    vsub,
+} from "../vect";
+import { Constraint } from "./constraint";
 import {
     apply_impulses,
-    normal_relative_velocity,
-    k_scalar, bias_coef,
-} from './util';
-import { assertSoft, clamp } from '../util';
-import {
-    Vect,
-    vadd, vsub,
-    vrotate,
-    vlength,
-    vmult,
-} from '../vect';
-import { Body } from '../body';
-
+    bias_coef,
+    k_scalar, normal_relative_velocity,
+} from "./util";
 
 export class PinJoint extends Constraint {
     anchr1: Vect;
@@ -125,4 +124,3 @@ export class PinJoint extends Constraint {
         return Math.abs(this.jnAcc);
     }
 }
-

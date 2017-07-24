@@ -21,20 +21,19 @@
  * SOFTWARE.
  */
 
-import { BB, bbNewForCircle, bbIntersects2 } from './bb';
-import { Body } from './body';
-import { BBTree } from './bb-tree';
-import { Arbiter, CollisionHandler, ContactPoint } from './arbiter';
-import { Constraint } from './constraints/constraint';
-import { hashPair, deleteObjFromList, assert, assertSoft } from './util';
+import { Arbiter, CollisionHandler, ContactPoint } from "./arbiter";
+import { BB, bbIntersects2, bbNewForCircle } from "./bb";
+import { BBTree } from "./bb-tree";
+import { Body } from "./body";
 // import { SpaceHash } from '???';
-import { Contact, collideShapes } from './collision';
-import { Vect, vlengthsq, vneg, vzero } from './vect';
+import { collideShapes, Contact } from "./collision";
+import { Constraint } from "./constraints/constraint";
+import { NearestPointQueryInfo, SegmentQueryInfo, Shape } from "./shapes";
 import {
-    componentRoot, componentActive, floodFillComponent,
-} from './space-components';
-import { Shape, NearestPointQueryInfo, SegmentQueryInfo } from './shapes';
-
+    componentActive, componentRoot, floodFillComponent,
+} from "./space-components";
+import { assert, assertSoft, deleteObjFromList, hashPair } from "./util";
+import { Vect, vlengthsq, vneg, vzero } from "./vect";
 
 const defaultCollisionHandler = new CollisionHandler();
 
@@ -345,7 +344,7 @@ export class Space {
                 (body === arb.body_b && (filter === arb.b || filter === null))
             ) {
                 // Call separate when removing shapes.
-                if (filter && arb.state !== 'cached') arb.callSeparate(this);
+                if (filter && arb.state !== "cached") arb.callSeparate(this);
 
                 arb.unthread();
 
@@ -443,12 +442,12 @@ export class Space {
         this.lock(); {
             const bodies = this.bodies;
 
-            for (var i = 0; i < bodies.length; i++) {
+            for (let i = 0; i < bodies.length; i++) {
                 func(bodies[i]);
             }
 
             const components = this.sleepingComponents;
-            for (var i = 0; i < components.length; i++) {
+            for (let i = 0; i < components.length; i++) {
                 const root = components[i];
 
                 let body = root;
@@ -527,7 +526,7 @@ export class Space {
             });
 
             body.eachArbiter((arbiter) => {
-                var bodyA = arbiter.body_a;
+                let bodyA = arbiter.body_a;
                 if (body === bodyA || bodyA.isStatic()) {
                     //var contacts = arb.contacts;
 
@@ -550,7 +549,7 @@ export class Space {
             });
 
             body.eachConstraint((constraint) => {
-                var bodyA = constraint.a;
+                let bodyA = constraint.a;
                 if (body === bodyA || bodyA.isStatic()) {
                     this.constraints.push(constraint);
                 }
@@ -569,7 +568,7 @@ export class Space {
         });
 
         body.eachArbiter((arbiter) => {
-            var bodyA = arbiter.body_a;
+            let bodyA = arbiter.body_a;
             if (body === bodyA || bodyA.isStatic()) {
                 this.uncacheArbiter(arbiter);
 
@@ -582,18 +581,18 @@ export class Space {
         });
 
         body.eachConstraint((constraint) => {
-            var bodyA = constraint.a;
+            let bodyA = constraint.a;
             if (body === bodyA || bodyA.isStatic()) deleteObjFromList(this.constraints, constraint);
         });
     }
 
     processComponents(dt: number): void {
-        var sleep = (this.sleepTimeThreshold !== Infinity);
-        var bodies = this.bodies;
+        let sleep = (this.sleepTimeThreshold !== Infinity);
+        let bodies = this.bodies;
 
         // These checks can be removed at some stage (if DEBUG == undefined)
-        for (var i = 0; i < bodies.length; i++) {
-            var body = bodies[i];
+        for (let i = 0; i < bodies.length; i++) {
+            let body = bodies[i];
 
             assertSoft(body.nodeNext === null, "Internal Error: Dangling next pointer detected in contact graph.");
             assertSoft(body.nodeRoot === null, "Internal Error: Dangling root pointer detected in contact graph.");
@@ -601,23 +600,23 @@ export class Space {
 
         // Calculate the kinetic energy of all the bodies
         if (sleep) {
-            var dv = this.idleSpeedThreshold;
-            var dvsq = (dv ? dv * dv : vlengthsq(this.gravity) * dt * dt);
+            let dv = this.idleSpeedThreshold;
+            let dvsq = (dv ? dv * dv : vlengthsq(this.gravity) * dt * dt);
 
-            for (var i = 0; i < bodies.length; i++) {
-                var body = bodies[i];
+            for (let i = 0; i < bodies.length; i++) {
+                let body = bodies[i];
 
                 // Need to deal with infinite mass objects
-                var keThreshold = (dvsq ? body.m * dvsq : 0);
+                let keThreshold = (dvsq ? body.m * dvsq : 0);
                 body.nodeIdleTime = (body.kineticEnergy() > keThreshold ? 0 : body.nodeIdleTime + dt);
             }
         }
 
         // Awaken any sleeping bodies found and then push arbiters to the bodies' lists.
-        var arbiters = this.arbiters;
-        for (var i = 0, count = arbiters.length; i < count; i++) {
-            var arb = arbiters[i];
-            var a = arb.body_a, b = arb.body_b;
+        let arbiters = this.arbiters;
+        for (let i = 0, count = arbiters.length; i < count; i++) {
+            let arb = arbiters[i];
+            let a = arb.body_a, b = arb.body_b;
 
             if (sleep) {
                 if ((b.isRogue() && !b.isStatic()) || a.isSleeping()) a.activate();
@@ -630,18 +629,18 @@ export class Space {
 
         if (sleep) {
             // Bodies should be held active if connected by a joint to a non-static rouge body.
-            var constraints = this.constraints;
-            for (var i = 0; i < constraints.length; i++) {
-                var constraint = constraints[i];
-                var a = constraint.a, b = constraint.b;
+            let constraints = this.constraints;
+            for (let i = 0; i < constraints.length; i++) {
+                let constraint = constraints[i];
+                let a = constraint.a, b = constraint.b;
 
                 if (b.isRogue() && !b.isStatic()) a.activate();
                 if (a.isRogue() && !a.isStatic()) b.activate();
             }
 
             // Generate components and deactivate sleeping ones
-            for (var i = 0; i < bodies.length;) {
-                var body = bodies[i];
+            for (let i = 0; i < bodies.length; ) {
+                let body = bodies[i];
 
                 if (componentRoot(body) === null) {
                     // Body not in a component yet. Perform a DFS to flood fill mark
@@ -651,7 +650,7 @@ export class Space {
                     // Check if the component should be put to sleep.
                     if (!componentActive(body, this.sleepTimeThreshold)) {
                         this.sleepingComponents.push(body);
-                        for (var other = body; other; other = other.nodeNext) {
+                        for (let other = body; other; other = other.nodeNext) {
                             this.deactivateBody(other);
                         }
 
@@ -672,7 +671,7 @@ export class Space {
 
     activateShapesTouchingShape(shape: Shape): void {
         if (this.sleepTimeThreshold !== Infinity) {
-            this.shapeQuery(shape, function (shape, points) {
+            this.shapeQuery(shape, function(shape, points) {
                 shape.body.activate();
             });
         }
@@ -701,7 +700,7 @@ export class Space {
     /// Query the space at a point and return the first shape found. Returns null if no shapes were found.
     pointQueryFirst(point: Vect, layers: number, group: number): Shape {
         let outShape = null;
-        this.pointQuery(point, layers, group, shape => {
+        this.pointQuery(point, layers, group, (shape) => {
             if (!shape.sensor) outShape = shape;
         });
 
@@ -862,7 +861,7 @@ export class Space {
                 contacts = collideShapes(a, b);
             } else {
                 contacts = collideShapes(b, a);
-                for (var i = 0; i < contacts.length; i++) contacts[i].n = vneg(contacts[i].n);
+                for (let i = 0; i < contacts.length; i++) contacts[i].n = vneg(contacts[i].n);
             }
 
             if (contacts.length) {
@@ -870,7 +869,7 @@ export class Space {
 
                 if (func) {
                     const set = new Array(contacts.length);
-                    for (var i = 0; i < contacts.length; i++) {
+                    for (let i = 0; i < contacts.length; i++) {
                         set[i] = new ContactPoint(contacts[i].p, contacts[i].n, contacts[i].dist);
                     }
 
@@ -971,20 +970,20 @@ export class Space {
             const arbHash = hashPair(a.hashid, b.hashid);
             let arb = space.cachedArbiters.get(arbHash);
             if (!arb) {
-                arb = new Arbiter(a, b)
+                arb = new Arbiter(a, b);
                 space.cachedArbiters.set(arbHash, arb);
             }
 
             arb.update(contacts, handler, a, b);
 
             // Call the begin function first if it's the first step
-            if (arb.state == 'first-coll' && !handler.begin(arb, space)) {
+            if (arb.state == "first-coll" && !handler.begin(arb, space)) {
                 arb.ignore(); // permanently ignore the collision until separation
             }
 
             if (
                 // Ignore the arbiter if it has been flagged
-                (arb.state !== 'ignore') &&
+                (arb.state !== "ignore") &&
                 // Call preSolve
                 handler.preSolve(arb, space) &&
                 // Process, but don't add collisions for sensors.
@@ -998,7 +997,7 @@ export class Space {
 
                 // Normally arbiters are set as used after calling the post-solve callback.
                 // However, post-solve callbacks are not called for sensors or arbiters rejected from pre-solve.
-                if (arb.state !== 'ignore') arb.state = 'normal';
+                if (arb.state !== "ignore") arb.state = "normal";
             }
 
             // Time stamp the arbiter so we know it was used recently.
@@ -1025,9 +1024,9 @@ export class Space {
         }
 
         // Arbiter was used last frame, but not this one
-        if (ticks >= 1 && arb.state != 'cached') {
+        if (ticks >= 1 && arb.state != "cached") {
             arb.callSeparate(this);
-            arb.state = 'cached';
+            arb.state = "cached";
         }
 
         if (ticks >= this.collisionPersistence) {
@@ -1062,7 +1061,7 @@ export class Space {
         // Reset and empty the arbiter lists.
         for (i = 0; i < arbiters.length; i++) {
             const arb = arbiters[i];
-            arb.state = 'normal';
+            arb.state = "normal";
 
             // If both bodies are awake, unthread the arbiter from the contact graph.
             if (!arb.body_a.isSleeping() && !arb.body_b.isSleeping()) {

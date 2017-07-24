@@ -21,15 +21,13 @@
  * SOFTWARE.
  */
 
-import { SpatialIndex } from './spatial-index';
-import { BB } from './bb';
-import { Vect, vmult } from './vect';
-import { assertSoft } from './util';
-import { Shape } from './shapes';
-
+import { BB } from "./bb";
+import { Shape } from "./shapes";
+import { SpatialIndex } from "./spatial-index";
+import { assertSoft } from "./util";
+import { Vect, vmult } from "./vect";
 
 function voidQueryFunc(obj1: Shape, obj2: Shape) { }
-
 
 interface Node {
     parent: Branch;
@@ -62,7 +60,6 @@ interface Node {
         func: (obj: Shape) => any,
     ): number;
 }
-
 
 export class Branch implements Node {
     bb_l: number;
@@ -205,7 +202,7 @@ export class Branch implements Node {
         }
 
         return Infinity;
-    };
+    }
 
     segmentQuery(
         a: Vect, b: Vect, t_exit: number,
@@ -239,9 +236,8 @@ export class Branch implements Node {
         }
 
         return t_exit;
-    };
+    }
 }
-
 
 export class Leaf implements Node {
     bb_l: number;
@@ -403,7 +399,6 @@ export class Leaf implements Node {
     }
 }
 
-
 export class BBTree extends SpatialIndex {
     velocityFunc: (obj: Shape) => Vect = null;
     leaves: Map<Shape, Leaf>;  // TODO TODO TODO
@@ -462,7 +457,7 @@ export class BBTree extends SpatialIndex {
         if (this.root) {
             this.root = this.root.insert(leaf);
         } else {
-            this.root = leaf
+            this.root = leaf;
         }
         this.count++;
 
@@ -557,23 +552,19 @@ export class BBTree extends SpatialIndex {
     }
 }
 
-
 function bbTreeMergedArea(a: Node, b: Node): number {
     return (
         (Math.max(a.bb_r, b.bb_r) - Math.min(a.bb_l, b.bb_l)) *
         (Math.max(a.bb_t, b.bb_t) - Math.min(a.bb_b, b.bb_b))
     );
-};
-
+}
 
 function bbProximity(a: Node, b: Node): number {
     return (
         Math.abs(a.bb_l + a.bb_r - b.bb_l - b.bb_r) +
         Math.abs(a.bb_b + a.bb_t - b.bb_b - b.bb_t)
     );
-};
-
-
+}
 
 function subtreeRemove(subtree: Node, leaf: Leaf, tree: BBTree): Node {
     if (leaf == subtree) {
@@ -591,7 +582,6 @@ function subtreeRemove(subtree: Node, leaf: Leaf, tree: BBTree): Node {
     }
 }
 
-
 function bbTreeIntersectsNode(a: Node, b: Node): boolean {
     return (
         a.bb_l <= b.bb_r &&
@@ -599,8 +589,7 @@ function bbTreeIntersectsNode(a: Node, b: Node): boolean {
         a.bb_b <= b.bb_t &&
         b.bb_b <= a.bb_t
     );
-};
-
+}
 
 function bbTreeMergedArea2(
     node: Node, l: number, b: number, r: number, t: number,
@@ -609,8 +598,7 @@ function bbTreeMergedArea2(
         (Math.max(node.bb_r, r) - Math.min(node.bb_l, l)) *
         (Math.max(node.bb_t, t) - Math.min(node.bb_b, b))
     );
-};
-
+}
 
 /* export function nodeRender(node: Node, depth: number): void {
     if (!node.isLeaf && depth <= 10) {

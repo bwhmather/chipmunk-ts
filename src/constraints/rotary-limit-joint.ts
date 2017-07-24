@@ -21,10 +21,10 @@
  * SOFTWARE.
  */
 
-import { Constraint } from './constraint';
-import { bias_coef } from './util';
-import { clamp } from '../util';
-import { Body } from '../body';
+import { Body } from "../body";
+import { clamp } from "../util";
+import { Constraint } from "./constraint";
+import { bias_coef } from "./util";
 
 class RotaryLimitJoint extends Constraint {
     min: number;
@@ -90,7 +90,7 @@ class RotaryLimitJoint extends Constraint {
         // compute relative rotational velocity
         const wr = b.w - a.w;
 
-        // compute normal impulse	
+        // compute normal impulse
         let j = -(this.bias + wr) * this.iSum;
         const jOld = this.jAcc;
         if (this.bias < 0) {
@@ -109,4 +109,3 @@ class RotaryLimitJoint extends Constraint {
         return Math.abs(this.jAcc);
     }
 }
-

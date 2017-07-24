@@ -21,15 +21,15 @@
  * SOFTWARE.
  */
 
-export * from './arbiter';
-export * from './bb-tree';
-export * from './bb';
-export * from './body';
-export * from './collision';
-export * from './constraints';
-export * from './shapes';
-export * from './space-components';
-export * from './space';
-export * from './spatial-index';
-export * from './util';
-export * from './vect';
+export * from "./arbiter";
+export * from "./bb-tree";
+export * from "./bb";
+export * from "./body";
+export * from "./collision";
+export * from "./constraints";
+export * from "./shapes";
+export * from "./space-components";
+export * from "./space";
+export * from "./spatial-index";
+export * from "./util";
+export * from "./vect";

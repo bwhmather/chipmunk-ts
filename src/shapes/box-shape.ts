@@ -21,21 +21,20 @@
  * SOFTWARE.
  */
 
-import { BB } from '../bb';
-import { Body } from '../body';
-import { PolyShape } from './poly-shape';
-import { vzero } from '../vect';
-
+import { BB } from "../bb";
+import { Body } from "../body";
+import { vzero } from "../vect";
+import { PolyShape } from "./poly-shape";
 
 export class BoxShape extends PolyShape {
     constructor(body: Body, width: number, height: number) {
         const verts = [
-            -0.5*width, -0.5*height,
-            -0.5*width, 0.5*height,
-            0.5*width, 0.5*height,
-            0.5*width, -0.5*height,
+            -0.5 * width, -0.5 * height,
+            -0.5 * width, 0.5 * height,
+            0.5 * width, 0.5 * height,
+            0.5 * width, -0.5 * height,
         ];
 
         super(body, verts, vzero);
     }
-};
+}

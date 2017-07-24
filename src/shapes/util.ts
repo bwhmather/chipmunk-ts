@@ -22,12 +22,11 @@
  */
 
 import {
-    Vect, vsub,
-    vmult, vcross, vdot,
-    vlerp, vnormalize,
-} from '../vect';
-import { Shape, SegmentQueryInfo } from './base'
-
+    vcross, vdot,
+    Vect, vlerp, vmult,
+    vnormalize, vsub,
+} from "../vect";
+import { SegmentQueryInfo, Shape } from "./base";
 
 export function circleSegmentQuery(
     shape: Shape, center: Vect, r: number, a: Vect, b: Vect,
@@ -48,4 +47,4 @@ export function circleSegmentQuery(
             return new SegmentQueryInfo(shape, t, vnormalize(vlerp(a, b, t)));
         }
     }
-};
+}

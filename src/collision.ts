@@ -21,16 +21,16 @@
  * SOFTWARE.
  */
 
-import { Shape, CircleShape, SegmentShape, PolyShape } from './shapes';
-import { SplittingPlane } from './shapes/poly-shape';
-import { assert, clamp01, hashPair } from './util';
+import { CircleShape, PolyShape, SegmentShape, Shape } from "./shapes";
+import { SplittingPlane } from "./shapes/poly-shape";
+import { assert, clamp01, hashPair } from "./util";
 import {
-    Vect, vzero, vneg,
-    vadd, vsub, vmult,
-    vcross, vcross2,
-    vdot, vdot2,
-    vlengthsq,
-} from './vect';
+    vadd, vcross, vcross2,
+    vdot, vdot2, Vect,
+    vlengthsq, vmult,
+    vneg, vsub,
+    vzero,
+} from "./vect";
 
 let numContacts = 0;
 
@@ -64,7 +64,6 @@ export class Contact {
     }
 }
 
-
 // Add contact points for circle to circle collisions.
 // Used by several collision tests.
 function circle2circleQuery(
@@ -82,15 +81,15 @@ function circle2circleQuery(
         vadd(p1, vmult(delta, 0.5 + (r1 - 0.5 * mindist) / (dist ? dist : Infinity))),
         (dist ? vmult(delta, 1 / dist) : new Vect(1, 0)),
         dist - mindist,
-        0
+        0,
     );
-};
+}
 
 // Collide circle shapes.
 function circle2circle(circ1: CircleShape, circ2: CircleShape) {
     const contact = circle2circleQuery(circ1.tc, circ2.tc, circ1.r, circ2.r);
     return contact ? [contact] : [];
-};
+}
 
 function circle2segment(circleShape: CircleShape, segmentShape: SegmentShape) {
     const seg_a = segmentShape.ta;
@@ -119,7 +118,6 @@ function segment2segment(seg1: SegmentShape, seg2: SegmentShape): Contact[] {
     return [];
 }
 
-
 // Find the minimum separating axis for the given poly and axis list.
 //
 // This function needs to return two values - the index of the min. separating axis and
@@ -145,7 +143,7 @@ function findMSA(poly: PolyShape, planes: SplittingPlane[]) {
 
     last_MSA_min = min;
     return min_index;
-};
+}
 
 // Add contacts for probably penetrating vertexes.
 // This handles the degenerate case where an overlap was detected, but no vertexes fall inside
@@ -156,25 +154,25 @@ function findVertsFallback(
     const arr = [];
 
     const verts1 = poly1.tVerts;
-    for (var i = 0; i < verts1.length; i += 2) {
-        var vx = verts1[i];
-        var vy = verts1[i + 1];
+    for (let i = 0; i < verts1.length; i += 2) {
+        let vx = verts1[i];
+        let vy = verts1[i + 1];
         if (poly2.containsVertPartial(vx, vy, vneg(n))) {
             arr.push(new Contact(new Vect(vx, vy), n, dist, hashPair(poly1.hashid, i)));
         }
     }
 
     const verts2 = poly2.tVerts;
-    for (var i = 0; i < verts2.length; i += 2) {
-        var vx = verts2[i];
-        var vy = verts2[i + 1];
+    for (let i = 0; i < verts2.length; i += 2) {
+        let vx = verts2[i];
+        let vy = verts2[i + 1];
         if (poly1.containsVertPartial(vx, vy, n)) {
             arr.push(new Contact(new Vect(vx, vy), n, dist, hashPair(poly2.hashid, i)));
         }
     }
 
     return arr;
-};
+}
 
 // Add contacts for penetrating vertexes.
 function findVerts(
@@ -183,25 +181,25 @@ function findVerts(
     const arr = [];
 
     const verts1 = poly1.tVerts;
-    for (var i = 0; i < verts1.length; i += 2) {
-        var vx = verts1[i];
-        var vy = verts1[i + 1];
+    for (let i = 0; i < verts1.length; i += 2) {
+        let vx = verts1[i];
+        let vy = verts1[i + 1];
         if (poly2.containsVert(vx, vy)) {
             arr.push(new Contact(new Vect(vx, vy), n, dist, hashPair(poly1.hashid, i >> 1)));
         }
     }
 
     const verts2 = poly2.tVerts;
-    for (var i = 0; i < verts2.length; i += 2) {
-        var vx = verts2[i];
-        var vy = verts2[i + 1];
+    for (let i = 0; i < verts2.length; i += 2) {
+        let vx = verts2[i];
+        let vy = verts2[i + 1];
         if (poly1.containsVert(vx, vy)) {
             arr.push(new Contact(new Vect(vx, vy), n, dist, hashPair(poly2.hashid, i >> 1)));
         }
     }
 
     return (arr.length ? arr : findVertsFallback(poly1, poly2, n, dist));
-};
+}
 
 // Collide poly shapes together.
 function poly2poly(poly1: PolyShape, poly2: PolyShape): Contact[] {
@@ -218,14 +216,14 @@ function poly2poly(poly1: PolyShape, poly2: PolyShape): Contact[] {
         return findVerts(poly1, poly2, poly1.tPlanes[mini1].n, min1);
     else
         return findVerts(poly1, poly2, vneg(poly2.tPlanes[mini2].n), min2);
-};
+}
 
 // Like cpPolyValueOnAxis(), but for segments.
 function segValueOnAxis(seg: SegmentShape, n: Vect, d: number) {
     const a = vdot(n, seg.ta) - seg.r;
     const b = vdot(n, seg.tb) - seg.r;
     return Math.min(a, b) - d;
-};
+}
 
 // Identify vertexes that have penetrated the segment.
 function findPointsBehindSeg(
@@ -247,7 +245,7 @@ function findPointsBehindSeg(
             }
         }
     }
-};
+}
 
 // This one is complicated and gross. Just don't go there...
 // TODO: Comment me!
@@ -315,7 +313,7 @@ function segment2poly(seg: SegmentShape, poly: PolyShape): Contact[] {
     //	console.log(poly.tVerts, poly.tPlanes);
     //	console.log('seg2poly', arr);
     return arr;
-};
+}
 
 // This one is less gross, but still gross.
 // TODO: Comment me!
@@ -357,13 +355,13 @@ function circle2poly(circ: CircleShape, poly: PolyShape): Contact[] {
             vsub(circ.tc, vmult(n, circ.r + min / 2)),
             vneg(n),
             min,
-            0
+            0,
         )];
     } else {
         const con = circle2circleQuery(circ.tc, new Vect(ax, ay), circ.r, 0);
         return con ? [con] : [];
     }
-};
+}
 
 // The javascripty way to do this would be either nested object or methods on the prototypes.
 //
@@ -378,7 +376,7 @@ PolyShape.prototype.collisionCode = 2;
 CircleShape.prototype.collisionTable = [
     circle2circle,
     circle2segment,
-    circle2poly
+    circle2poly,
 ];
 
 SegmentShape.prototype.collisionTable = [
@@ -394,7 +392,6 @@ PolyShape.prototype.collisionTable = [
 ];
 
 export function collideShapes(a: Shape, b: Shape) {
-    assert(a.collisionCode <= b.collisionCode, 'Collided shapes must be sorted by type');
+    assert(a.collisionCode <= b.collisionCode, "Collided shapes must be sorted by type");
     return a.collisionTable[b.collisionCode](a, b);
-};
-
+}

@@ -146,7 +146,6 @@ export function vrotate(v1: Vect, v2: Vect): Vect {
     return new Vect(v1.x * v2.x - v1.y * v2.y, v1.x * v2.y + v1.y * v2.x);
 }
 
-
 /// Inverse of vrotate().
 export function vunrotate(v1: Vect, v2: Vect): Vect {
     return new Vect(v1.x * v2.x + v1.y * v2.y, v1.y * v2.x - v1.x * v2.y);
@@ -233,5 +232,3 @@ export function vtoangle(v: Vect): number {
 export function vstr(v: Vect): string {
     return "(" + v.x.toFixed(3) + ", " + v.y.toFixed(3) + ")";
 }
-
-

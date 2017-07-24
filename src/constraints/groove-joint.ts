@@ -21,22 +21,21 @@
  * SOFTWARE.
  */
 
-import { Constraint } from './constraint';
+import { Body } from "../body";
 import {
-    mult_k, k_tensor, apply_impulses, bias_coef, relative_velocity,
-} from './util';
-import {
-    Vect, vzero,
-    vadd, vsub,
-    vmult, vcross, vdot,
-    vclamp, vperp,
-    vnormalize,
+    vadd, vclamp,
+    vcross, vdot,
+    Vect, vlength, vmult,
+    vnormalize, vperp,
     vproject,
-    vlength,
     vrotate,
-} from '../vect';
-import { Body } from '../body';
-
+    vsub,
+    vzero,
+} from "../vect";
+import { Constraint } from "./constraint";
+import {
+    apply_impulses, bias_coef, k_tensor, mult_k, relative_velocity,
+} from "./util";
 
 export class GrooveJoint extends Constraint {
     grv_a: Vect;
@@ -55,7 +54,6 @@ export class GrooveJoint extends Constraint {
     jAcc: Vect;
     jMaxLen: number;
     bias: Vect;
-
 
     constructor(
         a: Body, b: Body,
@@ -179,4 +177,3 @@ export class GrooveJoint extends Constraint {
         this.activateBodies();
     }
 }
-

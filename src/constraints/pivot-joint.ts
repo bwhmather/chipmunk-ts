@@ -21,22 +21,21 @@
  * SOFTWARE.
  */
 
-import { Constraint } from './constraint';
+import { Body } from "../body";
 import {
-    mult_k, k_tensor,
-    bias_coef,
+    vadd, vclamp,
+    Vect,
+    vlength, vmult,
+    vrotate, vsub,
+    vzero,
+} from "../vect";
+import { Constraint } from "./constraint";
+import {
     apply_impulse, apply_impulses,
+    bias_coef,
+    k_tensor, mult_k,
     relative_velocity,
-} from './util';
-import {
-    Vect, vzero,
-    vrotate,
-    vadd, vsub,
-    vclamp, vlength,
-    vmult,
-} from '../vect';
-import { Body } from '../body';
-
+} from "./util";
 
 // Pivot joints can also be created with (a, b, pivot);
 export class PivotJoint extends Constraint {
@@ -56,7 +55,7 @@ export class PivotJoint extends Constraint {
     constructor(a: Body, b: Body, anchr1: Vect, anchr2: Vect) {
         super(a, b);
 
-        if (typeof anchr2 === 'undefined') {
+        if (typeof anchr2 === "undefined") {
             const pivot = anchr1;
 
             anchr1 = (a ? a.world2Local(pivot) : pivot);
@@ -121,4 +120,3 @@ export class PivotJoint extends Constraint {
         return vlength(this.jAcc);
     }
 }
-

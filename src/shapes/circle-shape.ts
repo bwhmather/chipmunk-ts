@@ -21,11 +21,10 @@
  * SOFTWARE.
  */
 
-import { Vect, vlength2, vrotate } from '../vect';
-import { Body } from '../body';
-import { Shape, NearestPointQueryInfo, SegmentQueryInfo } from './base';
-import { circleSegmentQuery } from './util';
-
+import { Body } from "../body";
+import { Vect, vlength2, vrotate } from "../vect";
+import { NearestPointQueryInfo, SegmentQueryInfo, Shape } from "./base";
+import { circleSegmentQuery } from "./util";
 
 export class CircleShape extends Shape {
     c: Vect;
@@ -44,7 +43,7 @@ export class CircleShape extends Shape {
         this.c = this.tc = offset;
         this.r = radius;
 
-        this.type = 'circle';
+        this.type = "circle";
     }
 
     cacheData(p: Vect, rot: Vect): void {

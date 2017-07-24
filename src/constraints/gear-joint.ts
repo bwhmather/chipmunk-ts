@@ -21,11 +21,10 @@
  * SOFTWARE.
  */
 
-import { Constraint } from './constraint';
-import { bias_coef } from './util';
-import { clamp } from '../util';
-import { Body } from '../body';
-
+import { Body } from "../body";
+import { clamp } from "../util";
+import { Constraint } from "./constraint";
+import { bias_coef } from "./util";
 
 export class GearJoint extends Constraint {
     phase: number;
@@ -80,7 +79,7 @@ export class GearJoint extends Constraint {
         // compute relative rotational velocity
         const wr = b.w * this.ratio - a.w;
 
-        // compute normal impulse	
+        // compute normal impulse
         let j = (this.bias - wr) * this.iSum;
         const jOld = this.jAcc;
         this.jAcc = clamp(jOld + j, -this.jMax, this.jMax);
@@ -101,4 +100,3 @@ export class GearJoint extends Constraint {
         this.activateBodies();
     }
 }
-

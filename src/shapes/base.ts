@@ -21,20 +21,19 @@
  * SOFTWARE.
  */
 
-import { assert, closestPointOnSegment } from '../util'
+import { assert, closestPointOnSegment } from "../util";
 import {
-    Vect, vzero,
-    vadd, vsub,
-    vmult, vcross, vdot,
-    vdist, vlength2,
-    vlerp, vnormalize,
-    vneg, vperp, vrotate,
-} from '../vect';
+    vadd, vcross,
+    vdist, vdot,
+    Vect, vlength2, vlerp,
+    vmult, vneg,
+    vnormalize, vperp,
+    vrotate, vsub, vzero,
+} from "../vect";
 
-import { Body } from '../body';
-import { BB } from '../bb';
-import { Space } from '../space';
-
+import { BB } from "../bb";
+import { Body } from "../body";
+import { Space } from "../space";
 
 let shapeIDCounter = 0;
 
@@ -43,7 +42,7 @@ const CP_ALL_LAYERS = ~0;
 
 function resetShapeIdCounter() {
     shapeIDCounter = 0;
-};
+}
 
 /// The cpShape struct defines the shape of a rigid body.
 //
@@ -150,8 +149,8 @@ export abstract class Shape {
     }
 
     update(pos: Vect, rot: Vect) {
-        assert(!isNaN(rot.x), 'Rotation is NaN');
-        assert(!isNaN(pos.x), 'Position is NaN');
+        assert(!isNaN(rot.x), "Rotation is NaN");
+        assert(!isNaN(pos.x), "Position is NaN");
         this.cacheData(pos, rot);
     }
 

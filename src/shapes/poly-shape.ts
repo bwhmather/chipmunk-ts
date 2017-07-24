@@ -21,18 +21,18 @@
  * SOFTWARE.
  */
 
-import { BB } from '../bb';
-import { Shape, NearestPointQueryInfo, SegmentQueryInfo } from './base'
-import { assert, closestPointOnSegment2 } from '../util';
-import { Body } from '../body';
+import { BB } from "../bb";
+import { Body } from "../body";
+import { assert, closestPointOnSegment2 } from "../util";
 import {
-    Vect, vzero,
     vcross, vcross2,
-    vdot, vdot2,
-    vdist, vlerp,
-    vnormalize,
-    vperp, vrotate,
-} from '../vect';
+    vdist, vdot,
+    vdot2, Vect,
+    vlerp, vnormalize,
+    vperp,
+    vrotate, vzero,
+} from "../vect";
+import { NearestPointQueryInfo, SegmentQueryInfo, Shape } from "./base";
 
 /// Check that a set of vertexes is convex and has a clockwise winding.
 function polyValidate(verts: number[]): boolean {
@@ -71,8 +71,8 @@ export class SplittingPlane {
 /// Initialize a polygon shape.
 /// The vertexes must be convex and have a clockwise winding.
 export class PolyShape extends Shape {
-    verts: number[]
-    tVerts: number[]
+    verts: number[];
+    tVerts: number[];
     // TODO
     planes: SplittingPlane[];
     tPlanes: SplittingPlane[];
@@ -80,13 +80,13 @@ export class PolyShape extends Shape {
     constructor(body: Body, verts: number[], offset: Vect) {
         super(body);
         this.setVerts(verts, offset);
-        this.type = 'poly';
+        this.type = "poly";
     }
 
     setVerts(verts: number[], offset: Vect): void {
         assert(verts.length >= 4, "Polygons require some verts");
-        assert(typeof (verts[0]) === 'number',
-            'Polygon verticies should be specified in a flattened list (eg [x1,y1,x2,y2,x3,y3,...])');
+        assert(typeof (verts[0]) === "number",
+            "Polygon verticies should be specified in a flattened list (eg [x1,y1,x2,y2,x3,y3,...])");
 
         // Fail if the user attempts to pass a concave poly, or a bad winding.
         assert(polyValidate(verts), "Polygon is concave or has a reversed winding. Consider using cpConvexHull()");

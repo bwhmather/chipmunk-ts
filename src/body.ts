@@ -28,22 +28,22 @@
 /// @{
 
 // DEBUG,
-import { Shape } from './shapes';
-import { Space } from './space';
-import { apply_impulse } from './constraints/util';
-import { Constraint } from './constraints';
-import { Arbiter } from './arbiter';
+import { Arbiter } from "./arbiter";
+import { Constraint } from "./constraints";
+import { apply_impulse } from "./constraints/util";
+import { Shape } from "./shapes";
+import { Space } from "./space";
+import { componentActivate, componentRoot } from "./space-components";
 import {
     assert, assertSoft,
     clamp, deleteObjFromList,
-} from './util';
+} from "./util";
 import {
-    Vect, vzero,
-    vadd, vsub,
-    vmult, vcross,
-    vperp, vrotate, vunrotate,
-} from './vect';
-import { componentActivate, componentRoot } from './space-components';
+    vadd, vcross,
+    Vect, vmult,
+    vperp, vrotate,
+    vsub, vunrotate, vzero,
+} from "./vect";
 
 function filterConstraints(node: Constraint, body: Body, filter: Constraint) {
     if (node === filter) {
@@ -259,7 +259,7 @@ export class Body {
 
     setAngleInternal(angle: number): void {
         assert(!isNaN(angle), "Internal Error: Attempting to set body's angle to NaN");
-        this.a = angle;//fmod(a, (cpFloat)M_PI*2.0f);
+        this.a = angle; //fmod(a, (cpFloat)M_PI*2.0f);
 
         //this.rot = vforangle(angle);
         this.rot.x = Math.cos(angle);
@@ -406,7 +406,7 @@ export class Body {
             this.nodeIdleTime = 0;
             componentActivate(componentRoot(this));
         }
-    };
+    }
 
     activateStatic(filter: Shape): void {
         assert(this.isStatic(), "Body.activateStatic() called on a non-static body.");
@@ -504,6 +504,5 @@ function v_assert_infinite(v: Vect, message: string): void {
 }
 
 function v_assert_sane(v: Vect, message: string): void {
-     v_assert_nan(v, message); v_assert_infinite(v, message); 
+     v_assert_nan(v, message); v_assert_infinite(v, message);
     }
-
