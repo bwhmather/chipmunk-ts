@@ -49,8 +49,8 @@ export class SegmentShape extends Shape {
 
     r: number;
 
-    a_tangent: Vect;
-    b_tangent: Vect;
+    tangentA: Vect;
+    tangentB: Vect;
 
     constructor(body: Body, a: Vect, b: Vect, r: number) {
         super(body);
@@ -63,8 +63,8 @@ export class SegmentShape extends Shape {
 
         this.r = r;
 
-        this.a_tangent = vzero;
-        this.b_tangent = vzero;
+        this.tangentA = vzero;
+        this.tangentB = vzero;
 
         this.type = "segment";
     }
@@ -111,7 +111,9 @@ export class SegmentShape extends Shape {
         const d = vlength2(deltax, deltay);
         const r = this.r;
 
-        const nearestp = (d ? vadd(closest, vmult(new Vect(deltax, deltay), r / d)) : closest);
+        const nearestp = (
+            d ? vadd(closest, vmult(new Vect(deltax, deltay), r / d)) : closest
+        );
         return new NearestPointQueryInfo(this, nearestp, d - r);
     }
 
@@ -120,20 +122,22 @@ export class SegmentShape extends Shape {
         const d = vdot(vsub(this.ta, a), n);
         const r = this.r;
 
-        const flipped_n = (d > 0 ? vneg(n) : n);
-        const n_offset = vsub(vmult(flipped_n, r), a);
+        const flippedNormal = (d > 0 ? vneg(n) : n);
+        const normalOffset = vsub(vmult(flippedNormal, r), a);
 
-        const seg_a = vadd(this.ta, n_offset);
-        const seg_b = vadd(this.tb, n_offset);
+        const segA = vadd(this.ta, normalOffset);
+        const segB = vadd(this.tb, normalOffset);
         const delta = vsub(b, a);
 
-        if (vcross(delta, seg_a) * vcross(delta, seg_b) <= 0) {
-            const d_offset = d + (d > 0 ? -r : r);
-            const ad = -d_offset;
-            const bd = vdot(delta, n) - d_offset;
+        if (vcross(delta, segA) * vcross(delta, segB) <= 0) {
+            const dOffset = d + (d > 0 ? -r : r);
+            const ad = -dOffset;
+            const bd = vdot(delta, n) - dOffset;
 
             if (ad * bd < 0) {
-                return new SegmentQueryInfo(this, ad / (ad - bd), flipped_n);
+                return new SegmentQueryInfo(
+                    this, ad / (ad - bd), flippedNormal,
+                );
             }
         } else if (r !== 0) {
             const info1 = circleSegmentQuery(this, this.ta, this.r, a, b);
@@ -148,8 +152,8 @@ export class SegmentShape extends Shape {
     }
 
     setNeighbors(prev: Vect, next: Vect): void {
-        this.a_tangent = vsub(prev, this.a);
-        this.b_tangent = vsub(next, this.b);
+        this.tangentA = vsub(prev, this.a);
+        this.tangentB = vsub(next, this.b);
     }
 
     setEndpoints(a: Vect, b: Vect): void {

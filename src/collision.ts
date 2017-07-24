@@ -106,8 +106,8 @@ function circle2segment(circleShape: CircleShape, segmentShape: SegmentShape) {
 
         // Reject endcap collisions if tangents are provided.
         return (
-            (closest_t === 0 && vdot(n, segmentShape.a_tangent) < 0) ||
-            (closest_t === 1 && vdot(n, segmentShape.b_tangent) < 0)
+            (closest_t === 0 && vdot(n, segmentShape.tangentA) < 0) ||
+            (closest_t === 1 && vdot(n, segmentShape.tangentB) < 0)
         ) ? [] : [contact];
     } else {
         return [];
