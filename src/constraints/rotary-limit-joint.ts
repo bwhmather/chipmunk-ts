@@ -63,26 +63,33 @@ class RotaryLimitJoint extends Constraint {
 
         // calculate bias velocity
         const maxBias = this.maxBias;
-        this.bias = clamp(-bias_coef(this.errorBias, dt) * pdist / dt, -maxBias, maxBias);
+        this.bias = clamp(
+            -bias_coef(this.errorBias, dt) * pdist / dt,
+            -maxBias, maxBias,
+        );
 
         // compute max impulse
         this.jMax = this.maxForce * dt;
 
         // If the bias is 0, the joint is not at a limit. Reset the impulse.
-        if (!this.bias) this.jAcc = 0;
+        if (!this.bias) {
+            this.jAcc = 0;
+        }
     }
 
-    applyCachedImpulse(dt_coef: number): void {
+    applyCachedImpulse(dtCoef: number): void {
         const a = this.a;
         const b = this.b;
 
-        const j = this.jAcc * dt_coef;
+        const j = this.jAcc * dtCoef;
         a.w -= j * a.inertiaInv;
         b.w += j * b.inertiaInv;
     }
 
     applyImpulse() {
-        if (!this.bias) return; // early exit
+        if (!this.bias) {
+            return; // early exit
+        }
 
         const a = this.a;
         const b = this.b;
