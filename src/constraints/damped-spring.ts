@@ -51,8 +51,8 @@ export class DampedSpring extends Constraint {
         spring: DampedSpring, dist: number,
     ) => number;
 
-    target_vrn: number;
-    v_coef: number;
+    targetNormalRelativeVelocity: number;
+    dragCoef: number;
 
     r1: Vect;
     r2: Vect;
@@ -77,7 +77,7 @@ export class DampedSpring extends Constraint {
         this.damping = damping;
         this.springForceFunc = defaultSpringForce;
 
-        this.target_vrn = this.v_coef = 0;
+        this.targetNormalRelativeVelocity = this.dragCoef = 0;
 
         this.r1 = this.r2 = null;
         this.nMass = 0;
@@ -99,33 +99,40 @@ export class DampedSpring extends Constraint {
         assertSoft(k !== 0, "Unsolvable this.");
         this.nMass = 1 / k;
 
-        this.target_vrn = 0;
-        this.v_coef = 1 - Math.exp(-this.damping * dt * k);
+        this.targetNormalRelativeVelocity = 0;
+        this.dragCoef = 1 - Math.exp(-this.damping * dt * k);
 
         // apply this force
-        const f_spring = this.springForceFunc(this, dist);
-        apply_impulses(a, b, this.r1, this.r2, this.n.x * f_spring * dt, this.n.y * f_spring * dt);
+        const springForce = this.springForceFunc(this, dist);
+        apply_impulses(
+            a, b, this.r1, this.r2,
+            this.n.x * springForce * dt, this.n.y * springForce * dt,
+        );
     }
 
-    applyCachedImpulse(dt_coef: number): void { }
+    applyCachedImpulse(dtCoef: number): void {
+        // pass
+    }
 
     applyImpulse(): void {
-        const a = this.a;
-        const b = this.b;
-
-        const n = this.n;
-        const r1 = this.r1;
-        const r2 = this.r2;
-
         // compute relative velocity
-        const vrn = normal_relative_velocity(a, b, r1, r2, n);
+        const normalRelativeVelocity = normal_relative_velocity(
+            this.a, this.b, this.r1,
+            this.r2, this.n,
+        );
 
         // compute velocity loss from drag
-        let v_damp = (this.target_vrn - vrn) * this.v_coef;
-        this.target_vrn = vrn + v_damp;
+        let vDamped = (
+            this.targetNormalRelativeVelocity -
+            normalRelativeVelocity
+        ) * this.dragCoef;
+        this.targetNormalRelativeVelocity = normalRelativeVelocity + vDamped;
 
-        v_damp *= this.nMass;
-        apply_impulses(a, b, this.r1, this.r2, this.n.x * v_damp, this.n.y * v_damp);
+        vDamped *= this.nMass;
+        apply_impulses(
+            this.a, this.b, this.r1, this.r2,
+            this.n.x * vDamped, this.n.y * vDamped,
+        );
     }
 
     getImpulse(): number {
