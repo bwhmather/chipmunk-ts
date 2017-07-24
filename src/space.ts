@@ -817,7 +817,7 @@ export class Space {
         const helper = (shape: Shape) => {
             if (
                 !(shape.group && group === shape.group) && (layers & shape.layers) &&
-                bbIntersects2(bb, shape.bb_l, shape.bb_b, shape.bb_r, shape.bb_t)
+                bbIntersects2(bb, shape.bbL, shape.bbB, shape.bbR, shape.bbT)
             ) {
                 func(shape);
             }
@@ -840,7 +840,7 @@ export class Space {
         if (body) {
             shape.update(body.p, body.rot);
         }
-        const bb = new BB(shape.bb_l, shape.bb_b, shape.bb_r, shape.bb_t);
+        const bb = new BB(shape.bbL, shape.bbB, shape.bbR, shape.bbT);
 
         //shapeQueryContext context = {func, data, false};
         let anyCollision = false;
@@ -937,7 +937,7 @@ export class Space {
             if (
                 // BBoxes must overlap
                 //!bbIntersects(a.bb, b.bb)
-                !(a.bb_l <= b.bb_r && b.bb_l <= a.bb_r && a.bb_b <= b.bb_t && b.bb_b <= a.bb_t)
+                !(a.bbL <= b.bbR && b.bbL <= a.bbR && a.bbB <= b.bbT && b.bbB <= a.bbT)
                 // Don't collide shapes attached to the same body.
                 || a.body === b.body
                 // Don't collide objects in the same non-zero group

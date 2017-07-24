@@ -97,10 +97,10 @@ export class SegmentShape extends Shape {
 
         const rad = this.r;
 
-        this.bb_l = l - rad;
-        this.bb_b = b - rad;
-        this.bb_r = r + rad;
-        this.bb_t = t + rad;
+        this.bbL = l - rad;
+        this.bbB = b - rad;
+        this.bbR = r + rad;
+        this.bbT = t + rad;
     }
 
     nearestPointQuery(p: Vect): NearestPointQueryInfo {

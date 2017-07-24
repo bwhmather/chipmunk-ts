@@ -22,52 +22,53 @@
  */
 
 import { Body } from "../body";
-import { Vect, vlength2, vrotate } from "../vect";
+import { vadd, Vect, vlength2, vrotate } from "../vect";
 import { NearestPointQueryInfo, SegmentQueryInfo, Shape } from "./base";
 import { circleSegmentQuery } from "./util";
 
 export class CircleShape extends Shape {
-    c: Vect;
+    center: Vect;
+    radius: number;
+
     tc: Vect;
 
-    bb_l: number;
-    bb_b: number;
-    bb_r: number;
-    bb_t: number;
-
-    r: number;
+    bbL: number;
+    bbB: number;
+    bbR: number;
+    bbT: number;
 
     constructor(body: Body, radius: number, offset: Vect) {
         super(body);
 
-        this.c = this.tc = offset;
-        this.r = radius;
+        this.center = this.tc = offset;
+        this.radius = radius;
 
         this.type = "circle";
     }
 
     cacheData(p: Vect, rot: Vect): void {
-        //var c = this.tc = vadd(p, vrotate(this.c, rot));
-        const c = this.tc = vrotate(this.c, rot).add(p);
-        //this.bb = bbNewForCircle(c, this.r);
-        const r = this.r;
-        this.bb_l = c.x - r;
-        this.bb_b = c.y - r;
-        this.bb_r = c.x + r;
-        this.bb_t = c.y + r;
+        const c = this.tc = vadd(p, vrotate(this.center, rot));
+        const r = this.radius;
+        this.bbL = c.x - r;
+        this.bbB = c.y - r;
+        this.bbR = c.x + r;
+        this.bbT = c.y + r;
     }
 
     nearestPointQuery(p: Vect): NearestPointQueryInfo {
         const deltax = p.x - this.tc.x;
         const deltay = p.y - this.tc.y;
         const d = vlength2(deltax, deltay);
-        const r = this.r;
+        const r = this.radius;
 
-        const nearestp = new Vect(this.tc.x + deltax * r / d, this.tc.y + deltay * r / d);
+        const nearestp = new Vect(
+            this.tc.x + deltax * r / d,
+            this.tc.y + deltay * r / d,
+        );
         return new NearestPointQueryInfo(this, nearestp, d - r);
     }
 
     segmentQuery(a: Vect, b: Vect): SegmentQueryInfo {
-        return circleSegmentQuery(this, this.tc, this.r, a, b);
+        return circleSegmentQuery(this, this.tc, this.radius, a, b);
     }
 }

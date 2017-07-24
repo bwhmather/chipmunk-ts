@@ -328,10 +328,10 @@ export class Leaf implements Node {
     // **** Leaf Functions
     containsObj(obj: Shape): boolean {
         return (
-            this.bb_l <= obj.bb_l &&
-            this.bb_r >= obj.bb_r &&
-            this.bb_b <= obj.bb_b &&
-            this.bb_t >= obj.bb_t
+            this.bb_l <= obj.bbL &&
+            this.bb_r >= obj.bbR &&
+            this.bb_b <= obj.bbB &&
+            this.bb_t >= obj.bbT
         );
     }
 
@@ -419,20 +419,20 @@ export class BBTree extends SpatialIndex {
         const velocityFunc = this.velocityFunc;
         if (velocityFunc) {
             const coef = 0.1;
-            const x = (obj.bb_r - obj.bb_l) * coef;
-            const y = (obj.bb_t - obj.bb_b) * coef;
+            const x = (obj.bbR - obj.bbL) * coef;
+            const y = (obj.bbT - obj.bbB) * coef;
 
             const v = vmult(velocityFunc(obj), 0.1);
 
-            dest.bb_l = obj.bb_l + Math.min(-x, v.x);
-            dest.bb_b = obj.bb_b + Math.min(-y, v.y);
-            dest.bb_r = obj.bb_r + Math.max(x, v.x);
-            dest.bb_t = obj.bb_t + Math.max(y, v.y);
+            dest.bb_l = obj.bbL + Math.min(-x, v.x);
+            dest.bb_b = obj.bbB + Math.min(-y, v.y);
+            dest.bb_r = obj.bbR + Math.max(x, v.x);
+            dest.bb_t = obj.bbT + Math.max(y, v.y);
         } else {
-            dest.bb_l = obj.bb_l;
-            dest.bb_b = obj.bb_b;
-            dest.bb_r = obj.bb_r;
-            dest.bb_t = obj.bb_t;
+            dest.bb_l = obj.bbL;
+            dest.bb_b = obj.bbB;
+            dest.bb_r = obj.bbR;
+            dest.bb_t = obj.bbT;
         }
     }
 

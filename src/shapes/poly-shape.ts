@@ -154,10 +154,10 @@ export class PolyShape extends Shape {
             t = Math.max(t, vy);
         }
 
-        this.bb_l = l;
-        this.bb_b = b;
-        this.bb_r = r;
-        this.bb_t = t;
+        this.bbL = l;
+        this.bbB = b;
+        this.bbR = r;
+        this.bbT = t;
     }
 
     transformAxes(p: Vect, rot: Vect) {

@@ -68,7 +68,7 @@ export abstract class SpatialIndex {
         if (staticIndex.count > 0) {
             this.each((obj) => {
                 staticIndex.query(
-                    new BB(obj.bb_l, obj.bb_b, obj.bb_r, obj.bb_t),
+                    new BB(obj.bbL, obj.bbB, obj.bbR, obj.bbT),
                     func as any,  // TODO TODO TODO
                 );
             });

@@ -87,7 +87,7 @@ function circle2circleQuery(
 
 // Collide circle shapes.
 function circle2circle(circ1: CircleShape, circ2: CircleShape) {
-    const contact = circle2circleQuery(circ1.tc, circ2.tc, circ1.r, circ2.r);
+    const contact = circle2circleQuery(circ1.tc, circ2.tc, circ1.radius, circ2.radius);
     return contact ? [contact] : [];
 }
 
@@ -100,7 +100,7 @@ function circle2segment(circleShape: CircleShape, segmentShape: SegmentShape) {
     const closest_t = clamp01(vdot(seg_delta, vsub(center, seg_a)) / vlengthsq(seg_delta));
     const closest = vadd(seg_a, vmult(seg_delta, closest_t));
 
-    const contact = circle2circleQuery(center, closest, circleShape.r, segmentShape.r);
+    const contact = circle2circleQuery(center, closest, circleShape.radius, segmentShape.r);
     if (contact) {
         const n = contact.n;
 
@@ -321,9 +321,9 @@ function circle2poly(circ: CircleShape, poly: PolyShape): Contact[] {
     const planes = poly.tPlanes;
 
     let mini = 0;
-    let min = vdot(planes[0].n, circ.tc) - planes[0].d - circ.r;
+    let min = vdot(planes[0].n, circ.tc) - planes[0].d - circ.radius;
     for (let i = 0; i < planes.length; i++) {
-        const dist = vdot(planes[i].n, circ.tc) - planes[i].d - circ.r;
+        const dist = vdot(planes[i].n, circ.tc) - planes[i].d - circ.radius;
         if (dist > 0) {
             return [];
         } else if (dist > min) {
@@ -348,17 +348,17 @@ function circle2poly(circ: CircleShape, poly: PolyShape): Contact[] {
     const dt = vcross(n, circ.tc);
 
     if (dt < dtb) {
-        const con = circle2circleQuery(circ.tc, new Vect(bx, by), circ.r, 0);
+        const con = circle2circleQuery(circ.tc, new Vect(bx, by), circ.radius, 0);
         return con ? [con] : [];
     } else if (dt < dta) {
         return [new Contact(
-            vsub(circ.tc, vmult(n, circ.r + min / 2)),
+            vsub(circ.tc, vmult(n, circ.radius + min / 2)),
             vneg(n),
             min,
             0,
         )];
     } else {
-        const con = circle2circleQuery(circ.tc, new Vect(ax, ay), circ.r, 0);
+        const con = circle2circleQuery(circ.tc, new Vect(ax, ay), circ.radius, 0);
         return con ? [con] : [];
     }
 }

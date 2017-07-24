@@ -53,10 +53,10 @@ export abstract class Shape {
 
     body: Body;
 
-    bb_l: number;
-    bb_b: number;
-    bb_r: number;
-    bb_t: number;
+    bbL: number;
+    bbB: number;
+    bbR: number;
+    bbT: number;
 
     hashid: number;
     sensor: boolean;
@@ -85,7 +85,7 @@ export abstract class Shape {
         this.body = body;
 
         /// The current bounding box of the shape.
-        this.bb_l = this.bb_b = this.bb_r = this.bb_t = 0;
+        this.bbL = this.bbB = this.bbR = this.bbT = 0;
 
         this.hashid = shapeIDCounter++;
 
@@ -160,7 +160,7 @@ export abstract class Shape {
     }
 
     getBB(): BB {
-        return new BB(this.bb_l, this.bb_b, this.bb_r, this.bb_t);
+        return new BB(this.bbL, this.bbB, this.bbR, this.bbT);
     }
 
     protected abstract cacheData(pos: Vect, rot: Vect): void;
