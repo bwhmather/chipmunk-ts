@@ -1,4 +1,6 @@
-/* Copyright (c) 2007 Scott Lembcke
+/* Copyright (c) 2017 Ben Mather
+ * Forked from Chipmunk JS, copyright (c) 2013 Seph Gentle
+ * Ported from Chipmunk, copyright (c) 2010 Scott Lembcke
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -18,12 +20,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-// These are utility routines to use when creating custom constraints.
-// I'm not sure if this should be part of the private API or not.
-// I should probably clean up the naming conventions if it is...
-
-//#define J_MAX(constraint, dt) (((cpConstraint *)constraint)->maxForce*(dt))
 
 import { assertSoft } from '../util';
 import { Vect, vdot, vdot2, vcross, vcross2 } from '../vect';
