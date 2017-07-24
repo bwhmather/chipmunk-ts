@@ -38,6 +38,7 @@ import { Space } from "../space";
 let shapeIDCounter = 0;
 
 const CP_NO_GROUP = 0;
+// tslint:disable-next-line
 const CP_ALL_LAYERS = ~0;
 
 function resetShapeIdCounter() {
@@ -61,12 +62,13 @@ export abstract class Shape {
     hashid: number;
     sensor: boolean;
 
-    e: number;
-    u: number;
+    restitutionCoef: number;
+    frictionCoef: number;
 
-    surface_v: Vect;
+    /// Surface velocity used when solving for friction.
+    surfaceVelocity: Vect;
 
-    collision_type: number;
+    collisionType: number;
     collisionCode: number;
 
     // TODO TODO TODO should be a map
@@ -94,28 +96,29 @@ export abstract class Shape {
         this.sensor = false;
 
         /// Coefficient of restitution. (elasticity)
-        this.e = 0;
+        this.restitutionCoef = 0;
         /// Coefficient of friction.
-        this.u = 0;
+        this.frictionCoef = 0;
         /// Surface velocity used when solving for friction.
-        this.surface_v = vzero;
+        this.surfaceVelocity = vzero;
 
         /// Collision type of this shape used when picking collision handlers.
-        this.collision_type = 0;
+        this.collisionType = 0;
         /// Group of this shape. Shapes in the same group don't collide.
         this.group = 0;
-        // Layer bitmask for this shape. Shapes only collide if the bitwise and of their layers is non-zero.
+        // Layer bitmask for this shape. Shapes only collide if the bitwise and
+        // of their layers is non-zero.
         this.layers = CP_ALL_LAYERS;
 
         this.space = null;
     }
 
     setElasticity(e: number): void {
-        this.e = e;
+        this.restitutionCoef = e;
     }
 
     setFriction(u: number): void {
-        this.body.activate(); this.u = u;
+        this.body.activate(); this.frictionCoef = u;
     }
 
     setLayers(layers: number): void {
@@ -126,8 +129,8 @@ export abstract class Shape {
         this.body.activate(); this.sensor = sensor;
     }
 
-    setCollisionType(collision_type: number): void {
-        this.body.activate(); this.collision_type = collision_type;
+    setCollisionType(collisionType: number): void {
+        this.body.activate(); this.collisionType = collisionType;
     }
 
     getBody() {
@@ -135,12 +138,15 @@ export abstract class Shape {
     }
 
     active() {
-        // return shape->prev || (shape->body && shape->body->shapeList == shape);
         return this.body && this.body.shapeList.indexOf(this) !== -1;
     }
 
     setBody(body: Body): void {
-        assert(!this.active(), "You cannot change the body on an active shape. You must remove the shape from the space before changing the body.");
+        assert(
+            !this.active(),
+            "You cannot change the body on an active shape. You must remove " +
+            "the shape from the space before changing the body.",
+        );
         this.body = body;
     }
 
@@ -154,23 +160,26 @@ export abstract class Shape {
         this.cacheData(pos, rot);
     }
 
-    pointQuery(p: Vect) {
+    pointQuery(p: Vect): NearestPointQueryInfo {
         const info = this.nearestPointQuery(p);
-        if (info.d < 0) return info;
+        if (info.d < 0) {
+            return info;
+        }
     }
 
     getBB(): BB {
         return new BB(this.bbL, this.bbB, this.bbR, this.bbT);
     }
 
-    protected abstract cacheData(pos: Vect, rot: Vect): void;
-
     abstract nearestPointQuery(poing: Vect): NearestPointQueryInfo;
 
     abstract segmentQuery(a: Vect, b: Vect): SegmentQueryInfo;
+
+    protected abstract cacheData(pos: Vect, rot: Vect): void;
 }
 
-/// Extended point query info struct. Returned from calling pointQuery on a shape.
+// Extended point query info struct. Returned from calling pointQuery on a
+// shape.
 export class PointQueryExtendedInfo {
     shape: Shape;
     d: number;
@@ -194,9 +203,11 @@ export class NearestPointQueryInfo {
     constructor(shape: Shape, p: Vect, d: number) {
         /// The nearest shape, NULL if no shape was within range.
         this.shape = shape;
-        /// The closest point on the shape's surface. (in world space coordinates)
+        /// The closest point on the shape's surface, in world space
+        /// coordinates.
         this.p = p;
-        /// The distance to the point. The distance is negative if the point is inside the shape.
+        /// The distance to the point. The distance is negative if the point is
+        /// inside the shape.
         this.d = d;
     }
 }
