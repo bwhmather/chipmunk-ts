@@ -5,6 +5,10 @@
     ],
     "jsRules": {},
     "rules": {
+        "member-access": [true, "no-public"],
+        "max-line-length": [true, 80],
+        "max-classes-per-file": [true, 5],
+        "trailing-newline": [true, "multiline", "always", "singleline", "never"]
     },
     "rulesDirectory": []
 }
