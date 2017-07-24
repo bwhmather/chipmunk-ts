@@ -99,19 +99,28 @@ export class SlideJoint extends Constraint {
 
         // calculate bias velocity
         const maxBias = this.maxBias;
-        this.bias = clamp(-bias_coef(this.errorBias, dt) * pdist / dt, -maxBias, maxBias);
+        this.bias = clamp(
+            -bias_coef(this.errorBias, dt) * pdist / dt,
+            -maxBias, maxBias,
+        );
 
         // compute max impulse
         this.jnMax = this.maxForce * dt;
     }
 
-    applyCachedImpulse(dt_coef: number): void {
-        const jn = this.jnAcc * dt_coef;
-        apply_impulses(this.a, this.b, this.r1, this.r2, this.n.x * jn, this.n.y * jn);
+    applyCachedImpulse(dtCoef: number): void {
+        const jn = this.jnAcc * dtCoef;
+        apply_impulses(
+            this.a, this.b,
+            this.r1, this.r2,
+            this.n.x * jn, this.n.y * jn,
+        );
     }
 
     applyImpulse(): void {
-        if (this.n.x === 0 && this.n.y === 0) return;  // early exit
+        if (this.n.x === 0 && this.n.y === 0) {
+            return;  // early exit
+        }
 
         const a = this.a;
         const b = this.b;
