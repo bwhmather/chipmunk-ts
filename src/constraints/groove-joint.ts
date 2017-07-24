@@ -38,10 +38,10 @@ import {
 } from "./util";
 
 export class GrooveJoint extends Constraint {
-    grv_a: Vect;
-    grv_b: Vect;
-    grv_n: Vect;
-    grv_tn: Vect;
+    grooveA: Vect;
+    grooveB: Vect;
+    grooveN: Vect;
+    grooveTN: Vect;
 
     anchr1: Vect;
     anchr2: Vect;
@@ -57,17 +57,17 @@ export class GrooveJoint extends Constraint {
 
     constructor(
         a: Body, b: Body,
-        groove_a: Vect, groove_b: Vect,
+        grooveA: Vect, grooveB: Vect,
         anchr2: Vect,
     ) {
         super(a, b);
 
-        this.grv_a = groove_a;
-        this.grv_b = groove_b;
-        this.grv_n = vperp(vnormalize(vsub(groove_b, groove_a)));
+        this.grooveA = grooveA;
+        this.grooveB = grooveB;
+        this.grooveN = vperp(vnormalize(vsub(grooveB, grooveA)));
         this.anchr2 = anchr2;
 
-        this.grv_tn = null;
+        this.grooveTN = null;
         this.clamp = 0;
         this.r1 = this.r2 = null;
 
@@ -84,14 +84,14 @@ export class GrooveJoint extends Constraint {
         const b = this.b;
 
         // calculate endpoints in worldspace
-        const ta = a.local2World(this.grv_a);
-        const tb = a.local2World(this.grv_b);
+        const ta = a.local2World(this.grooveA);
+        const tb = a.local2World(this.grooveB);
 
         // calculate axis
-        const n = vrotate(this.grv_n, a.rot);
+        const n = vrotate(this.grooveN, a.rot);
         const d = vdot(ta, n);
 
-        this.grv_tn = n;
+        this.grooveTN = n;
         this.r2 = vrotate(this.anchr2, b.rot);
 
         // calculate tangential distance along the axis of r2
@@ -122,17 +122,17 @@ export class GrooveJoint extends Constraint {
         );
     }
 
-    applyCachedImpulse(dt_coef: number): void {
+    applyCachedImpulse(dtCoef: number): void {
         apply_impulses(
             this.a, this.b,
             this.r1, this.r2,
-            this.jAcc.x * dt_coef,
-            this.jAcc.y * dt_coef,
+            this.jAcc.x * dtCoef,
+            this.jAcc.y * dtCoef,
         );
     }
 
     grooveConstrain(j: Vect): Vect {
-        const n = this.grv_tn;
+        const n = this.grooveTN;
         const jClamp = (this.clamp * vcross(j, n) > 0) ? j : vproject(j, n);
         return vclamp(jClamp, this.jMaxLen);
     }
@@ -164,15 +164,15 @@ export class GrooveJoint extends Constraint {
     }
 
     setGrooveA(value: Vect): void {
-        this.grv_a = value;
-        this.grv_n = vperp(vnormalize(vsub(this.grv_b, value)));
+        this.grooveA = value;
+        this.grooveN = vperp(vnormalize(vsub(this.grooveB, value)));
 
         this.activateBodies();
     }
 
     setGrooveB(value: Vect): void {
-        this.grv_b = value;
-        this.grv_n = vperp(vnormalize(vsub(value, this.grv_a)));
+        this.grooveB = value;
+        this.grooveN = vperp(vnormalize(vsub(value, this.grooveA)));
 
         this.activateBodies();
     }
