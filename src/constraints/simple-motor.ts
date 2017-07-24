@@ -49,11 +49,11 @@ export class SimpleMotor extends Constraint {
         this.jMax = this.maxForce * dt;
     }
 
-    applyCachedImpulse(dt_coef: number): void {
+    applyCachedImpulse(dtCoef: number): void {
         const a = this.a;
         const b = this.b;
 
-        const j = this.jAcc * dt_coef;
+        const j = this.jAcc * dtCoef;
         a.w -= j * a.inertiaInv;
         b.w += j * b.inertiaInv;
     }
