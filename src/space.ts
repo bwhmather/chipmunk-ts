@@ -329,8 +329,8 @@ export class Space {
         this.constraints.push(constraint);
 
         // Push onto the heads of the bodies' constraint lists
-        constraint.next_a = a.constraintList; a.constraintList = constraint;
-        constraint.next_b = b.constraintList; b.constraintList = constraint;
+        constraint.nextA = a.constraintList; a.constraintList = constraint;
+        constraint.nextB = b.constraintList; b.constraintList = constraint;
         constraint.space = this;
 
         return constraint;

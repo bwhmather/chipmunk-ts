@@ -49,9 +49,9 @@ function filterConstraints(node: Constraint, body: Body, filter: Constraint) {
     if (node === filter) {
         return node.next(body);
     } else if (node.a === body) {
-        node.next_a = filterConstraints(node.next_a, body, filter);
+        node.nextA = filterConstraints(node.nextA, body, filter);
     } else {
-        node.next_b = filterConstraints(node.next_b, body, filter);
+        node.nextB = filterConstraints(node.nextB, body, filter);
     }
 
     return node;

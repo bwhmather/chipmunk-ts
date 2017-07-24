@@ -34,8 +34,8 @@ export abstract class Constraint {
 
     space: Space;
 
-    next_a: Constraint;
-    next_b: Constraint;
+    nextA: Constraint;
+    nextB: Constraint;
 
     maxForce: number;
 
@@ -50,8 +50,8 @@ export abstract class Constraint {
 
         this.space = null;
 
-        this.next_a = null;
-        this.next_b = null;
+        this.nextA = null;
+        this.nextB = null;
 
         /// The maximum force that this constraint is allowed to use.
         this.maxForce = Infinity;
@@ -64,31 +64,46 @@ export abstract class Constraint {
     }
 
     activateBodies(): void {
-        if (this.a) this.a.activate();
-        if (this.b) this.b.activate();
+        if (this.a) {
+            this.a.activate();
+        }
+        if (this.b) {
+            this.b.activate();
+        }
     }
 
     /// These methods are overridden by the constraint itself.
-    preStep(dt: number): void { }
+    preStep(dt: number): void {
+        // Pass.
+    }
 
-    applyCachedImpulse(dt_coef: number): void { }
-    applyImpulse(): void { }
+    applyCachedImpulse(dtCoef: number): void {
+        // Pass.
+    }
+
+    applyImpulse(): void {
+        // Pass.
+    }
 
     getImpulse(): number {
         return 0;
     }
 
-    /// Function called before the solver runs. This can be overridden by the user
-    /// to customize the constraint.
-    /// Animate your joint anchors, update your motor torque, etc.
-    preSolve(space: Space) { }
+    /// Function called before the solver runs. This can be overridden by the
+    /// user to customize the constraint.  Animate your joint anchors, update
+    /// your motor torque, etc.
+    preSolve(space: Space) {
+        // Pass.
+    }
 
-    /// Function called after the solver runs. This can be overridden by the user
-    /// to customize the constraint.
-    /// Use the applied impulse to perform effects like breakable joints.
-    postSolve(space: Space) { }
+    /// Function called after the solver runs. This can be overridden by the
+    /// user to customize the constraint.  Use the applied impulse to perform
+    /// effects like breakable joints.
+    postSolve(space: Space) {
+        // Pass.
+    }
 
     next(body: Body) {
-        return (this.a === body ? this.next_a : this.next_b);
+        return (this.a === body ? this.nextA : this.nextB);
     }
 }
