@@ -65,7 +65,11 @@ export class PinJoint extends Constraint {
         const p2 = (b ? vadd(b.p, vrotate(anchr2, b.rot)) : anchr2);
         this.dist = vlength(vsub(p2, p1));
 
-        assertSoft(this.dist > 0, "You created a 0 length pin joint. A pivot joint will be much more stable.");
+        assertSoft(
+            this.dist > 0,
+            "You created a 0 length pin joint. A pivot joint will be much " +
+            "more stable.",
+        );
 
         this.r1 = this.r2 = null;
         this.n = null;
@@ -91,14 +95,17 @@ export class PinJoint extends Constraint {
 
         // calculate bias velocity
         const maxBias = this.maxBias;
-        this.bias = clamp(-bias_coef(this.errorBias, dt) * (dist - this.dist) / dt, -maxBias, maxBias);
+        this.bias = clamp(
+            -bias_coef(this.errorBias, dt) * (dist - this.dist) / dt,
+            -maxBias, maxBias,
+        );
 
         // compute max impulse
         this.jnMax = this.maxForce * dt;
     }
 
-    applyCachedImpulse(dt_coef: number): void {
-        const j = vmult(this.n, this.jnAcc * dt_coef);
+    applyCachedImpulse(dtCoef: number): void {
+        const j = vmult(this.n, this.jnAcc * dtCoef);
         apply_impulses(this.a, this.b, this.r1, this.r2, j.x, j.y);
     }
 
