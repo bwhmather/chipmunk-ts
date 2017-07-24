@@ -90,11 +90,17 @@ export class PivotJoint extends Constraint {
 
         // calculate bias velocity
         const delta = vsub(vadd(b.p, this.r2), vadd(a.p, this.r1));
-        this.bias = vclamp(vmult(delta, -bias_coef(this.errorBias, dt) / dt), this.maxBias);
+        this.bias = vclamp(
+            vmult(delta, -bias_coef(this.errorBias, dt) / dt),
+            this.maxBias,
+        );
     }
 
-    applyCachedImpulse(dt_coef: number): void {
-        apply_impulses(this.a, this.b, this.r1, this.r2, this.jAcc.x * dt_coef, this.jAcc.y * dt_coef);
+    applyCachedImpulse(dtCoef: number): void {
+        apply_impulses(
+            this.a, this.b, this.r1, this.r2,
+            this.jAcc.x * dtCoef, this.jAcc.y * dtCoef,
+        );
     }
 
     applyImpulse(): void {
@@ -113,7 +119,10 @@ export class PivotJoint extends Constraint {
         this.jAcc = vclamp(vadd(this.jAcc, j), this.jMaxLen);
 
         // apply impulse
-        apply_impulses(a, b, this.r1, this.r2, this.jAcc.x - jOld.x, this.jAcc.y - jOld.y);
+        apply_impulses(
+            a, b, this.r1, this.r2,
+            this.jAcc.x - jOld.x, this.jAcc.y - jOld.y,
+        );
     }
 
     getImpulse(): number {
