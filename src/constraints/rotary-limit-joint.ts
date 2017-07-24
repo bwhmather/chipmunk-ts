@@ -59,7 +59,7 @@ class RotaryLimitJoint extends Constraint {
         }
 
         // calculate moment of inertia coefficient.
-        this.iSum = 1 / (1 / a.i + 1 / b.i);
+        this.iSum = 1 / (1 / a.inertia + 1 / b.inertia);
 
         // calculate bias velocity
         const maxBias = this.maxBias;
@@ -77,8 +77,8 @@ class RotaryLimitJoint extends Constraint {
         const b = this.b;
 
         const j = this.jAcc * dt_coef;
-        a.w -= j * a.i_inv;
-        b.w += j * b.i_inv;
+        a.w -= j * a.inertiaInv;
+        b.w += j * b.inertiaInv;
     }
 
     applyImpulse() {
@@ -101,8 +101,8 @@ class RotaryLimitJoint extends Constraint {
         j = this.jAcc - jOld;
 
         // apply impulse
-        a.w -= j * a.i_inv;
-        b.w += j * b.i_inv;
+        a.w -= j * a.inertiaInv;
+        b.w += j * b.inertiaInv;
     }
 
     getImpulse(): number {

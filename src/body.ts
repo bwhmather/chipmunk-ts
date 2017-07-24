@@ -102,12 +102,12 @@ export class Body {
     nodeIdleTime: number;
 
     // Mass and one-over-mass.
-    m: number;
-    m_inv: number;
+    mass: number;
+    massInv: number;
 
     // Inertia and one over inertia.
-    i: number;
-    i_inv: number;
+    inertia: number;
+    inertiaInv: number;
 
     // Set this.a and this.rot
     rot: Vect;
@@ -207,16 +207,16 @@ export class Body {
 
         //activate is defined in cpSpaceComponent
         this.activate();
-        this.m = mass;
-        this.m_inv = 1 / mass;
+        this.mass = mass;
+        this.massInv = 1 / mass;
     }
 
     setMoment(moment: number): void {
         assert(moment > 0, "Moment of Inertia must be positive and non-zero.");
 
         this.activate();
-        this.i = moment;
-        this.i_inv = 1 / moment;
+        this.inertia = moment;
+        this.inertiaInv = 1 / moment;
     }
 
     addShape(shape: Shape): void {
@@ -274,8 +274,8 @@ export class Body {
 
     velocity_func(gravity: Vect, damping: number, dt: number): void {
         //this.v = vclamp(vadd(vmult(this.v, damping), vmult(vadd(gravity, vmult(this.f, this.m_inv)), dt)), this.v_limit);
-        const vx = this.vx * damping + (gravity.x + this.f.x * this.m_inv) * dt;
-        const vy = this.vy * damping + (gravity.y + this.f.y * this.m_inv) * dt;
+        const vx = this.vx * damping + (gravity.x + this.f.x * this.massInv) * dt;
+        const vy = this.vy * damping + (gravity.y + this.f.y * this.massInv) * dt;
 
         //var v = vclamp(new Vect(vx, vy), this.v_limit);
         //this.vx = v.x; this.vy = v.y;
@@ -286,7 +286,7 @@ export class Body {
         this.vy = vy * scale;
 
         const w_limit = this.w_limit;
-        this.w = clamp(this.w * damping + this.t * this.i_inv * dt, -w_limit, w_limit);
+        this.w = clamp(this.w * damping + this.t * this.inertiaInv * dt, -w_limit, w_limit);
 
         this.sanityCheck();
     }
@@ -379,12 +379,12 @@ export class Body {
         // Need to do some fudging to avoid NaNs
         const vsq = this.vx * this.vx + this.vy * this.vy;
         const wsq = this.w * this.w;
-        return (vsq ? vsq * this.m : 0) + (wsq ? wsq * this.i : 0);
+        return (vsq ? vsq * this.mass : 0) + (wsq ? wsq * this.inertia : 0);
     }
 
     sanityCheck(): void {
-        assert(this.m === this.m && this.m_inv === this.m_inv, "Body's mass is invalid.");
-        assert(this.i === this.i && this.i_inv === this.i_inv, "Body's moment is invalid.");
+        assert(this.mass === this.mass && this.massInv === this.massInv, "Body's mass is invalid.");
+        assert(this.inertia === this.inertia && this.inertiaInv === this.inertiaInv, "Body's moment is invalid.");
 
         v_assert_sane(this.p, "Body's position is invalid.");
         v_assert_sane(this.f, "Body's force is invalid.");

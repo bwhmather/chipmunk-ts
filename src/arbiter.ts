@@ -286,11 +286,11 @@ export class Arbiter {
         this.contacts = contacts;
 
         this.handler = handler;
-        this.swappedColl = (a.collision_type !== handler.a);
+        this.swappedColl = (a.collisionType !== handler.a);
 
-        this.e = a.e * b.e;
-        this.u = a.u * b.u;
-        this.surface_vr = vsub(a.surface_v, b.surface_v);
+        this.e = a.restitutionCoef * b.restitutionCoef;
+        this.u = a.frictionCoef * b.frictionCoef;
+        this.surface_vr = vsub(a.surfaceVelocity, b.surfaceVelocity);
 
         // For collisions between two similar primitive types, the order could have been swapped.
         this.a = a; this.body_a = a.body;
@@ -418,7 +418,7 @@ export class Arbiter {
         // The handler needs to be looked up again as the handler cached on the
         // arbiter may have been deleted since the last step.
         const handler = space.lookupHandler(
-            this.a.collision_type, this.b.collision_type,
+            this.a.collisionType, this.b.collisionType,
         );
         handler.separate(this, space);
     }

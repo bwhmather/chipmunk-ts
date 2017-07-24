@@ -63,7 +63,7 @@ export class DampedRotarySpring extends Constraint {
         const a = this.a;
         const b = this.b;
 
-        const moment = a.i_inv + b.i_inv;
+        const moment = a.inertiaInv + b.inertiaInv;
         assertSoft(moment !== 0, "Unsolvable spring.");
         this.iSum = 1 / moment;
 
@@ -72,8 +72,8 @@ export class DampedRotarySpring extends Constraint {
 
         // apply this torque
         const j_spring = this.springTorqueFunc(this, a.a - b.a) * dt;
-        a.w -= j_spring * a.i_inv;
-        b.w += j_spring * b.i_inv;
+        a.w -= j_spring * a.inertiaInv;
+        b.w += j_spring * b.inertiaInv;
     }
 
     applyImpulse(): void {
@@ -90,7 +90,7 @@ export class DampedRotarySpring extends Constraint {
 
         //apply_impulses(a, b, this.r1, this.r2, vmult(this.n, v_damp*this.nMass));
         const j_damp = w_damp * this.iSum;
-        a.w += j_damp * a.i_inv;
-        b.w -= j_damp * b.i_inv;
+        a.w += j_damp * a.inertiaInv;
+        b.w -= j_damp * b.inertiaInv;
     }
 }

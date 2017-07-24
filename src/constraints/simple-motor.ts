@@ -43,7 +43,7 @@ export class SimpleMotor extends Constraint {
 
     preStep(dt: number): void {
         // calculate moment of inertia coefficient.
-        this.iSum = 1 / (this.a.i_inv + this.b.i_inv);
+        this.iSum = 1 / (this.a.inertiaInv + this.b.inertiaInv);
 
         // compute max impulse
         this.jMax = this.maxForce * dt;
@@ -54,8 +54,8 @@ export class SimpleMotor extends Constraint {
         const b = this.b;
 
         const j = this.jAcc * dt_coef;
-        a.w -= j * a.i_inv;
-        b.w += j * b.i_inv;
+        a.w -= j * a.inertiaInv;
+        b.w += j * b.inertiaInv;
     }
 
     applyImpulse(): void {
@@ -72,8 +72,8 @@ export class SimpleMotor extends Constraint {
         j = this.jAcc - jOld;
 
         // apply impulse
-        a.w -= j * a.i_inv;
-        b.w += j * b.i_inv;
+        a.w -= j * a.inertiaInv;
+        b.w += j * b.inertiaInv;
     }
 
     getImpulse(): number {

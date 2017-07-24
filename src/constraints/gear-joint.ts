@@ -53,7 +53,7 @@ export class GearJoint extends Constraint {
         const b = this.b;
 
         // calculate moment of inertia coefficient.
-        this.iSum = 1 / (a.i_inv * this.ratio_inv + this.ratio * b.i_inv);
+        this.iSum = 1 / (a.inertiaInv * this.ratio_inv + this.ratio * b.inertiaInv);
 
         // calculate bias velocity
         const maxBias = this.maxBias;
@@ -68,8 +68,8 @@ export class GearJoint extends Constraint {
         const b = this.b;
 
         const j = this.jAcc * dt_coef;
-        a.w -= j * a.i_inv * this.ratio_inv;
-        b.w += j * b.i_inv;
+        a.w -= j * a.inertiaInv * this.ratio_inv;
+        b.w += j * b.inertiaInv;
     }
 
     applyImpulse(): void {
@@ -86,8 +86,8 @@ export class GearJoint extends Constraint {
         j = this.jAcc - jOld;
 
         // apply impulse
-        a.w -= j * a.i_inv * this.ratio_inv;
-        b.w += j * b.i_inv;
+        a.w -= j * a.inertiaInv * this.ratio_inv;
+        b.w += j * b.inertiaInv;
     }
 
     getImpulse(): number {

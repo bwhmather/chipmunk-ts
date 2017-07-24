@@ -67,7 +67,7 @@ export class RatchetJoint extends Constraint {
         }
 
         // calculate moment of inertia coefficient.
-        this.iSum = 1 / (a.i_inv + b.i_inv);
+        this.iSum = 1 / (a.inertiaInv + b.inertiaInv);
 
         // calculate bias velocity
         const maxBias = this.maxBias;
@@ -85,8 +85,8 @@ export class RatchetJoint extends Constraint {
         const b = this.b;
 
         const j = this.jAcc * dt_coef;
-        a.w -= j * a.i_inv;
-        b.w += j * b.i_inv;
+        a.w -= j * a.inertiaInv;
+        b.w += j * b.inertiaInv;
     }
 
     applyImpulse(): void {
@@ -106,8 +106,8 @@ export class RatchetJoint extends Constraint {
         j = this.jAcc - jOld;
 
         // apply impulse
-        a.w -= j * a.i_inv;
-        b.w += j * b.i_inv;
+        a.w -= j * a.inertiaInv;
+        b.w += j * b.inertiaInv;
     }
 
     getImpulse(): number {

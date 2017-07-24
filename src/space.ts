@@ -543,7 +543,7 @@ export class Space {
 
                     // Update the arbiter's state
                     arbiter.stamp = this.stamp;
-                    arbiter.handler = this.lookupHandler(a.collision_type, b.collision_type);
+                    arbiter.handler = this.lookupHandler(a.collisionType, b.collisionType);
                     this.arbiters.push(arbiter);
                 }
             });
@@ -607,7 +607,7 @@ export class Space {
                 let body = bodies[i];
 
                 // Need to deal with infinite mass objects
-                let keThreshold = (dvsq ? body.m * dvsq : 0);
+                let keThreshold = (dvsq ? body.mass * dvsq : 0);
                 body.nodeIdleTime = (body.kineticEnergy() > keThreshold ? 0 : body.nodeIdleTime + dt);
             }
         }
@@ -946,7 +946,7 @@ export class Space {
                 || !(a.layers & b.layers)
             ) return;
 
-            const handler = space.lookupHandler(a.collision_type, b.collision_type);
+            const handler = space.lookupHandler(a.collisionType, b.collisionType);
 
             const sensor = a.sensor || b.sensor;
             if (sensor && handler === defaultCollisionHandler) return;

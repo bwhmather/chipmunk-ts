@@ -29,16 +29,16 @@ import { vcross, vcross2, vdot, vdot2, Vect } from "../vect";
 export function relative_velocity(
     a: Body, b: Body, r1: Vect, r2: Vect,
 ) {
-    //var v1_sum = vadd(a.v, vmult(vperp(r1), a.w));
-    const v1_sumx = a.vx + (-r1.y) * a.w;
-    const v1_sumy = a.vy + (r1.x) * a.w;
+    // var v1_sum = vadd(a.v, vmult(vperp(r1), a.w));
+    const v1sumx = a.vx + (-r1.y) * a.w;
+    const v1sumy = a.vy + (r1.x) * a.w;
 
-    //var v2_sum = vadd(b.v, vmult(vperp(r2), b.w));
-    const v2_sumx = b.vx + (-r2.y) * b.w;
-    const v2_sumy = b.vy + (r2.x) * b.w;
+    // var v2_sum = vadd(b.v, vmult(vperp(r2), b.w));
+    const v2sumx = b.vx + (-r2.y) * b.w;
+    const v2sumy = b.vy + (r2.x) * b.w;
 
-    //	return vsub(v2_sum, v1_sum);
-    return new Vect(v2_sumx - v1_sumx, v2_sumy - v1_sumy);
+    // return vsub(v2_sum, v1_sum);
+    return new Vect(v2sumx - v1sumx, v2sumy - v1sumy);
 }
 
 export function normal_relative_velocity(
@@ -46,23 +46,23 @@ export function normal_relative_velocity(
     r1: Vect, r2: Vect,
     n: Vect,
 ) {
-    //return vdot(relative_velocity(a, b, r1, r2), n);
-    const v1_sumx = a.vx + (-r1.y) * a.w;
-    const v1_sumy = a.vy + (r1.x) * a.w;
-    const v2_sumx = b.vx + (-r2.y) * b.w;
-    const v2_sumy = b.vy + (r2.x) * b.w;
+    // return vdot(relative_velocity(a, b, r1, r2), n);
+    const v1sumx = a.vx + (-r1.y) * a.w;
+    const v1sumy = a.vy + (r1.x) * a.w;
+    const v2sumx = b.vx + (-r2.y) * b.w;
+    const v2sumy = b.vy + (r2.x) * b.w;
 
-    return vdot2(v2_sumx - v1_sumx, v2_sumy - v1_sumy, n.x, n.y);
+    return vdot2(v2sumx - v1sumx, v2sumy - v1sumy, n.x, n.y);
 }
 
 export function apply_impulse(
     body: Body, jx: number, jy: number, r: Vect,
 ) {
-    //	body.v = body.v.add(vmult(j, body.m_inv));
-    body.vx += jx * body.m_inv;
-    body.vy += jy * body.m_inv;
-    //	body.w += body.i_inv*vcross(r, j);
-    body.w += body.i_inv * (r.x * jy - r.y * jx);
+    // body.v = body.v.add(vmult(j, body.m_inv));
+    body.vx += jx * body.massInv;
+    body.vy += jy * body.massInv;
+    // body.w += body.i_inv*vcross(r, j);
+    body.w += body.inertiaInv * (r.x * jy - r.y * jx);
 }
 
 export function apply_impulses(
@@ -75,15 +75,15 @@ export function apply_impulses(
 export function apply_bias_impulse(
     body: Body, jx: number, jy: number, r: Vect,
 ) {
-    //body.v_bias = vadd(body.v_bias, vmult(j, body.m_inv));
-    body.v_biasx += jx * body.m_inv;
-    body.v_biasy += jy * body.m_inv;
-    body.w_bias += body.i_inv * vcross2(r.x, r.y, jx, jy);
+    // body.v_bias = vadd(body.v_bias, vmult(j, body.m_inv));
+    body.v_biasx += jx * body.massInv;
+    body.v_biasy += jy * body.massInv;
+    body.w_bias += body.inertiaInv * vcross2(r.x, r.y, jx, jy);
 }
 
 export function k_scalar_body(body: Body, r: Vect, n: Vect) {
     const rcn = vcross(r, n);
-    return body.m_inv + body.i_inv * rcn * rcn;
+    return body.massInv + body.inertiaInv * rcn * rcn;
 }
 
 export function k_scalar(
@@ -101,32 +101,28 @@ export function k_tensor(
     r1: Vect, r2: Vect,
     k1: Vect, k2: Vect,
 ): void {
-    // calculate mass matrix
-    // If I wasn't lazy and wrote a proper matrix class, this wouldn't be so gross...
     let k11;
 
     let k12;
     let k21;
     let k22;
-    const m_sum = a.m_inv + b.m_inv;
+    const msum = a.massInv + b.massInv;
 
     // start with I*m_sum
-    k11 = m_sum; k12 = 0;
-    k21 = 0; k22 = m_sum;
+    k11 = msum; k12 = 0;
+    k21 = 0; k22 = msum;
 
     // add the influence from r1
-    const a_i_inv = a.i_inv;
-    const r1xsq = r1.x * r1.x * a_i_inv;
-    const r1ysq = r1.y * r1.y * a_i_inv;
-    const r1nxy = -r1.x * r1.y * a_i_inv;
+    const r1xsq = r1.x * r1.x * a.inertiaInv;
+    const r1ysq = r1.y * r1.y * a.inertiaInv;
+    const r1nxy = -r1.x * r1.y * a.inertiaInv;
     k11 += r1ysq; k12 += r1nxy;
     k21 += r1nxy; k22 += r1xsq;
 
     // add the influnce from r2
-    const b_i_inv = b.i_inv;
-    const r2xsq = r2.x * r2.x * b_i_inv;
-    const r2ysq = r2.y * r2.y * b_i_inv;
-    const r2nxy = -r2.x * r2.y * b_i_inv;
+    const r2xsq = r2.x * r2.x * b.inertiaInv;
+    const r2ysq = r2.y * r2.y * b.inertiaInv;
+    const r2nxy = -r2.x * r2.y * b.inertiaInv;
     k11 += r2ysq; k12 += r2nxy;
     k21 += r2nxy; k22 += r2xsq;
 
@@ -134,10 +130,10 @@ export function k_tensor(
     const determinant = k11 * k22 - k12 * k21;
     assertSoft(determinant !== 0, "Unsolvable constraint.");
 
-    const det_inv = 1 / determinant;
+    const determinantInv = 1 / determinant;
 
-    k1.x = k22 * det_inv; k1.y = -k12 * det_inv;
-    k2.x = -k21 * det_inv; k2.y = k11 * det_inv;
+    k1.x = k22 * determinantInv; k1.y = -k12 * determinantInv;
+    k2.x = -k21 * determinantInv; k2.y = k11 * determinantInv;
 }
 
 export function mult_k(vr: Vect, k1: Vect, k2: Vect): Vect {
