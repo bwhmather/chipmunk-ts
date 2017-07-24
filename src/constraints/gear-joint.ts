@@ -29,7 +29,7 @@ import { bias_coef } from "./util";
 export class GearJoint extends Constraint {
     phase: number;
     ratio: number;
-    ratio_inv: number;
+    ratioInv: number;
 
     jAcc: number;
     iSum: number;
@@ -41,7 +41,7 @@ export class GearJoint extends Constraint {
 
         this.phase = phase;
         this.ratio = ratio;
-        this.ratio_inv = 1 / ratio;
+        this.ratioInv = 1 / ratio;
 
         this.jAcc = 0;
 
@@ -53,22 +53,31 @@ export class GearJoint extends Constraint {
         const b = this.b;
 
         // calculate moment of inertia coefficient.
-        this.iSum = 1 / (a.inertiaInv * this.ratio_inv + this.ratio * b.inertiaInv);
+        this.iSum = 1 / (
+            a.inertiaInv * this.ratioInv + this.ratio * b.inertiaInv
+            );
 
         // calculate bias velocity
         const maxBias = this.maxBias;
-        this.bias = clamp(-bias_coef(this.errorBias, dt) * (b.a * this.ratio - a.a - this.phase) / dt, -maxBias, maxBias);
+        this.bias = clamp(
+            (
+                -bias_coef(this.errorBias, dt) *
+                (b.a * this.ratio - a.a - this.phase) /
+                dt
+            ),
+            -maxBias, maxBias,
+        );
 
         // compute max impulse
         this.jMax = this.maxForce * dt;
     }
 
-    applyCachedImpulse(dt_coef: number): void {
+    applyCachedImpulse(dtCoef: number): void {
         const a = this.a;
         const b = this.b;
 
-        const j = this.jAcc * dt_coef;
-        a.w -= j * a.inertiaInv * this.ratio_inv;
+        const j = this.jAcc * dtCoef;
+        a.w -= j * a.inertiaInv * this.ratioInv;
         b.w += j * b.inertiaInv;
     }
 
@@ -86,7 +95,7 @@ export class GearJoint extends Constraint {
         j = this.jAcc - jOld;
 
         // apply impulse
-        a.w -= j * a.inertiaInv * this.ratio_inv;
+        a.w -= j * a.inertiaInv * this.ratioInv;
         b.w += j * b.inertiaInv;
     }
 
@@ -96,7 +105,7 @@ export class GearJoint extends Constraint {
 
     setRatio(value: number): void {
         this.ratio = value;
-        this.ratio_inv = 1 / value;
+        this.ratioInv = 1 / value;
         this.activateBodies();
     }
 }
