@@ -25,7 +25,7 @@ import { BB } from "../bb";
 import { Body } from "../body";
 import { assert, closestPointOnSegment2 } from "../util";
 import {
-    vcross, vcross2,
+    v, vcross, vcross2,
     vdist, vdot,
     vdot2, Vect,
     vlerp, vnormalize,
@@ -45,7 +45,7 @@ function polyValidate(verts: number[]): boolean {
         const cx = verts[(i + 4) % len];
         const cy = verts[(i + 5) % len];
 
-        //if(vcross(vsub(b, a), vsub(c, b)) > 0){
+        // if(vcross(vsub(b, a), vsub(c, b)) > 0){
         if (vcross2(bx - ax, by - ay, cx - bx, cy - by) > 0) {
             return false;
         }
@@ -63,8 +63,8 @@ export class SplittingPlane {
         this.d = d;
     }
 
-    compare(v: Vect): number {
-        return vdot(this.n, v) - this.d;
+    compare(vect: Vect): number {
+        return vdot(this.n, vect) - this.d;
     }
 }
 
@@ -85,25 +85,32 @@ export class PolyShape extends Shape {
 
     setVerts(verts: number[], offset: Vect): void {
         assert(verts.length >= 4, "Polygons require some verts");
-        assert(typeof (verts[0]) === "number",
-            "Polygon verticies should be specified in a flattened list (eg [x1,y1,x2,y2,x3,y3,...])");
+        assert(
+            typeof (verts[0]) === "number",
+            "Polygon verticies should be specified in a flattened list " +
+            "(eg [x1,y1,x2,y2,x3,y3,...])",
+        );
 
         // Fail if the user attempts to pass a concave poly, or a bad winding.
-        assert(polyValidate(verts), "Polygon is concave or has a reversed winding. Consider using cpConvexHull()");
+        assert(
+            polyValidate(verts),
+            "Polygon is concave or has a reversed winding. " +
+            "Consider using cpConvexHull()",
+        );
 
         const len = verts.length;
-        const numVerts = len >> 1;
+        const numVerts = len / 2;
 
-        // This a pretty bad way to do this in javascript. As a first pass, I want to keep
-        // the code similar to the C.
+        // This a pretty bad way to do this in javascript. As a first pass, I
+        // want to keep the code similar to the C.
         this.verts = new Array(len);
         this.tVerts = new Array(len);
         this.planes = new Array(numVerts);
         this.tPlanes = new Array(numVerts);
 
         for (let i = 0; i < len; i += 2) {
-            //var a = vadd(offset, verts[i]);
-            //var b = vadd(offset, verts[(i+1)%numVerts]);
+            // var a = vadd(offset, verts[i]);
+            // var b = vadd(offset, verts[(i+1)%numVerts]);
             const ax = verts[i] + offset.x;
             const ay = verts[i + 1] + offset.y;
             const bx = verts[(i + 2) % len] + offset.x;
@@ -114,8 +121,10 @@ export class PolyShape extends Shape {
 
             this.verts[i] = ax;
             this.verts[i + 1] = ay;
-            this.planes[i >> 1] = new SplittingPlane(n, vdot2(n.x, n.y, ax, ay));
-            this.tPlanes[i >> 1] = new SplittingPlane(new Vect(0, 0), 0);
+            this.planes[i / 2] = new SplittingPlane(
+                n, vdot2(n.x, n.y, ax, ay),
+            );
+            this.tPlanes[i / 2] = new SplittingPlane(new Vect(0, 0), 0);
         }
     }
 
@@ -129,14 +138,12 @@ export class PolyShape extends Shape {
         let t = -Infinity;
 
         for (let i = 0; i < src.length; i += 2) {
-            //var v = vadd(p, vrotate(src[i], rot));
+            // var v = vadd(p, vrotate(src[i], rot));
             const x = src[i];
             const y = src[i + 1];
 
             const vx = p.x + x * rot.x - y * rot.y;
             const vy = p.y + x * rot.y + y * rot.x;
-
-            //console.log('(' + x + ',' + y + ') -> (' + vx + ',' + vy + ')');
 
             dst[i] = vx;
             dst[i + 1] = vy;
@@ -180,11 +187,15 @@ export class PolyShape extends Shape {
         let outside = false;
 
         for (let i = 0; i < planes.length; i++) {
-            if (planes[i].compare(p) > 0) outside = true;
+            if (planes[i].compare(p) > 0) {
+                outside = true;
+            }
 
             const v1x = verts[i * 2];
             const v1y = verts[i * 2 + 1];
-            const closest = closestPointOnSegment2(p.x, p.y, v0x, v0y, v1x, v1y);
+            const closest = closestPointOnSegment2(
+                p.x, p.y, v0x, v0y, v1x, v1y,
+            );
 
             const dist = vdist(p, closest);
             if (dist < minDist) {
@@ -196,7 +207,9 @@ export class PolyShape extends Shape {
             v0y = v1y;
         }
 
-        return new NearestPointQueryInfo(this, closestPoint, (outside ? minDist : -minDist));
+        return new NearestPointQueryInfo(
+            this, closestPoint, (outside ? minDist : -minDist),
+        );
     }
 
     segmentQuery(a: Vect, b: Vect): SegmentQueryInfo {
@@ -208,16 +221,25 @@ export class PolyShape extends Shape {
         for (let i = 0; i < numVerts; i++) {
             const n = axes[i].n;
             const an = vdot(a, n);
-            if (axes[i].d > an) continue;
+            if (axes[i].d > an) {
+                continue;
+            }
 
             const bn = vdot(b, n);
             const t = (axes[i].d - an) / (bn - an);
-            if (t < 0 || 1 < t) continue;
+            if (t < 0 || 1 < t) {
+                continue;
+            }
 
             const point = vlerp(a, b, t);
             const dt = -vcross(n, point);
-            const dtMin = -vcross2(n.x, n.y, verts[i * 2], verts[i * 2 + 1]);
-            const dtMax = -vcross2(n.x, n.y, verts[(i * 2 + 2) % len], verts[(i * 2 + 3) % len]);
+            const dtMin = -vcross(
+                v(n.x, n.y), v(verts[i * 2], verts[i * 2 + 1]),
+            );
+            const dtMax = -vcross(
+                v(n.x, n.y),
+                v(verts[(i * 2 + 2) % len], verts[(i * 2 + 3) % len]),
+            );
 
             if (dtMin <= dt && dt <= dtMax) {
                 // josephg: In the original C code, this function keeps
@@ -242,10 +264,12 @@ export class PolyShape extends Shape {
     containsVert(vx: number, vy: number): boolean {
         const planes = this.tPlanes;
 
-        for (let i = 0; i < planes.length; i++) {
-            const n = planes[i].n;
-            const dist = vdot2(n.x, n.y, vx, vy) - planes[i].d;
-            if (dist > 0) return false;
+        for (const plane of planes) {
+            const n = plane.n;
+            const dist = vdot2(n.x, n.y, vx, vy) - plane.d;
+            if (dist > 0) {
+                return false;
+            }
         }
 
         return true;
@@ -254,18 +278,23 @@ export class PolyShape extends Shape {
     containsVertPartial(vx: number, vy: number, n: Vect) {
         const planes = this.tPlanes;
 
-        for (let i = 0; i < planes.length; i++) {
-            const n2 = planes[i].n;
-            if (vdot(n2, n) < 0) continue;
-            const dist = vdot2(n2.x, n2.y, vx, vy) - planes[i].d;
-            if (dist > 0) return false;
+        for (const plane of planes) {
+            const n2 = plane.n;
+            if (vdot(n2, n) < 0) {
+                continue;
+            }
+
+            const dist = vdot2(n2.x, n2.y, vx, vy) - plane.d;
+            if (dist > 0) {
+                return false;
+            }
         }
 
         return true;
     }
 
-    // These methods are provided for API compatibility with Chipmunk. I recommend against using
-    // them - just access the poly.verts list directly.
+    // These methods are provided for API compatibility with Chipmunk. I
+    // recommend against using them - just access the poly.verts list directly.
     getNumVerts(): number {
         return this.verts.length / 2;
     }
