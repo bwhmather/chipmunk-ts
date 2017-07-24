@@ -40,8 +40,8 @@ export class DampedRotarySpring extends Constraint {
         spring: DampedRotarySpring, relativeAngle: number,
     ) => number;
 
-    target_wrn: number;
-    w_coef: number;
+    targetNormalRelativeRate: number;
+    dragCoef: number;
     iSum: number;
 
     constructor(
@@ -54,8 +54,8 @@ export class DampedRotarySpring extends Constraint {
         this.damping = damping;
         this.springTorqueFunc = defaultSpringTorque;
 
-        this.target_wrn = 0;
-        this.w_coef = 0;
+        this.targetNormalRelativeRate = 0;
+        this.dragCoef = 0;
         this.iSum = 0;
     }
 
@@ -67,13 +67,13 @@ export class DampedRotarySpring extends Constraint {
         assertSoft(moment !== 0, "Unsolvable spring.");
         this.iSum = 1 / moment;
 
-        this.w_coef = 1 - Math.exp(-this.damping * dt * moment);
-        this.target_wrn = 0;
+        this.dragCoef = 1 - Math.exp(-this.damping * dt * moment);
+        this.targetNormalRelativeRate = 0;
 
         // apply this torque
-        const j_spring = this.springTorqueFunc(this, a.a - b.a) * dt;
-        a.w -= j_spring * a.inertiaInv;
-        b.w += j_spring * b.inertiaInv;
+        const springTorque = this.springTorqueFunc(this, a.a - b.a) * dt;
+        a.w -= springTorque * a.inertiaInv;
+        b.w += springTorque * b.inertiaInv;
     }
 
     applyImpulse(): void {
@@ -81,16 +81,19 @@ export class DampedRotarySpring extends Constraint {
         const b = this.b;
 
         // compute relative velocity
-        const wrn = a.w - b.w; //normal_relative_velocity(a, b, r1, r2, n) - this.target_vrn;
+        // normal_relative_velocity(a, b, r1, r2, n) - this.target_vrn;
+        const normalRelativeRate = a.w - b.w;
 
         // compute velocity loss from drag
         // not 100% certain spring is derived correctly, though it makes sense
-        const w_damp = (this.target_wrn - wrn) * this.w_coef;
-        this.target_wrn = wrn + w_damp;
+        const rateDamped = (this.targetNormalRelativeRate - normalRelativeRate) * this.dragCoef;
+        this.targetNormalRelativeRate = normalRelativeRate + rateDamped;
 
-        //apply_impulses(a, b, this.r1, this.r2, vmult(this.n, v_damp*this.nMass));
-        const j_damp = w_damp * this.iSum;
-        a.w += j_damp * a.inertiaInv;
-        b.w -= j_damp * b.inertiaInv;
+        // apply_impulses(
+        //     a, b, this.r1, this.r2, vmult(this.n, v_damp*this.nMass),
+        // );
+        const torqueDamped = rateDamped * this.iSum;
+        a.w += torqueDamped * a.inertiaInv;
+        b.w -= torqueDamped * b.inertiaInv;
     }
 }
