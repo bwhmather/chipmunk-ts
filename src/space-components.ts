@@ -30,13 +30,18 @@ export function componentRoot(body: Body) {
 }
 
 export function componentActivate(root: Body): void {
-    if (!root || !root.isSleeping()) return;
-    assert(!root.isRogue(), "Internal Error: componentActivate() called on a rogue body.");
+    if (!root || !root.isSleeping()) {
+        return;
+    }
+    assert(
+        !root.isRogue(),
+        "Internal Error: componentActivate() called on a rogue body.",
+    );
 
-    let space = root.space;
+    const space = root.space;
     let body = root;
     while (body) {
-        let next = body.nodeNext;
+        const next = body.nodeNext;
 
         body.nodeIdleTime = 0;
         body.nodeRoot = null;
@@ -59,27 +64,45 @@ export function componentAdd(root: Body, body: Body): void {
 }
 
 export function floodFillComponent(root: Body, body: Body): void {
-    // Rogue bodies cannot be put to sleep and prevent bodies they are touching from sleeping anyway.
-    // Static bodies (which are a type of rogue body) are effectively sleeping all the time.
+    // Rogue bodies cannot be put to sleep and prevent bodies they are touching
+    // from sleeping anyway. Static bodies (which are a type of rogue body) are
+    // effectively sleeping all the time.
     if (!body.isRogue()) {
-        let other_root = componentRoot(body);
-        if (other_root == null) {
+        const otherRoot = componentRoot(body);
+        if (otherRoot == null) {
             componentAdd(root, body);
             for (let arb = body.arbiterList; arb; arb = arb.next(body)) {
-                floodFillComponent(root, (body == arb.body_a ? arb.body_b : arb.body_a));
+                const other = (body === arb.body_a
+                    ? arb.body_b
+                    : arb.body_a
+                );
+                floodFillComponent(root, other);
             }
-            for (let constraint = body.constraintList; constraint; constraint = constraint.next(body)) {
-                floodFillComponent(root, (body == constraint.a ? constraint.b : constraint.a));
+            for (
+                let constraint = body.constraintList;
+                constraint;
+                constraint = constraint.next(body)
+            ) {
+                const other = (body === constraint.a
+                    ? constraint.b
+                    : constraint.a
+                );
+                floodFillComponent(root, other);
             }
         } else {
-            assertSoft(other_root === root, "Internal Error: Inconsistency detected in the contact graph.");
+            assertSoft(
+                otherRoot === root,
+                "Internal Error: Inconsistency detected in the contact graph.",
+            );
         }
     }
 }
 
 export function componentActive(root: Body, threshold: number): boolean {
     for (let body = root; body; body = body.nodeNext) {
-        if (body.nodeIdleTime < threshold) return true;
+        if (body.nodeIdleTime < threshold) {
+            return true;
+        }
     }
 
     return false;
