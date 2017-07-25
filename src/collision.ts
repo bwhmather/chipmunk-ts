@@ -72,13 +72,17 @@ function circle2circleQuery(
     const mindist = r1 + r2;
     const delta = vsub(p2, p1);
     const distsq = vlengthsq(delta);
-    if (distsq >= mindist * mindist) return;
+    if (distsq >= mindist * mindist) {
+        return;
+    }
 
     const dist = Math.sqrt(distsq);
 
     // Allocate and initialize the contact.
     return new Contact(
-        vadd(p1, vmult(delta, 0.5 + (r1 - 0.5 * mindist) / (dist ? dist : Infinity))),
+        vadd(p1, vmult(
+            delta, 0.5 + (r1 - 0.5 * mindist) / (dist ? dist : Infinity),
+        )),
         (dist ? vmult(delta, 1 / dist) : new Vect(1, 0)),
         dist - mindist,
         0,
@@ -87,27 +91,33 @@ function circle2circleQuery(
 
 // Collide circle shapes.
 function circle2circle(circ1: CircleShape, circ2: CircleShape) {
-    const contact = circle2circleQuery(circ1.tc, circ2.tc, circ1.radius, circ2.radius);
+    const contact = circle2circleQuery(
+        circ1.tc, circ2.tc, circ1.radius, circ2.radius,
+    );
     return contact ? [contact] : [];
 }
 
 function circle2segment(circleShape: CircleShape, segmentShape: SegmentShape) {
-    const seg_a = segmentShape.ta;
-    const seg_b = segmentShape.tb;
+    const segA = segmentShape.ta;
+    const segB = segmentShape.tb;
     const center = circleShape.tc;
 
-    const seg_delta = vsub(seg_b, seg_a);
-    const closest_t = clamp01(vdot(seg_delta, vsub(center, seg_a)) / vlengthsq(seg_delta));
-    const closest = vadd(seg_a, vmult(seg_delta, closest_t));
+    const segDelta = vsub(segB, segA);
+    const closestT = clamp01(
+        vdot(segDelta, vsub(center, segA)) / vlengthsq(segDelta),
+    );
+    const closest = vadd(segA, vmult(segDelta, closestT));
 
-    const contact = circle2circleQuery(center, closest, circleShape.radius, segmentShape.r);
+    const contact = circle2circleQuery(
+        center, closest, circleShape.radius, segmentShape.r,
+    );
     if (contact) {
         const n = contact.n;
 
         // Reject endcap collisions if tangents are provided.
         return (
-            (closest_t === 0 && vdot(n, segmentShape.tangentA) < 0) ||
-            (closest_t === 1 && vdot(n, segmentShape.tangentB) < 0)
+            (closestT === 0 && vdot(n, segmentShape.tangentA) < 0) ||
+            (closestT === 1 && vdot(n, segmentShape.tangentB) < 0)
         ) ? [] : [contact];
     } else {
         return [];
@@ -120,16 +130,18 @@ function segment2segment(seg1: SegmentShape, seg2: SegmentShape): Contact[] {
 
 // Find the minimum separating axis for the given poly and axis list.
 //
-// This function needs to return two values - the index of the min. separating axis and
-// the value itself. Short of inlining MSA, returning values through a global like this
-// is the fastest implementation.
+// This function needs to return two values - the index of the min. separating
+// axis and the value itself. Short of inlining MSA, returning values through a
+// global like this is the fastest implementation.
 //
 // See: http://jsperf.com/return-two-values-from-function/2
-let last_MSA_min = 0;
+let lastMsaMin = 0;
 function findMSA(poly: PolyShape, planes: SplittingPlane[]) {
-    let min_index = 0;
+    let indexMin = 0;
     let min = poly.valueOnAxis(planes[0].n, planes[0].d);
-    if (min > 0) return -1;
+    if (min > 0) {
+        return -1;
+    }
 
     for (let i = 1; i < planes.length; i++) {
         const dist = poly.valueOnAxis(planes[i].n, planes[i].d);
@@ -137,17 +149,17 @@ function findMSA(poly: PolyShape, planes: SplittingPlane[]) {
             return -1;
         } else if (dist > min) {
             min = dist;
-            min_index = i;
+            indexMin = i;
         }
     }
 
-    last_MSA_min = min;
-    return min_index;
+    lastMsaMin = min;
+    return indexMin;
 }
 
 // Add contacts for probably penetrating vertexes.
-// This handles the degenerate case where an overlap was detected, but no vertexes fall inside
-// the opposing polygon. (like a star of david)
+// This handles the degenerate case where an overlap was detected, but no
+// vertexes fall inside the opposing polygon. (like a star of david)
 function findVertsFallback(
     poly1: PolyShape, poly2: PolyShape, n: Vect, dist: number,
 ): Contact[] {
@@ -155,19 +167,23 @@ function findVertsFallback(
 
     const verts1 = poly1.tVerts;
     for (let i = 0; i < verts1.length; i += 2) {
-        let vx = verts1[i];
-        let vy = verts1[i + 1];
+        const vx = verts1[i];
+        const vy = verts1[i + 1];
         if (poly2.containsVertPartial(vx, vy, vneg(n))) {
-            arr.push(new Contact(new Vect(vx, vy), n, dist, hashPair(poly1.hashid, i)));
+            arr.push(new Contact(
+                new Vect(vx, vy), n, dist, hashPair(poly1.hashid, i)),
+            );
         }
     }
 
     const verts2 = poly2.tVerts;
     for (let i = 0; i < verts2.length; i += 2) {
-        let vx = verts2[i];
-        let vy = verts2[i + 1];
+        const vx = verts2[i];
+        const vy = verts2[i + 1];
         if (poly1.containsVertPartial(vx, vy, n)) {
-            arr.push(new Contact(new Vect(vx, vy), n, dist, hashPair(poly2.hashid, i)));
+            arr.push(new Contact(
+                new Vect(vx, vy), n, dist, hashPair(poly2.hashid, i)),
+            );
         }
     }
 
@@ -182,19 +198,23 @@ function findVerts(
 
     const verts1 = poly1.tVerts;
     for (let i = 0; i < verts1.length; i += 2) {
-        let vx = verts1[i];
-        let vy = verts1[i + 1];
+        const vx = verts1[i];
+        const vy = verts1[i + 1];
         if (poly2.containsVert(vx, vy)) {
-            arr.push(new Contact(new Vect(vx, vy), n, dist, hashPair(poly1.hashid, i >> 1)));
+            arr.push(new Contact(
+                new Vect(vx, vy), n, dist, hashPair(poly1.hashid, i >> 1)),
+            );
         }
     }
 
     const verts2 = poly2.tVerts;
     for (let i = 0; i < verts2.length; i += 2) {
-        let vx = verts2[i];
-        let vy = verts2[i + 1];
+        const vx = verts2[i];
+        const vy = verts2[i + 1];
         if (poly1.containsVert(vx, vy)) {
-            arr.push(new Contact(new Vect(vx, vy), n, dist, hashPair(poly2.hashid, i >> 1)));
+            arr.push(new Contact
+                (new Vect(vx, vy), n, dist, hashPair(poly2.hashid, i >> 1),
+            ));
         }
     }
 
@@ -204,18 +224,23 @@ function findVerts(
 // Collide poly shapes together.
 function poly2poly(poly1: PolyShape, poly2: PolyShape): Contact[] {
     const mini1 = findMSA(poly2, poly1.tPlanes);
-    if (mini1 == -1) return [];
-    const min1 = last_MSA_min;
+    if (mini1 === -1) {
+        return [];
+    }
+    const min1 = lastMsaMin;
 
     const mini2 = findMSA(poly1, poly2.tPlanes);
-    if (mini2 == -1) return [];
-    const min2 = last_MSA_min;
+    if (mini2 === -1) {
+        return [];
+    }
+    const min2 = lastMsaMin;
 
     // There is overlap, find the penetrating verts
-    if (min1 > min2)
+    if (min1 > min2) {
         return findVerts(poly1, poly2, poly1.tPlanes[mini1].n, min1);
-    else
+    } else {
         return findVerts(poly1, poly2, vneg(poly2.tPlanes[mini2].n), min2);
+    }
 }
 
 // Like cpPolyValueOnAxis(), but for segments.
@@ -241,7 +266,9 @@ function findPointsBehindSeg(
         if (vdot2(vx, vy, n.x, n.y) < vdot(seg.tn, seg.ta) * coef + seg.r) {
             const dt = vcross2(seg.tn.x, seg.tn.y, vx, vy);
             if (dta >= dt && dt >= dtb) {
-                arr.push(new Contact(new Vect(vx, vy), n, pDist, hashPair(poly.hashid, i)));
+                arr.push(new Contact(
+                    new Vect(vx, vy), n, pDist, hashPair(poly.hashid, i),
+                ));
             }
         }
     }
@@ -258,39 +285,46 @@ function segment2poly(seg: SegmentShape, poly: PolyShape): Contact[] {
     const segD = vdot(seg.tn, seg.ta);
     const minNorm = poly.valueOnAxis(seg.tn, segD) - seg.r;
     const minNeg = poly.valueOnAxis(vneg(seg.tn), -segD) - seg.r;
-    if (minNeg > 0 || minNorm > 0) return [];
+    if (minNeg > 0 || minNorm > 0) {
+        return [];
+    }
 
     let mini = 0;
-    let poly_min = segValueOnAxis(seg, planes[0].n, planes[0].d);
-    if (poly_min > 0) return [];
+    let polyMin = segValueOnAxis(seg, planes[0].n, planes[0].d);
+    if (polyMin > 0) {
+        return [];
+    }
     for (let i = 0; i < numVerts; i++) {
         const dist = segValueOnAxis(seg, planes[i].n, planes[i].d);
         if (dist > 0) {
             return [];
-        } else if (dist > poly_min) {
-            poly_min = dist;
+        } else if (dist > polyMin) {
+            polyMin = dist;
             mini = i;
         }
     }
 
-    const poly_n = vneg(planes[mini].n);
+    const polyN = vneg(planes[mini].n);
 
-    const va = vadd(seg.ta, vmult(poly_n, seg.r));
-    const vb = vadd(seg.tb, vmult(poly_n, seg.r));
-    if (poly.containsVert(va.x, va.y))
-        arr.push(new Contact(va, poly_n, poly_min, hashPair(seg.hashid, 0)));
-    if (poly.containsVert(vb.x, vb.y))
-        arr.push(new Contact(vb, poly_n, poly_min, hashPair(seg.hashid, 1)));
+    const va = vadd(seg.ta, vmult(polyN, seg.r));
+    const vb = vadd(seg.tb, vmult(polyN, seg.r));
+    if (poly.containsVert(va.x, va.y)) {
+        arr.push(new Contact(va, polyN, polyMin, hashPair(seg.hashid, 0)));
+    }
+    if (poly.containsVert(vb.x, vb.y)) {
+        arr.push(new Contact(vb, polyN, polyMin, hashPair(seg.hashid, 1)));
+    }
 
     // Floating point precision problems here.
     // This will have to do for now.
-    //	poly_min -= cp_collision_slop; // TODO is this needed anymore?
+    // poly_min -= cp_collision_slop; // TODO is this needed anymore?
 
-    if (minNorm >= poly_min || minNeg >= poly_min) {
-        if (minNorm > minNeg)
+    if (minNorm >= polyMin || minNeg >= polyMin) {
+        if (minNorm > minNeg) {
             findPointsBehindSeg(arr, seg, poly, minNorm, 1);
-        else
+        } else {
             findPointsBehindSeg(arr, seg, poly, minNeg, -1);
+        }
     }
 
     // If no other collision points are found, try colliding endpoints.
@@ -298,20 +332,30 @@ function segment2poly(seg: SegmentShape, poly: PolyShape): Contact[] {
         const mini2 = mini * 2;
         const verts = poly.tVerts;
 
-        const poly_a = new Vect(verts[mini2], verts[mini2 + 1]);
-
+        const polyA = new Vect(
+            verts[mini2], verts[mini2 + 1],
+        );
         let con;
-        if ((con = circle2circleQuery(seg.ta, poly_a, seg.r, 0))) return [con];
-        if ((con = circle2circleQuery(seg.tb, poly_a, seg.r, 0))) return [con];
+
+        con = circle2circleQuery(seg.ta, polyA, seg.r, 0);
+        if (con) { return [con]; }
+
+        con = circle2circleQuery(seg.tb, polyA, seg.r, 0);
+        if (con) { return [con]; }
 
         const len = numVerts * 2;
-        const poly_b = new Vect(verts[(mini2 + 2) % len], verts[(mini2 + 3) % len]);
-        if ((con = circle2circleQuery(seg.ta, poly_b, seg.r, 0))) return [con];
-        if ((con = circle2circleQuery(seg.tb, poly_b, seg.r, 0))) return [con];
+        const polyB = new Vect(
+            verts[(mini2 + 2) % len], verts[(mini2 + 3) % len],
+        );
+        con = circle2circleQuery(seg.ta, polyB, seg.r, 0);
+        if (con) { return [con]; }
+
+        con = circle2circleQuery(seg.tb, polyB, seg.r, 0);
+        if (con) { return [con]; }
     }
 
-    //	console.log(poly.tVerts, poly.tPlanes);
-    //	console.log('seg2poly', arr);
+    // console.log(poly.tVerts, poly.tPlanes);
+    // console.log('seg2poly', arr);
     return arr;
 }
 
@@ -348,7 +392,9 @@ function circle2poly(circ: CircleShape, poly: PolyShape): Contact[] {
     const dt = vcross(n, circ.tc);
 
     if (dt < dtb) {
-        const con = circle2circleQuery(circ.tc, new Vect(bx, by), circ.radius, 0);
+        const con = circle2circleQuery(
+            circ.tc, new Vect(bx, by), circ.radius, 0,
+        );
         return con ? [con] : [];
     } else if (dt < dta) {
         return [new Contact(
@@ -358,17 +404,21 @@ function circle2poly(circ: CircleShape, poly: PolyShape): Contact[] {
             0,
         )];
     } else {
-        const con = circle2circleQuery(circ.tc, new Vect(ax, ay), circ.radius, 0);
+        const con = circle2circleQuery(
+            circ.tc, new Vect(ax, ay), circ.radius, 0,
+        );
         return con ? [con] : [];
     }
 }
 
-// The javascripty way to do this would be either nested object or methods on the prototypes.
+// The javascripty way to do this would be either nested object or methods on
+// the prototypes.
 //
 // However, the *fastest* way is the method below.
 // See: http://jsperf.com/dispatch
 
-// These are copied from the prototypes into the actual objects in the Shape constructor.
+// These are copied from the prototypes into the actual objects in the Shape
+// constructor.
 CircleShape.prototype.collisionCode = 0;
 SegmentShape.prototype.collisionCode = 1;
 PolyShape.prototype.collisionCode = 2;
@@ -392,6 +442,9 @@ PolyShape.prototype.collisionTable = [
 ];
 
 export function collideShapes(a: Shape, b: Shape) {
-    assert(a.collisionCode <= b.collisionCode, "Collided shapes must be sorted by type");
+    assert(
+        a.collisionCode <= b.collisionCode,
+        "Collided shapes must be sorted by type",
+    );
     return a.collisionTable[b.collisionCode](a, b);
 }
