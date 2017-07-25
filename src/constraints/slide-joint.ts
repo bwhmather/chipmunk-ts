@@ -32,10 +32,10 @@ import {
 } from "../vect";
 import { Constraint } from "./constraint";
 import {
-    apply_impulses,
-    bias_coef,
-    k_scalar,
-    relative_velocity,
+    applyImpulses,
+    biasCoef,
+    kScalar,
+    relativeVelocity,
 } from "./util";
 
 export class SlideJoint extends Constraint {
@@ -95,12 +95,12 @@ export class SlideJoint extends Constraint {
         }
 
         // calculate mass normal
-        this.nMass = 1 / k_scalar(a, b, this.r1, this.r2, this.n);
+        this.nMass = 1 / kScalar(a, b, this.r1, this.r2, this.n);
 
         // calculate bias velocity
         const maxBias = this.maxBias;
         this.bias = clamp(
-            -bias_coef(this.errorBias, dt) * pdist / dt,
+            -biasCoef(this.errorBias, dt) * pdist / dt,
             -maxBias, maxBias,
         );
 
@@ -110,7 +110,7 @@ export class SlideJoint extends Constraint {
 
     applyCachedImpulse(dtCoef: number): void {
         const jn = this.jnAcc * dtCoef;
-        apply_impulses(
+        applyImpulses(
             this.a, this.b,
             this.r1, this.r2,
             this.n.x * jn, this.n.y * jn,
@@ -130,7 +130,7 @@ export class SlideJoint extends Constraint {
         const r2 = this.r2;
 
         // compute relative velocity
-        const vr = relative_velocity(a, b, r1, r2);
+        const vr = relativeVelocity(a, b, r1, r2);
         const vrn = vdot(vr, n);
 
         // compute normal impulse
@@ -140,7 +140,7 @@ export class SlideJoint extends Constraint {
         jn = this.jnAcc - jnOld;
 
         // apply impulse
-        apply_impulses(a, b, this.r1, this.r2, n.x * jn, n.y * jn);
+        applyImpulses(a, b, this.r1, this.r2, n.x * jn, n.y * jn);
     }
 
     getImpulse(): number {

@@ -32,9 +32,9 @@ import {
 } from "../vect";
 import { Constraint } from "./constraint";
 import {
-    apply_impulses,
-    bias_coef,
-    k_scalar, normal_relative_velocity,
+    applyImpulses,
+    biasCoef,
+    kScalar, normalRelativeVelocity,
 } from "./util";
 
 export class PinJoint extends Constraint {
@@ -91,12 +91,12 @@ export class PinJoint extends Constraint {
         this.n = vmult(delta, 1 / (dist ? dist : Infinity));
 
         // calculate mass normal
-        this.nMass = 1 / k_scalar(a, b, this.r1, this.r2, this.n);
+        this.nMass = 1 / kScalar(a, b, this.r1, this.r2, this.n);
 
         // calculate bias velocity
         const maxBias = this.maxBias;
         this.bias = clamp(
-            -bias_coef(this.errorBias, dt) * (dist - this.dist) / dt,
+            -biasCoef(this.errorBias, dt) * (dist - this.dist) / dt,
             -maxBias, maxBias,
         );
 
@@ -106,7 +106,7 @@ export class PinJoint extends Constraint {
 
     applyCachedImpulse(dtCoef: number): void {
         const j = vmult(this.n, this.jnAcc * dtCoef);
-        apply_impulses(this.a, this.b, this.r1, this.r2, j.x, j.y);
+        applyImpulses(this.a, this.b, this.r1, this.r2, j.x, j.y);
     }
 
     applyImpulse(): void {
@@ -115,7 +115,7 @@ export class PinJoint extends Constraint {
         const n = this.n;
 
         // compute relative velocity
-        const vrn = normal_relative_velocity(a, b, this.r1, this.r2, n);
+        const vrn = normalRelativeVelocity(a, b, this.r1, this.r2, n);
 
         // compute normal impulse
         let jn = (this.bias - vrn) * this.nMass;
@@ -124,7 +124,7 @@ export class PinJoint extends Constraint {
         jn = this.jnAcc - jnOld;
 
         // apply impulse
-        apply_impulses(a, b, this.r1, this.r2, n.x * jn, n.y * jn);
+        applyImpulses(a, b, this.r1, this.r2, n.x * jn, n.y * jn);
     }
 
     getImpulse(): number {

@@ -24,7 +24,7 @@
 import { Body } from "../body";
 import { clamp } from "../util";
 import { Constraint } from "./constraint";
-import { bias_coef } from "./util";
+import { biasCoef } from "./util";
 
 export class GearJoint extends Constraint {
     phase: number;
@@ -61,7 +61,7 @@ export class GearJoint extends Constraint {
         const maxBias = this.maxBias;
         this.bias = clamp(
             (
-                -bias_coef(this.errorBias, dt) *
+                -biasCoef(this.errorBias, dt) *
                 (b.a * this.ratio - a.a - this.phase) /
                 dt
             ),

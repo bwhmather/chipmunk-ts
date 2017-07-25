@@ -34,7 +34,7 @@ import {
 } from "../vect";
 import { Constraint } from "./constraint";
 import {
-    apply_impulses, bias_coef, k_tensor, mult_k, relative_velocity,
+    applyImpulses, biasCoef, kTensor, multK, relativeVelocity,
 } from "./util";
 
 export class GrooveJoint extends Constraint {
@@ -109,7 +109,7 @@ export class GrooveJoint extends Constraint {
         }
 
         // Calculate mass tensor
-        k_tensor(a, b, this.r1, this.r2, this.k1, this.k2);
+        kTensor(a, b, this.r1, this.r2, this.k1, this.k2);
 
         // compute max impulse
         this.jMaxLen = this.maxForce * dt;
@@ -117,13 +117,13 @@ export class GrooveJoint extends Constraint {
         // calculate bias velocity
         const delta = vsub(vadd(b.p, this.r2), vadd(a.p, this.r1));
         this.bias = vclamp(
-            vmult(delta, -bias_coef(this.errorBias, dt) / dt),
+            vmult(delta, -biasCoef(this.errorBias, dt) / dt),
             this.maxBias,
         );
     }
 
     applyCachedImpulse(dtCoef: number): void {
-        apply_impulses(
+        applyImpulses(
             this.a, this.b,
             this.r1, this.r2,
             this.jAcc.x * dtCoef,
@@ -145,14 +145,14 @@ export class GrooveJoint extends Constraint {
         const r2 = this.r2;
 
         // compute impulse
-        const vr = relative_velocity(a, b, r1, r2);
+        const vr = relativeVelocity(a, b, r1, r2);
 
-        const j = mult_k(vsub(this.bias, vr), this.k1, this.k2);
+        const j = multK(vsub(this.bias, vr), this.k1, this.k2);
         const jOld = this.jAcc;
         this.jAcc = this.grooveConstrain(vadd(jOld, j));
 
         // apply impulse
-        apply_impulses(
+        applyImpulses(
             a, b, this.r1, this.r2,
             this.jAcc.x - jOld.x,
             this.jAcc.y - jOld.y,

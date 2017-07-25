@@ -30,8 +30,8 @@ import {
 } from "../vect";
 import { Constraint } from "./constraint";
 import {
-    apply_impulses, k_scalar,
-    normal_relative_velocity,
+    applyImpulses, kScalar,
+    normalRelativeVelocity,
 } from "./util";
 
 function defaultSpringForce(spring: DampedSpring, dist: number): number {
@@ -95,7 +95,7 @@ export class DampedSpring extends Constraint {
         const dist = vlength(delta);
         this.n = vmult(delta, 1 / (dist ? dist : Infinity));
 
-        const k = k_scalar(a, b, this.r1, this.r2, this.n);
+        const k = kScalar(a, b, this.r1, this.r2, this.n);
         assertSoft(k !== 0, "Unsolvable this.");
         this.nMass = 1 / k;
 
@@ -104,7 +104,7 @@ export class DampedSpring extends Constraint {
 
         // apply this force
         const springForce = this.springForceFunc(this, dist);
-        apply_impulses(
+        applyImpulses(
             a, b, this.r1, this.r2,
             this.n.x * springForce * dt, this.n.y * springForce * dt,
         );
@@ -116,7 +116,7 @@ export class DampedSpring extends Constraint {
 
     applyImpulse(): void {
         // compute relative velocity
-        const normalRelativeVelocity = normal_relative_velocity(
+        const nrv = normalRelativeVelocity(
             this.a, this.b, this.r1,
             this.r2, this.n,
         );
@@ -124,12 +124,12 @@ export class DampedSpring extends Constraint {
         // compute velocity loss from drag
         let vDamped = (
             this.targetNormalRelativeVelocity -
-            normalRelativeVelocity
+            nrv
         ) * this.dragCoef;
-        this.targetNormalRelativeVelocity = normalRelativeVelocity + vDamped;
+        this.targetNormalRelativeVelocity = nrv + vDamped;
 
         vDamped *= this.nMass;
-        apply_impulses(
+        applyImpulses(
             this.a, this.b, this.r1, this.r2,
             this.n.x * vDamped, this.n.y * vDamped,
         );

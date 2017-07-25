@@ -30,7 +30,7 @@
 // DEBUG,
 import { Arbiter } from "./arbiter";
 import { Constraint } from "./constraints";
-import { apply_impulse } from "./constraints/util";
+import { applyImpulse } from "./constraints/util";
 import { Shape } from "./shapes";
 import { Space } from "./space";
 import { componentActivate, componentRoot } from "./space-components";
@@ -320,7 +320,7 @@ export class Body {
 
     applyImpulse(impulse: Vect, r: Vect) {
         this.activate();
-        apply_impulse(this, impulse.x, impulse.y, r);
+        applyImpulse(this, impulse.x, impulse.y, r);
     }
 
     getVelAtPoint(r: Vect): Vect {

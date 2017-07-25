@@ -26,7 +26,7 @@ import { assertSoft } from "../util";
 import { vcross, vcross2, vdot, vdot2, Vect } from "../vect";
 
 // a and b are bodies.
-export function relative_velocity(
+export function relativeVelocity(
     a: Body, b: Body, r1: Vect, r2: Vect,
 ) {
     // var v1_sum = vadd(a.v, vmult(vperp(r1), a.w));
@@ -41,7 +41,7 @@ export function relative_velocity(
     return new Vect(v2sumx - v1sumx, v2sumy - v1sumy);
 }
 
-export function normal_relative_velocity(
+export function normalRelativeVelocity(
     a: Body, b: Body,
     r1: Vect, r2: Vect,
     n: Vect,
@@ -55,7 +55,7 @@ export function normal_relative_velocity(
     return vdot2(v2sumx - v1sumx, v2sumy - v1sumy, n.x, n.y);
 }
 
-export function apply_impulse(
+export function applyImpulse(
     body: Body, jx: number, jy: number, r: Vect,
 ) {
     // body.v = body.v.add(vmult(j, body.m_inv));
@@ -65,14 +65,14 @@ export function apply_impulse(
     body.w += body.inertiaInv * (r.x * jy - r.y * jx);
 }
 
-export function apply_impulses(
+export function applyImpulses(
     a: Body, b: Body, r1: Vect, r2: Vect, jx: number, jy: number,
 ) {
-    apply_impulse(a, -jx, -jy, r1);
-    apply_impulse(b, jx, jy, r2);
+    applyImpulse(a, -jx, -jy, r1);
+    applyImpulse(b, jx, jy, r2);
 }
 
-export function apply_bias_impulse(
+export function applyBiasImpulse(
     body: Body, jx: number, jy: number, r: Vect,
 ) {
     // body.v_bias = vadd(body.v_bias, vmult(j, body.m_inv));
@@ -81,22 +81,22 @@ export function apply_bias_impulse(
     body.w_bias += body.inertiaInv * vcross2(r.x, r.y, jx, jy);
 }
 
-export function k_scalar_body(body: Body, r: Vect, n: Vect) {
+export function kScalarBody(body: Body, r: Vect, n: Vect) {
     const rcn = vcross(r, n);
     return body.massInv + body.inertiaInv * rcn * rcn;
 }
 
-export function k_scalar(
+export function kScalar(
     a: Body, b: Body, r1: Vect, r2: Vect, n: Vect,
 ): number {
-    const value = k_scalar_body(a, r1, n) + k_scalar_body(b, r2, n);
+    const value = kScalarBody(a, r1, n) + kScalarBody(b, r2, n);
     assertSoft(value !== 0, "Unsolvable collision or constraint.");
 
     return value;
 }
 
 // k1 and k2 are modified by the function to contain the outputs.
-export function k_tensor(
+export function kTensor(
     a: Body, b: Body,
     r1: Vect, r2: Vect,
     k1: Vect, k2: Vect,
@@ -136,10 +136,10 @@ export function k_tensor(
     k2.x = -k21 * determinantInv; k2.y = k11 * determinantInv;
 }
 
-export function mult_k(vr: Vect, k1: Vect, k2: Vect): Vect {
+export function multK(vr: Vect, k1: Vect, k2: Vect): Vect {
     return new Vect(vdot(vr, k1), vdot(vr, k2));
 }
 
-export function bias_coef(errorBias: number, dt: number) {
+export function biasCoef(errorBias: number, dt: number) {
     return 1 - errorBias ** dt;
 }

@@ -86,7 +86,9 @@ export class DampedRotarySpring extends Constraint {
 
         // compute velocity loss from drag
         // not 100% certain spring is derived correctly, though it makes sense
-        const rateDamped = (this.targetNormalRelativeRate - normalRelativeRate) * this.dragCoef;
+        const rateDamped = (
+            this.targetNormalRelativeRate - normalRelativeRate
+        ) * this.dragCoef;
         this.targetNormalRelativeRate = normalRelativeRate + rateDamped;
 
         // apply_impulses(

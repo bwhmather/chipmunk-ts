@@ -24,8 +24,8 @@
 import { Body } from "./body";
 import { Contact } from "./collision";
 import {
-    apply_bias_impulse, apply_impulses,
-    k_scalar, normal_relative_velocity,
+    applyBiasImpulse, applyImpulses,
+    kScalar, normalRelativeVelocity,
 } from "./constraints/util";
 import { Shape } from "./shapes";
 import { Space } from "./space";
@@ -310,15 +310,15 @@ export class Arbiter {
             con.r2 = vsub(con.p, b.p);
 
             // Calculate the mass normal and mass tangent.
-            con.nMass = 1 / k_scalar(a, b, con.r1, con.r2, con.n);
-            con.tMass = 1 / k_scalar(a, b, con.r1, con.r2, vperp(con.n));
+            con.nMass = 1 / kScalar(a, b, con.r1, con.r2, con.n);
+            con.tMass = 1 / kScalar(a, b, con.r1, con.r2, vperp(con.n));
 
             // Calculate the target bias velocity.
             con.bias = -bias * Math.min(0, con.dist + slop) / dt;
             con.jBias = 0;
 
             // Calculate the target bounce velocity.
-            con.bounce = normal_relative_velocity(
+            con.bounce = normalRelativeVelocity(
                 a, b, con.r1, con.r2, con.n,
             ) * this.e;
         }
@@ -337,7 +337,7 @@ export class Arbiter {
             const jx = nx * con.jnAcc - ny * con.jtAcc;
             const jy = nx * con.jtAcc + ny * con.jnAcc;
             //apply_impulses(a, b, con.r1, con.r2, vmult(j, dt_coef));
-            apply_impulses(a, b, con.r1, con.r2, jx * dt_coef, jy * dt_coef);
+            applyImpulses(a, b, con.r1, con.r2, jx * dt_coef, jy * dt_coef);
         }
     }
 
@@ -398,15 +398,15 @@ export class Arbiter {
             //apply_bias_impulses(a, b, r1, r2, vmult(n, con.jBias - jbnOld));
             const bias_x = n.x * (con.jBias - jbnOld);
             const bias_y = n.y * (con.jBias - jbnOld);
-            apply_bias_impulse(a, -bias_x, -bias_y, r1);
-            apply_bias_impulse(b, bias_x, bias_y, r2);
+            applyBiasImpulse(a, -bias_x, -bias_y, r1);
+            applyBiasImpulse(b, bias_x, bias_y, r2);
 
             //apply_impulses(a, b, r1, r2, vrotate(n, new Vect(con.jnAcc - jnOld, con.jtAcc - jtOld)));
             const rot_x = con.jnAcc - jnOld;
             const rot_y = con.jtAcc - jtOld;
 
             // Inlining apply_impulses decreases speed for some reason :/
-            apply_impulses(
+            applyImpulses(
                 a, b, r1, r2,
                 n.x * rot_x - n.y * rot_y,
                 n.x * rot_y + n.y * rot_x,

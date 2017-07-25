@@ -31,10 +31,10 @@ import {
 } from "../vect";
 import { Constraint } from "./constraint";
 import {
-    apply_impulse, apply_impulses,
-    bias_coef,
-    k_tensor, mult_k,
-    relative_velocity,
+    applyImpulse, applyImpulses,
+    biasCoef,
+    kTensor, multK,
+    relativeVelocity,
 } from "./util";
 
 // Pivot joints can also be created with (a, b, pivot);
@@ -83,7 +83,7 @@ export class PivotJoint extends Constraint {
         this.r2 = vrotate(this.anchr2, b.rot);
 
         // Calculate mass tensor. Result is stored into this.k1 & this.k2.
-        k_tensor(a, b, this.r1, this.r2, this.k1, this.k2);
+        kTensor(a, b, this.r1, this.r2, this.k1, this.k2);
 
         // compute max impulse
         this.jMaxLen = this.maxForce * dt;
@@ -91,13 +91,13 @@ export class PivotJoint extends Constraint {
         // calculate bias velocity
         const delta = vsub(vadd(b.p, this.r2), vadd(a.p, this.r1));
         this.bias = vclamp(
-            vmult(delta, -bias_coef(this.errorBias, dt) / dt),
+            vmult(delta, -biasCoef(this.errorBias, dt) / dt),
             this.maxBias,
         );
     }
 
     applyCachedImpulse(dtCoef: number): void {
-        apply_impulses(
+        applyImpulses(
             this.a, this.b, this.r1, this.r2,
             this.jAcc.x * dtCoef, this.jAcc.y * dtCoef,
         );
@@ -111,15 +111,15 @@ export class PivotJoint extends Constraint {
         const r2 = this.r2;
 
         // compute relative velocity
-        const vr = relative_velocity(a, b, r1, r2);
+        const vr = relativeVelocity(a, b, r1, r2);
 
         // compute normal impulse
-        const j = mult_k(vsub(this.bias, vr), this.k1, this.k2);
+        const j = multK(vsub(this.bias, vr), this.k1, this.k2);
         const jOld = this.jAcc;
         this.jAcc = vclamp(vadd(this.jAcc, j), this.jMaxLen);
 
         // apply impulse
-        apply_impulses(
+        applyImpulses(
             a, b, this.r1, this.r2,
             this.jAcc.x - jOld.x, this.jAcc.y - jOld.y,
         );

@@ -24,7 +24,7 @@
 import { Body } from "../body";
 import { clamp } from "../util";
 import { Constraint } from "./constraint";
-import { bias_coef } from "./util";
+import { biasCoef } from "./util";
 
 export class RatchetJoint extends Constraint {
     angle: number;
@@ -74,7 +74,7 @@ export class RatchetJoint extends Constraint {
         // calculate bias velocity
         const maxBias = this.maxBias;
         this.bias = clamp(
-            -bias_coef(this.errorBias, dt) * pdist / dt,
+            -biasCoef(this.errorBias, dt) * pdist / dt,
             -maxBias, maxBias,
         );
 
