@@ -39,8 +39,10 @@ export function assert(value: any, message: string): void {
 
 export function assertSoft(value: any, message: string): void {
     if (!value && console && console.warn) {
+        // tslint:disable-next-line
         console.warn("ASSERTION FAILED: " + message);
         if (console.trace) {
+            // tslint:disable-next-line
             console.trace();
         }
     }
@@ -48,16 +50,9 @@ export function assertSoft(value: any, message: string): void {
 
 /* The hashpair function takes two numbers and returns a hash code for them.
  * Required that hashPair(a, b) === hashPair(b, a).
- * Chipmunk's hashPair function is defined as:
- *   #define CP_HASH_COEF (3344921057ul)
- *   #define CP_HASH_PAIR(A, B) ((cpHashValue)(A)*CP_HASH_COEF ^ (cpHashValue)(B)*CP_HASH_COEF)
- * But thats not suitable in javascript because multiplying by a large number will make the number
- * a large float.
- *
  * The result of hashPair is used as the key in objects, so it returns a string.
  */
 export function hashPair(a: number, b: number): string {
-    //assert(typeof(a) === 'number', "HashPair used on something not a number");
     return a < b ? a + " " + b : b + " " + a;
 }
 
@@ -122,7 +117,11 @@ export function momentForPoly(
         const v2y = verts[(i + 3) % len] + offset.y;
 
         const a = vcross2(v2x, v2y, v1x, v1y);
-        const b = vdot2(v1x, v1y, v1x, v1y) + vdot2(v1x, v1y, v2x, v2y) + vdot2(v2x, v2y, v2x, v2y);
+        const b = (
+            vdot2(v1x, v1y, v1x, v1y) +
+            vdot2(v1x, v1y, v2x, v2y) +
+            vdot2(v2x, v2y, v2x, v2y)
+        );
 
         sum1 += a * b;
         sum2 += a;
@@ -134,7 +133,10 @@ export function momentForPoly(
 export function areaForPoly(verts: number[]): number {
     let area = 0;
     for (let i = 0, len = verts.length; i < len; i += 2) {
-        area += vcross(new Vect(verts[i], verts[i + 1]), new Vect(verts[(i + 2) % len], verts[(i + 3) % len]));
+        area += vcross(
+            new Vect(verts[i], verts[i + 1]),
+            new Vect(verts[(i + 2) % len], verts[(i + 3) % len]),
+        );
     }
 
     return -area / 2;
@@ -188,7 +190,7 @@ export function clamp01(f: number): number {
     return Math.max(0, Math.min(f, 1));
 }
 
-/// Linearly interpolate (or extrapolate) between @c f1 and @c f2 by @c t percent.
+/// Linearly interpolate (or extrapolate) between `f1` and `f2` by t percent.
 export function lerp(f1: number, f2: number, t: number): number {
     return f1 * (1 - t) + f2 * t;
 }
