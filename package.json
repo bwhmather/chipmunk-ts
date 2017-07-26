@@ -1,17 +1,17 @@
 {
-  "name": "chipmunk",
-  "description": "Chipmunk 2d physics engine, in Javascript",
+  "name": "chipmunk-ts",
+  "description": "Chipmunk 2d physics engine, in Typescript",
   "keywords": [
     "physics",
     "engine",
     "chipmunk"
   ],
-  "version": "6.1.1",
-  "author": "Joseph Gentle <josephg@gmail.com> (josephg.com)",
-  "homepage": "https://github.com/josephg/chipmunk-js",
+  "version": "0.0.1",
+  "author": "Ben Mather <bwhmather@bwhmather.com> (bwhmather.com)",
+  "homepage": "https://github.com/bwhmather/chipmunk-ts",
   "repository": {
     "type": "git",
-    "url": "git://github.com/josephg/Chipmunk-js.git"
+    "url": "git://github.com/bwhmather/chipmunk-ts.git"
   },
   "main": "dist/chipmunk.js",
   "module": "dist/chipmunk.jsm",
