@@ -212,8 +212,7 @@ export class Body {
         this.a = angle; // fmod(a, (cpFloat)M_PI*2.0f);
 
         // this.rot = vforangle(angle);
-        this.rot.x = Math.cos(angle);
-        this.rot.y = Math.sin(angle);
+        this.rot = new Vect(Math.cos(angle), Math.sin(angle));
     }
 
     setAngle(angle: number) {
@@ -260,8 +259,13 @@ export class Body {
         // this.p = vadd(this.p, vmult(vadd(this.v, this.v_bias), dt));
 
         // this.p = this.p + (this.v + this.v_bias) * dt;
-        this.p.x += (this.vx + this.vxBias) * dt;
-        this.p.y += (this.vy + this.vyBias) * dt;
+        this.p = vadd(
+            this.p,
+            new Vect(
+                (this.vx + this.vxBias) * dt,
+                (this.vy + this.vyBias) * dt,
+            ),
+        );
 
         this.setAngleInternal(this.a + (this.w + this.wBias) * dt);
 

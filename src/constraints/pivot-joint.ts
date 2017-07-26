@@ -83,7 +83,7 @@ export class PivotJoint extends Constraint {
         this.r2 = vrotate(this.anchr2, b.rot);
 
         // Calculate mass tensor. Result is stored into this.k1 & this.k2.
-        kTensor(a, b, this.r1, this.r2, this.k1, this.k2);
+        [this.k1, this.k2] = kTensor(a, b, this.r1, this.r2);
 
         // compute max impulse
         this.jMaxLen = this.maxForce * dt;

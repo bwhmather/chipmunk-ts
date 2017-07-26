@@ -109,7 +109,7 @@ export class GrooveJoint extends Constraint {
         }
 
         // Calculate mass tensor
-        kTensor(a, b, this.r1, this.r2, this.k1, this.k2);
+        [this.k1, this.k2] = kTensor(a, b, this.r1, this.r2);
 
         // compute max impulse
         this.jMaxLen = this.maxForce * dt;

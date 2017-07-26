@@ -99,8 +99,7 @@ export function kScalar(
 export function kTensor(
     a: Body, b: Body,
     r1: Vect, r2: Vect,
-    k1: Vect, k2: Vect,
-): void {
+): [Vect, Vect] {
     let k11;
 
     let k12;
@@ -132,8 +131,10 @@ export function kTensor(
 
     const determinantInv = 1 / determinant;
 
-    k1.x = k22 * determinantInv; k1.y = -k12 * determinantInv;
-    k2.x = -k21 * determinantInv; k2.y = k11 * determinantInv;
+    return [
+        new Vect(k22 * determinantInv, -k12 * determinantInv),
+        new Vect(-k21 * determinantInv, k11 * determinantInv),
+    ];
 }
 
 export function multK(vr: Vect, k1: Vect, k2: Vect): Vect {
