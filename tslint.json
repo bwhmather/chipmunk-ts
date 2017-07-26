@@ -10,7 +10,7 @@
         "max-classes-per-file": [true, 5],
         "no-bitwise": [false],
         "member-ordering": [false],
-        "trailing-newline": [true, "multiline", "always", "singleline", "never"]
+        "trailing-comma": [true, "multiline", "always", "singleline", "never"]
     },
     "rulesDirectory": []
 }
