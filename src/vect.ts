@@ -29,41 +29,6 @@ export class Vect {
         this.x = x;
         this.y = y;
     }
-
-    add(v2: Vect): Vect {
-        this.x += v2.x;
-        this.y += v2.y;
-        return this;
-    }
-
-    sub(v2: Vect): Vect {
-        this.x -= v2.x;
-        this.y -= v2.y;
-        return this;
-    }
-
-    neg(): Vect {
-        this.x = -this.x;
-        this.y = -this.y;
-        return this;
-    }
-
-    mult(s: number): Vect {
-        this.x *= s;
-        this.y *= s;
-        return this;
-    }
-
-    project(v2: Vect): Vect {
-        this.mult(vdot(this, v2) / vlengthsq(v2));
-        return this;
-    }
-
-    rotate(v2: Vect): Vect {
-        this.x = this.x * v2.x - this.y * v2.y;
-        this.y = this.x * v2.y + this.y * v2.x;
-        return this;
-    }
 }
 
 export function v(x: number, y: number): Vect {
