@@ -30,7 +30,9 @@ import {
 import { Shape } from "./shapes";
 import { Space } from "./space";
 import { clamp } from "./util";
-import { vdot2, Vect, vmult, vneg, vperp, vsub, vzero } from "./vect";
+import {
+    vadd, vdot2, Vect, vmult, vneg, vperp, vrotate, vsub, vzero,
+} from "./vect";
 
 /// @defgroup cpArbiter cpArbiter
 /// The cpArbiter struct controls pairs of colliding shapes.
@@ -159,14 +161,14 @@ export class Arbiter {
     /// cpBodyEachArbiter callback.
     totalImpulse(): Vect {
         const contacts = this.contacts;
-        const sum = new Vect(0, 0);
+        let sum = new Vect(0, 0);
 
         for (let i = 0, count = contacts.length; i < count; i++) {
             const con = contacts[i];
-            sum.add(vmult(con.n, con.jnAcc));
+            sum = vadd(sum, vmult(con.n, con.jnAcc));
         }
 
-        return this.swappedColl ? sum : sum.neg();
+        return this.swappedColl ? sum : vneg(sum);
     }
 
     /// Calculate the total impulse including the friction that was applied by
@@ -175,14 +177,14 @@ export class Arbiter {
     /// cpBodyEachArbiter callback.
     totalImpulseWithFriction(): Vect {
         const contacts = this.contacts;
-        const sum = new Vect(0, 0);
+        let sum = new Vect(0, 0);
 
         for (let i = 0, count = contacts.length; i < count; i++) {
             const con = contacts[i];
-            sum.add(new Vect(con.jnAcc, con.jtAcc).rotate(con.n));
+            sum = vrotate(vadd(sum, new Vect(con.jnAcc, con.jtAcc)), con.n);
         }
 
-        return this.swappedColl ? sum : sum.neg();
+        return this.swappedColl ? sum : vneg(sum);
     }
 
     /// Calculate the amount of energy lost in a collision including static,
