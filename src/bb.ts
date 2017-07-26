@@ -21,26 +21,24 @@
  * SOFTWARE.
  */
 
-/// Chipmunk's axis-aligned 2D bounding box type along with a few handy routines.
+/// Chipmunk's axis-aligned 2D bounding box type along with a few handy
+/// routines.
 
 import { Vect } from "./vect";
 
-let numBB = 0;
-
-// Bounding boxes are JS objects with {l, b, r, t} = left, bottom, right, top, respectively.
+// Bounding boxes are JS objects with {l, b, r, t} = left, bottom, right, top,
+// respectively.
 export class BB {
-    l: number;
-    b: number;
-    r: number;
-    t: number;
+    readonly l: number;
+    readonly b: number;
+    readonly r: number;
+    readonly t: number;
 
     constructor(l: number, b: number, r: number, t: number) {
         this.l = l;
         this.b = b;
         this.r = r;
         this.t = t;
-
-        numBB++;
     }
 }
 
@@ -58,108 +56,113 @@ export function bbNewForCircle(c: Vect, r: number) {
 }
 
 /// Returns true if @c a and @c b intersect.
-export function bbIntersects(a: BB, b: BB): boolean {
-    return (a.l <= b.r && b.l <= a.r && a.b <= b.t && b.b <= a.t);
+export function bbIntersects(boxA: BB, boxB: BB): boolean {
+    return (
+        boxA.l <= boxB.r &&
+        boxB.l <= boxA.r &&
+        boxA.b <= boxB.t &&
+        boxB.b <= boxA.t
+    );
 }
 export function bbIntersects2(
-    bb: BB,
+    box: BB,
     l: number, b: number, r: number, t: number,
 ): boolean {
-    return (bb.l <= r && l <= bb.r && bb.b <= t && b <= bb.t);
+    return (box.l <= r && l <= box.r && box.b <= t && b <= box.t);
 }
 
 /// Returns true if @c other lies completely within @c bb.
-export function bbContainsBB(bb: BB, other: BB): boolean {
+export function bbContainsBB(boxA: BB, boxB: BB): boolean {
     return (
-        bb.l <= other.l &&
-        bb.r >= other.r &&
-        bb.b <= other.b &&
-        bb.t >= other.t
+        boxA.l <= boxB.l &&
+        boxA.r >= boxB.r &&
+        boxA.b <= boxB.b &&
+        boxA.t >= boxB.t
     );
 }
 
 /// Returns true if @c bb contains @c v.
-export function bbContainsVect(bb: BB, v: Vect): boolean {
+export function bbContainsVect(box: BB, vect: Vect): boolean {
     return (
-        bb.l <= v.x &&
-        bb.r >= v.x &&
-        bb.b <= v.y &&
-        bb.t >= v.y
+        box.l <= vect.x &&
+        box.r >= vect.x &&
+        box.b <= vect.y &&
+        box.t >= vect.y
     );
 }
 
 export function bbContainsVect2(
     l: number, b: number, r: number, t: number,
-    v: Vect,
+    vect: Vect,
 ): boolean {
     return (
-        l <= v.x &&
-        r >= v.x &&
-        b <= v.y &&
-        t >= v.y
+        l <= vect.x &&
+        r >= vect.x &&
+        b <= vect.y &&
+        t >= vect.y
     );
 }
 
 /// Returns a bounding box that holds both bounding boxes.
-export function bbMerge(a: BB, b: BB): BB {
+export function bbMerge(boxA: BB, boxB: BB): BB {
     return new BB(
-        Math.min(a.l, b.l),
-        Math.min(a.b, b.b),
-        Math.max(a.r, b.r),
-        Math.max(a.t, b.t),
+        Math.min(boxA.l, boxB.l),
+        Math.min(boxA.b, boxB.b),
+        Math.max(boxA.r, boxB.r),
+        Math.max(boxA.t, boxB.t),
     );
 }
 
 /// Returns a bounding box that holds both @c bb and @c v.
-export function bbExpand(bb: BB, v: Vect): BB {
+export function bbExpand(box: BB, vect: Vect): BB {
     return new BB(
-        Math.min(bb.l, v.x),
-        Math.min(bb.b, v.y),
-        Math.max(bb.r, v.x),
-        Math.max(bb.t, v.y),
+        Math.min(box.l, vect.x),
+        Math.min(box.b, vect.y),
+        Math.max(box.r, vect.x),
+        Math.max(box.t, vect.y),
     );
 }
 
 /// Returns the area of the bounding box.
-export function bbArea(bb: BB): number {
-    return (bb.r - bb.l) * (bb.t - bb.b);
+export function bbArea(box: BB): number {
+    return (box.r - box.l) * (box.t - box.b);
 }
 
 /// Merges @c a and @c b and returns the area of the merged bounding box.
-export function bbMergedArea(a: BB, b: BB): number {
+export function bbMergedArea(boxA: BB, boxB: BB): number {
     return (
-        (Math.max(a.r, b.r) - Math.min(a.l, b.l)) *
-        (Math.max(a.t, b.t) - Math.min(a.b, b.b))
+        (Math.max(boxA.r, boxB.r) - Math.min(boxA.l, boxB.l)) *
+        (Math.max(boxA.t, boxB.t) - Math.min(boxA.b, boxB.b))
     );
 }
 
 export function bbMergedArea2(
-    bb: BB,
+    box: BB,
     l: number, b: number, r: number, t: number,
 ): number {
     return (
-        (Math.max(bb.r, r) - Math.min(bb.l, l)) *
-        (Math.max(bb.t, t) - Math.min(bb.b, b))
+        (Math.max(box.r, r) - Math.min(box.l, l)) *
+        (Math.max(box.t, t) - Math.min(box.b, b))
     );
 }
 
 /// Clamp a vector to a bounding box.
-export function bbClampVect(bb: BB, v: Vect): Vect {
-    const x = Math.min(Math.max(bb.l, v.x), bb.r);
-    const y = Math.min(Math.max(bb.b, v.y), bb.t);
+export function bbClampVect(box: BB, vect: Vect): Vect {
+    const x = Math.min(Math.max(box.l, vect.x), box.r);
+    const y = Math.min(Math.max(box.b, vect.y), box.t);
     return new Vect(x, y);
 }
 
 // TODO edge case issue
 /// Wrap a vector to a bounding box.
-export function bbWrapVect(bb: BB, v: Vect): Vect {
-    const ix = Math.abs(bb.r - bb.l);
-    const modx = (v.x - bb.l) % ix;
+export function bbWrapVect(box: BB, vect: Vect): Vect {
+    const ix = Math.abs(box.r - box.l);
+    const modx = (vect.x - box.l) % ix;
     const x = (modx > 0) ? modx : modx + ix;
 
-    const iy = Math.abs(bb.t - bb.b);
-    const mody = (v.y - bb.b) % iy;
+    const iy = Math.abs(box.t - box.b);
+    const mody = (vect.y - box.b) % iy;
     const y = (mody > 0) ? mody : mody + iy;
 
-    return new Vect(x + bb.l, y + bb.b);
+    return new Vect(x + box.l, y + box.b);
 }
