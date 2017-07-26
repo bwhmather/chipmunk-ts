@@ -76,9 +76,9 @@ export function applyBiasImpulse(
     body: Body, jx: number, jy: number, r: Vect,
 ) {
     // body.v_bias = vadd(body.v_bias, vmult(j, body.m_inv));
-    body.v_biasx += jx * body.massInv;
-    body.v_biasy += jy * body.massInv;
-    body.w_bias += body.inertiaInv * vcross2(r.x, r.y, jx, jy);
+    body.vxBias += jx * body.massInv;
+    body.vxBias += jy * body.massInv;
+    body.wBias += body.inertiaInv * vcross2(r.x, r.y, jx, jy);
 }
 
 export function kScalarBody(body: Body, r: Vect, n: Vect) {

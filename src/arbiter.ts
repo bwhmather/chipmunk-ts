@@ -366,12 +366,12 @@ export class Arbiter {
 
             const vbn = (
                 n.x * (
-                    b.v_biasx - r2.y * b.w_bias -
-                    a.v_biasx + r1.y * a.w_bias
+                    b.vxBias - r2.y * b.wBias -
+                    a.vxBias + r1.y * a.wBias
                 ) +
                 n.y * (
-                    r2.x * b.w_bias + b.v_biasy -
-                    r1.x * a.w_bias - a.v_biasy
+                    r2.x * b.wBias + b.vxBias -
+                    r1.x * a.wBias - a.vxBias
                 )
             );
 
