@@ -77,7 +77,7 @@ export function applyBiasImpulse(
 ) {
     // body.v_bias = vadd(body.v_bias, vmult(j, body.m_inv));
     body.vxBias += jx * body.massInv;
-    body.vxBias += jy * body.massInv;
+    body.vyBias += jy * body.massInv;
     body.wBias += body.inertiaInv * vcross2(r.x, r.y, jx, jy);
 }
 

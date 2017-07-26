@@ -388,8 +388,8 @@ export class Arbiter {
                     a.vxBias + r1.y * a.wBias
                 ) +
                 n.y * (
-                    r2.x * b.wBias + b.vxBias -
-                    r1.x * a.wBias - a.vxBias
+                    r2.x * b.wBias + b.vyBias -
+                    r1.x * a.wBias - a.vyBias
                 )
             );
 
