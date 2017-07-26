@@ -72,9 +72,9 @@ export function floodFillComponent(root: Body, body: Body): void {
         if (otherRoot == null) {
             componentAdd(root, body);
             for (let arb = body.arbiterList; arb; arb = arb.next(body)) {
-                const other = (body === arb.body_a
-                    ? arb.body_b
-                    : arb.body_a
+                const other = (body === arb.bodyA
+                    ? arb.bodyB
+                    : arb.bodyA
                 );
                 floodFillComponent(root, other);
             }

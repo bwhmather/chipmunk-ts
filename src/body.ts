@@ -324,7 +324,7 @@ export class Body {
         while (arb) {
             const next = arb.next(this);
 
-            arb.swappedColl = (this === arb.body_b);
+            arb.swappedColl = (this === arb.bodyB);
             func(arb);
 
             arb = next;
@@ -412,8 +412,8 @@ export class Body {
         );
 
         for (let arb = this.arbiterList; arb; arb = arb.next(this)) {
-            if (!filter || filter === arb.a || filter === arb.b) {
-                (arb.body_a === this ? arb.body_b : arb.body_a).activate();
+            if (!filter || filter === arb.shapeA || filter === arb.shapeB) {
+                (arb.bodyA === this ? arb.bodyB : arb.bodyA).activate();
             }
         }
 
@@ -423,13 +423,13 @@ export class Body {
     pushArbiter(arb: Arbiter): void {
         assertSoft(
             (
-                arb.body_a === this ? arb.thread_a_next : arb.thread_b_next
+                arb.bodyA === this ? arb.threadNextA : arb.threadNextB
             ) === null,
             "Internal Error: Dangling contact graph pointers detected. (A)",
         );
         assertSoft(
             (
-                arb.body_a === this ? arb.thread_a_prev : arb.thread_b_prev
+                arb.bodyA === this ? arb.threadPrevA : arb.threadPrevB
             ) === null,
             "Internal Error: Dangling contact graph pointers detected. (B)",
         );
@@ -439,25 +439,25 @@ export class Body {
             (
                 next === null ||
                 (
-                    next.body_a === this
-                        ? next.thread_a_prev
-                        : next.thread_b_prev
+                    next.bodyA === this
+                        ? next.threadPrevA
+                        : next.threadPrevB
                 ) === null
             ),
             "Internal Error: Dangling contact graph pointers detected. (C)",
         );
 
-        if (arb.body_a === this) {
-            arb.thread_a_next = next;
+        if (arb.bodyA === this) {
+            arb.threadNextA = next;
         } else {
-            arb.thread_b_next = next;
+            arb.threadNextB = next;
         }
 
         if (next) {
-            if (next.body_a === this) {
-                next.thread_a_prev = arb;
+            if (next.bodyA === this) {
+                next.threadPrevA = arb;
             } else {
-                next.thread_b_prev = arb;
+                next.threadPrevB = arb;
             }
         }
         this.arbiterList = arb;

@@ -67,23 +67,28 @@ export class CollisionHandler {
 
     /// Collision begin event callback
     /// Returning false from a begin callback causes the collision to be ignored
-    /// until the the separate callback is called when the objects stop colliding.
+    /// until the the separate callback is called when the objects stop
+    /// colliding.
     begin(arb: Arbiter, space: Space) {
         return true;
     }
 
     /// Collision pre-solve event callback
-    /// Returning false from a pre-step callback causes the collision to be ignored
-    /// until the next step.
+    /// Returning false from a pre-step callback causes the collision to be
+    /// ignored until the next step.
     preSolve(arb: Arbiter, space: Space) {
         return true;
     }
 
     /// Collision post-solve event function callback type.
-    postSolve(arb: Arbiter, space: Space) { }
+    postSolve(arb: Arbiter, space: Space) {
+        // Pass.
+    }
 
     /// Collision separate event function callback type.
-    separate(arb: Arbiter, space: Space) { }
+    separate(arb: Arbiter, space: Space) {
+        // Pass.
+    }
 }
 
 type ArbiterState = (
@@ -111,17 +116,17 @@ export class Arbiter {
 
     /// Calculated value to use for applying surface velocities.
     /// Override in a pre-solve collision handler for custom behavior.
-    surface_vr: Vect = vzero;
+    vrSurface: Vect = vzero;
 
-    a: Shape;
-    body_a: Body;
-    b: Shape;
-    body_b: Body;
+    shapeA: Shape;
+    bodyA: Body;
+    shapeB: Shape;
+    bodyB: Body;
 
-    thread_a_next: Arbiter;
-    thread_a_prev: Arbiter;
-    thread_b_next: Arbiter;
-    thread_b_prev: Arbiter;
+    threadNextA: Arbiter = null;
+    threadPrevA: Arbiter = null;
+    threadNextB: Arbiter = null;
+    threadPrevB: Arbiter = null;
 
     contacts: Contact[];
     stamp: number;
@@ -130,11 +135,8 @@ export class Arbiter {
     state: ArbiterState;
 
     constructor(a: Shape, b: Shape) {
-        this.a = a; this.body_a = a.body;
-        this.b = b; this.body_b = b.body;
-
-        this.thread_a_next = this.thread_a_prev = null;
-        this.thread_b_next = this.thread_b_prev = null;
+        this.shapeA = a; this.bodyA = a.body;
+        this.shapeB = b; this.bodyB = b.body;
 
         this.contacts = null;
 
@@ -146,9 +148,9 @@ export class Arbiter {
 
     getShapes(): [Shape, Shape] {
         if (this.swappedColl) {
-            return [this.b, this.a];
+            return [this.shapeB, this.shapeA];
         } else {
-            return [this.a, this.b];
+            return [this.shapeA, this.shapeB];
         }
     }
 
@@ -197,7 +199,10 @@ export class Arbiter {
             const jnAcc = con.jnAcc;
             const jtAcc = con.jtAcc;
 
-            sum += eCoef * jnAcc * jnAcc / con.nMass + jtAcc * jtAcc / con.tMass;
+            sum += (
+                eCoef * jnAcc * jnAcc / con.nMass +
+                jtAcc * jtAcc / con.tMass
+            );
         }
 
         return sum;
@@ -215,11 +220,11 @@ export class Arbiter {
     /// The order of their cpSpace.collision_type values will match
     /// the order set when the collision handler was registered.
     getA(): Shape {
-        return this.swappedColl ? this.b : this.a;
+        return this.swappedColl ? this.shapeB : this.shapeA;
     }
 
     getB(): Shape {
-        return this.swappedColl ? this.a : this.b;
+        return this.swappedColl ? this.shapeA : this.shapeB;
     }
 
     /// Returns true if this is the first step a pair of objects started
@@ -259,25 +264,31 @@ export class Arbiter {
     }
 
     unthread(): void {
-        unthreadHelper(this, this.body_a, this.thread_a_prev, this.thread_a_next);
-        unthreadHelper(this, this.body_b, this.thread_b_prev, this.thread_b_next);
-        this.thread_a_prev = this.thread_a_next = null;
-        this.thread_b_prev = this.thread_b_next = null;
+        unthreadHelper(
+            this, this.bodyA, this.threadPrevA, this.threadNextA,
+        );
+        unthreadHelper(
+            this, this.bodyB, this.threadPrevB, this.threadNextB,
+        );
+        this.threadPrevA = this.threadNextA = null;
+        this.threadPrevB = this.threadNextB = null;
     }
 
     update(
         contacts: Contact[], handler: CollisionHandler, a: Shape, b: Shape,
     ): void {
-        // Arbiters without contact data may exist if a collision function rejected the collision.
+        // Arbiters without contact data may exist if a collision function
+        // rejected the collision.
         if (this.contacts) {
             // Iterate over the possible pairs to look for hash value matches.
             for (const old of this.contacts) {
-                for (const new_contact of contacts) {
-                    // This could trigger false positives, but is fairly unlikely nor serious if it does.
-                    if (new_contact.hash === old.hash) {
+                for (const newContact of contacts) {
+                    // This could trigger false positives, but is fairly
+                    //  unlikely nor serious if it does.
+                    if (newContact.hash === old.hash) {
                         // Copy the persistant contact information.
-                        new_contact.jnAcc = old.jnAcc;
-                        new_contact.jtAcc = old.jtAcc;
+                        newContact.jnAcc = old.jnAcc;
+                        newContact.jtAcc = old.jtAcc;
                     }
                 }
             }
@@ -290,19 +301,22 @@ export class Arbiter {
 
         this.e = a.restitutionCoef * b.restitutionCoef;
         this.u = a.frictionCoef * b.frictionCoef;
-        this.surface_vr = vsub(a.surfaceVelocity, b.surfaceVelocity);
+        this.vrSurface = vsub(a.surfaceVelocity, b.surfaceVelocity);
 
-        // For collisions between two similar primitive types, the order could have been swapped.
-        this.a = a; this.body_a = a.body;
-        this.b = b; this.body_b = b.body;
+        // For collisions between two similar primitive types, the order could
+        // have been swapped.
+        this.shapeA = a; this.bodyA = a.body;
+        this.shapeB = b; this.bodyB = b.body;
 
         // mark it as new if it's been cached
-        if (this.state == "cached") this.state = "first-coll";
+        if (this.state === "cached") {
+            this.state = "first-coll";
+        }
     }
 
     preStep(dt: number, slop: number, bias: number): void {
-        const a = this.body_a;
-        const b = this.body_b;
+        const a = this.bodyA;
+        const b = this.bodyB;
 
         for (const con of this.contacts) {
             // Calculate the offsets.
@@ -324,29 +338,31 @@ export class Arbiter {
         }
     }
 
-    applyCachedImpulse(dt_coef: number): void {
-        if (this.isFirstContact()) return;
+    applyCachedImpulse(dtCoef: number): void {
+        if (this.isFirstContact()) {
+            return;
+        }
 
-        const a = this.body_a;
-        const b = this.body_b;
+        const a = this.bodyA;
+        const b = this.bodyB;
 
         for (const con of this.contacts) {
-            //var j = vrotate(con.n, new Vect(con.jnAcc, con.jtAcc));
+            // var j = vrotate(con.n, new Vect(con.jnAcc, con.jtAcc));
             const nx = con.n.x;
             const ny = con.n.y;
             const jx = nx * con.jnAcc - ny * con.jtAcc;
             const jy = nx * con.jtAcc + ny * con.jnAcc;
-            //apply_impulses(a, b, con.r1, con.r2, vmult(j, dt_coef));
-            applyImpulses(a, b, con.r1, con.r2, jx * dt_coef, jy * dt_coef);
+            // apply_impulses(a, b, con.r1, con.r2, vmult(j, dt_coef));
+            applyImpulses(a, b, con.r1, con.r2, jx * dtCoef, jy * dtCoef);
         }
     }
 
     applyImpulse() {
         numApplyImpulse++;
-        //if (!this.contacts) { throw new Error('contacts is undefined'); }
-        const a = this.body_a;
-        const b = this.body_b;
-        const surface_vr = this.surface_vr;
+        // if (!this.contacts) { throw new Error('contacts is undefined'); }
+        const a = this.bodyA;
+        const b = this.bodyB;
+        const vrSurface = this.vrSurface;
         const friction = this.u;
 
         this.contacts.forEach((con: Contact, i: number) => {
@@ -356,13 +372,13 @@ export class Arbiter {
             const r1 = con.r1;
             const r2 = con.r2;
 
-            //var vr = relative_velocity(a, b, r1, r2);
+            // var vr = relative_velocity(a, b, r1, r2);
             const vrx = b.vx - r2.y * b.w - (a.vx - r1.y * a.w);
             const vry = b.vy + r2.x * b.w - (a.vy + r1.x * a.w);
 
-            //var vb1 = vadd(vmult(vperp(r1), a.w_bias), a.v_bias);
-            //var vb2 = vadd(vmult(vperp(r2), b.w_bias), b.v_bias);
-            //var vbn = vdot(vsub(vb2, vb1), n);
+            // var vb1 = vadd(vmult(vperp(r1), a.w_bias), a.v_bias);
+            // var vb2 = vadd(vmult(vperp(r2), b.w_bias), b.v_bias);
+            // var vbn = vdot(vsub(vb2, vb1), n);
 
             const vbn = (
                 n.x * (
@@ -376,9 +392,9 @@ export class Arbiter {
             );
 
             const vrn = vdot2(vrx, vry, n.x, n.y);
-            //var vrt = vdot(vadd(vr, surface_vr), vperp(n));
+            // var vrt = vdot(vadd(vr, surface_vr), vperp(n));
             const vrt = vdot2(
-                vrx + surface_vr.x, vry + surface_vr.y,
+                vrx + vrSurface.x, vry + vrSurface.y,
                 -n.y, n.x,
             );
 
@@ -395,21 +411,24 @@ export class Arbiter {
             const jtOld = con.jtAcc;
             con.jtAcc = clamp(jtOld + jt, -jtMax, jtMax);
 
-            //apply_bias_impulses(a, b, r1, r2, vmult(n, con.jBias - jbnOld));
-            const bias_x = n.x * (con.jBias - jbnOld);
-            const bias_y = n.y * (con.jBias - jbnOld);
-            applyBiasImpulse(a, -bias_x, -bias_y, r1);
-            applyBiasImpulse(b, bias_x, bias_y, r2);
+            // apply_bias_impulses(a, b, r1, r2, vmult(n, con.jBias - jbnOld));
+            const xBias = n.x * (con.jBias - jbnOld);
+            const yBias = n.y * (con.jBias - jbnOld);
+            applyBiasImpulse(a, -xBias, -yBias, r1);
+            applyBiasImpulse(b, xBias, yBias, r2);
 
-            //apply_impulses(a, b, r1, r2, vrotate(n, new Vect(con.jnAcc - jnOld, con.jtAcc - jtOld)));
-            const rot_x = con.jnAcc - jnOld;
-            const rot_y = con.jtAcc - jtOld;
+            // apply_impulses(
+            //     a, b, r1, r2,
+            //     vrotate(n, new Vect(con.jnAcc - jnOld, con.jtAcc - jtOld)),
+            // );
+            const rotX = con.jnAcc - jnOld;
+            const rotY = con.jtAcc - jtOld;
 
             // Inlining apply_impulses decreases speed for some reason :/
             applyImpulses(
                 a, b, r1, r2,
-                n.x * rot_x - n.y * rot_y,
-                n.x * rot_y + n.y * rot_x,
+                n.x * rotX - n.y * rotY,
+                n.x * rotY + n.y * rotX,
             );
         });
     }
@@ -418,14 +437,14 @@ export class Arbiter {
         // The handler needs to be looked up again as the handler cached on the
         // arbiter may have been deleted since the last step.
         const handler = space.lookupHandler(
-            this.a.collisionType, this.b.collisionType,
+            this.shapeA.collisionType, this.shapeB.collisionType,
         );
         handler.separate(this, space);
     }
 
     // From chipmunk_private.h
     next(body: Body) {
-        return (this.body_a == body ? this.thread_a_next : this.thread_b_next);
+        return (this.bodyA === body ? this.threadNextA : this.threadNextB);
     }
 }
 
@@ -435,15 +454,17 @@ Arbiter.prototype.threadForBody = function(body)
 	return (this.body_a === body ? this.thread_a : this.thread_b);
 };*/
 
-function unthreadHelper(arb: Arbiter, body: Body, prev: Arbiter, next: Arbiter) {
+function unthreadHelper(
+    arb: Arbiter, body: Body, prev: Arbiter, next: Arbiter,
+) {
     // thread_x_y is quite ugly, but it avoids making unnecessary js objects per
     // arbiter.
     if (prev) {
         // cpArbiterThreadForBody(prev, body)->next = next;
-        if (prev.body_a === body) {
-            prev.thread_a_next = next;
+        if (prev.bodyA === body) {
+            prev.threadNextA = next;
         } else {
-            prev.thread_b_next = next;
+            prev.threadNextB = next;
         }
     } else if (body.arbiterList === arb) {
         body.arbiterList = next;
@@ -451,10 +472,10 @@ function unthreadHelper(arb: Arbiter, body: Body, prev: Arbiter, next: Arbiter) 
 
     if (next) {
         // cpArbiterThreadForBody(next, body)->prev = prev;
-        if (next.body_a === body) {
-            next.thread_a_prev = prev;
+        if (next.bodyA === body) {
+            next.threadPrevA = prev;
         } else {
-            next.thread_b_prev = prev;
+            next.threadPrevB = prev;
         }
     }
 }

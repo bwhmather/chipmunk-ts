@@ -324,11 +324,11 @@ export class Space {
             // Match on the filter shape, or if it's null the filter body
             if (
                 (
-                    body === arb.body_a &&
-                    (filter === arb.a || filter === null)
+                    body === arb.bodyA &&
+                    (filter === arb.shapeA || filter === null)
                 ) || (
-                    body === arb.body_b &&
-                    (filter === arb.b || filter === null)
+                    body === arb.bodyB &&
+                    (filter === arb.shapeB || filter === null)
                 )
             ) {
                 // Call separate when removing shapes.
@@ -436,7 +436,9 @@ export class Space {
     }
 
     uncacheArbiter(arb: Arbiter): void {
-        this.cachedArbiters.delete(hashPair(arb.a.hashid, arb.b.hashid));
+        this.cachedArbiters.delete(
+            hashPair(arb.shapeA.hashid, arb.shapeB.hashid),
+        );
         deleteObjFromList(this.arbiters, arb);
     }
 
@@ -545,7 +547,7 @@ export class Space {
             });
 
             body.eachArbiter((arbiter) => {
-                if (body === arbiter.body_a || arbiter.body_a.isStatic()) {
+                if (body === arbiter.bodyA || arbiter.bodyA.isStatic()) {
                     // var contacts = arb.contacts;
 
                     // Restore contact values back to the space's contact buffer
@@ -559,13 +561,18 @@ export class Space {
 
                     // Reinsert the arbiter into the arbiter cache
                     this.cachedArbiters.set(
-                        hashPair(arbiter.a.hashid, arbiter.b.hashid), arbiter,
+                        hashPair(
+                            arbiter.shapeA.hashid,
+                            arbiter.shapeB.hashid,
+                        ),
+                        arbiter,
                     );
 
                     // Update the arbiter's state
                     arbiter.stamp = this.stamp;
                     arbiter.handler = this.lookupHandler(
-                        arbiter.a.collisionType, arbiter.b.collisionType,
+                        arbiter.shapeA.collisionType,
+                        arbiter.shapeB.collisionType,
                     );
                     this.arbiters.push(arbiter);
                 }
@@ -593,7 +600,7 @@ export class Space {
         });
 
         body.eachArbiter((arbiter) => {
-            if (body === arbiter.body_a || arbiter.body_a.isStatic()) {
+            if (body === arbiter.bodyA || arbiter.bodyA.isStatic()) {
                 this.uncacheArbiter(arbiter);
 
                 // Save contact values to a new block of memory so they won't
@@ -649,8 +656,8 @@ export class Space {
         // Awaken any sleeping bodies found and then push arbiters to the
         // bodies' lists.
         for (const arb of this.arbiters) {
-            const a = arb.body_a;
-            const b = arb.body_b;
+            const a = arb.bodyA;
+            const b = arb.bodyB;
 
             if (sleep) {
                 if ((b.isRogue() && !b.isStatic()) || a.isSleeping()) {
@@ -1108,8 +1115,8 @@ export class Space {
     arbiterSetFilter(arb: Arbiter): boolean {
         const ticks = this.stamp - arb.stamp;
 
-        const a = arb.body_a;
-        const b = arb.body_b;
+        const a = arb.bodyA;
+        const b = arb.bodyB;
 
         // TODO should make an arbiter state for this so it doesn't require
         // filtering arbiters for dangling body pointers on body removal.
@@ -1162,7 +1169,7 @@ export class Space {
 
             // If both bodies are awake, unthread the arbiter from the contact
             // graph.
-            if (!arb.body_a.isSleeping() && !arb.body_b.isSleeping()) {
+            if (!arb.bodyA.isSleeping() && !arb.bodyB.isSleeping()) {
                 arb.unthread();
             }
         }

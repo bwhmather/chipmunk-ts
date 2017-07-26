@@ -68,7 +68,7 @@ class Branch implements INode {
     bbB: number;
     bbR: number;
     bbT: number;
-    
+
     parent: Branch;
     childA: INode;
     childB: INode;
