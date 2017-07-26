@@ -68,7 +68,7 @@ export class Body {
     /// Rotation of the body around it's center of gravity in radians.
     /// Must agree with cpBody.rot! Use cpBodySetAngle() when changing the angle
     /// for this reason.
-    a: number = 0;
+    a: number;
     /// Angular velocity of the body around it's center of gravity in radians
     /// per second.
     w: number = 0;
@@ -77,7 +77,7 @@ export class Body {
 
     /// Cached unit length vector representing the angle of the body.
     /// Used for fast rotations using cpvrotate().
-    rot: Vect = new Vect(0, 0);
+    rot: Vect;
 
     /// Maximum velocity allowed when updating the velocity.
     vLimit: number = Infinity;
@@ -117,6 +117,9 @@ export class Body {
 
         // Set this.i and this.i_inv
         this.setMoment(i);
+
+        // Set this.a and this.rot.
+        this.setAngleInternal(0);
     }
 
     getPos(): Vect {
