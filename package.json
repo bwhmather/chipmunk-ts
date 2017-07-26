@@ -25,6 +25,7 @@
     "typescript-formatter": "^5.2.0"
   },
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "tslint": "tslint src/*.ts src/*/*.ts"
   }
 }
