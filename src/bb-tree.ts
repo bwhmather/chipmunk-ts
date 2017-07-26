@@ -27,17 +27,19 @@ import { SpatialIndex } from "./spatial-index";
 import { assertSoft } from "./util";
 import { Vect, vmult } from "./vect";
 
-function voidQueryFunc(obj1: Shape, obj2: Shape) { }
+function voidQueryFunc(obj1: Shape, obj2: Shape) {
+    // Pass.
+}
 
-interface Node {
+interface INode {
     parent: Branch;
 
-    bb_l: number;
-    bb_b: number;
-    bb_r: number;
-    bb_t: number;
+    bbL: number;
+    bbB: number;
+    bbR: number;
+    bbT: number;
 
-    insert(leaf: Leaf): Node;
+    insert(leaf: Leaf): INode;
 
     markLeafQuery(
         leaf: Leaf, left: boolean, tree: BBTree,
@@ -45,7 +47,7 @@ interface Node {
     ): void;
 
     markSubtree(
-        tree: BBTree, staticRoot: Node,
+        tree: BBTree, staticRoot: INode,
         func: (a: Shape, b: Shape) => any,
     ): void;
 
@@ -56,85 +58,88 @@ interface Node {
     /// Returns the fraction along the segment query the node hits. Returns
     /// Infinity if it doesn't hit.
     segmentQuery(
-        a: Vect, b: Vect, t_exit: number,
+        a: Vect, b: Vect, tExit: number,
         func: (obj: Shape) => any,
     ): number;
 }
 
-export class Branch implements Node {
-    bb_l: number;
-    bb_b: number;
-    bb_r: number;
-    bb_t: number;
+class Branch implements INode {
+    bbL: number;
+    bbB: number;
+    bbR: number;
+    bbT: number;
+    
     parent: Branch;
+    childA: INode;
+    childB: INode;
 
-    A: Node;
-    B: Node;
-
-    constructor(a: Node, b: Node) {
-        this.bb_l = Math.min(a.bb_l, b.bb_l);
-        this.bb_b = Math.min(a.bb_b, b.bb_b);
-        this.bb_r = Math.max(a.bb_r, b.bb_r);
-        this.bb_t = Math.max(a.bb_t, b.bb_t);
+    constructor(a: INode, b: INode) {
+        this.bbL = Math.min(a.bbL, b.bbL);
+        this.bbB = Math.min(a.bbB, b.bbB);
+        this.bbR = Math.max(a.bbR, b.bbR);
+        this.bbT = Math.max(a.bbT, b.bbT);
         this.parent = null;
 
         this.setA(a);
         this.setB(b);
     }
 
-    setA(value: Node): void {
-        this.A = value;
+    setA(value: INode): void {
+        this.childA = value;
         value.parent = this;
     }
 
-    setB(value: Node): void {
-        this.B = value;
+    setB(value: INode): void {
+        this.childB = value;
         value.parent = this;
     }
 
-    otherChild(child: Node): Node {
-        return (this.A == child ? this.B : this.A);
+    otherChild(child: INode): INode {
+        return (this.childA === child ? this.childB : this.childA);
     }
 
-    replaceChild(child: Node, value: Node): void {
-        assertSoft(child == this.A || child == this.B, "Node is not a child of parent.");
+    replaceChild(child: INode, value: INode): void {
+        assertSoft(
+            child === this.childA || child === this.childB,
+            "Node is not a child of parent.",
+        );
 
-        if (this.A == child) {
+        if (this.childA === child) {
             this.setA(value);
         } else {
             this.setB(value);
         }
 
         for (let branch: Branch = this; branch; branch = branch.parent) {
-            //node.bb = bbMerge(node.A.bb, node.B.bb);
-            const a = branch.A;
-            const b = branch.B;
-            branch.bb_l = Math.min(a.bb_l, b.bb_l);
-            branch.bb_b = Math.min(a.bb_b, b.bb_b);
-            branch.bb_r = Math.max(a.bb_r, b.bb_r);
-            branch.bb_t = Math.max(a.bb_t, b.bb_t);
+            // node.bb = bbMerge(node.A.bb, node.B.bb);
+            const a = branch.childA;
+            const b = branch.childB;
+            branch.bbL = Math.min(a.bbL, b.bbL);
+            branch.bbB = Math.min(a.bbB, b.bbB);
+            branch.bbR = Math.max(a.bbR, b.bbR);
+            branch.bbT = Math.max(a.bbT, b.bbT);
         }
     }
 
-    insert(leaf: Leaf): Node {
-        let cost_a = this.B.bbArea() + bbTreeMergedArea(this.A, leaf);
-        let cost_b = this.A.bbArea() + bbTreeMergedArea(this.B, leaf);
+    insert(leaf: Leaf): INode {
+        let costA = this.childB.bbArea() + bbTreeMergedArea(this.childA, leaf);
+        let costB = this.childA.bbArea() + bbTreeMergedArea(this.childB, leaf);
 
-        if (cost_a === cost_b) {
-            cost_a = bbProximity(this.A, leaf);
-            cost_b = bbProximity(this.B, leaf);
+        if (costA === costB) {
+            costA = bbProximity(this.childA, leaf);
+            costB = bbProximity(this.childB, leaf);
         }
 
-        if (cost_b < cost_a) {
-            this.setB(this.B.insert(leaf));
+        if (costB < costA) {
+            this.setB(this.childB.insert(leaf));
         } else {
-            this.setA(this.A.insert(leaf));
+            this.setA(this.childA.insert(leaf));
         }
 
-        this.bb_l = Math.min(this.bb_l, leaf.bb_l);
-        this.bb_b = Math.min(this.bb_b, leaf.bb_b);
-        this.bb_r = Math.max(this.bb_r, leaf.bb_r);
-        this.bb_t = Math.max(this.bb_t, leaf.bb_t);
+        this.bbL = Math.min(this.bbL, leaf.bbL);
+        this.bbB = Math.min(this.bbB, leaf.bbB);
+        this.bbR = Math.max(this.bbR, leaf.bbR);
+        this.bbT = Math.max(this.bbT, leaf.bbT);
 
         return this;
     }
@@ -144,113 +149,116 @@ export class Branch implements Node {
         func: (a: Shape, b: Shape) => any,
     ) {
         if (bbTreeIntersectsNode(leaf, this)) {
-            this.A.markLeafQuery(leaf, left, tree, func);
-            this.B.markLeafQuery(leaf, left, tree, func);
+            this.childA.markLeafQuery(leaf, left, tree, func);
+            this.childB.markLeafQuery(leaf, left, tree, func);
         }
     }
 
     markSubtree(
-        tree: BBTree, staticRoot: Node,
+        tree: BBTree, staticRoot: INode,
         func: (a: Shape, b: Shape) => any,
     ) {
-        this.A.markSubtree(tree, staticRoot, func);
-        this.B.markSubtree(tree, staticRoot, func);
+        this.childA.markSubtree(tree, staticRoot, func);
+        this.childB.markSubtree(tree, staticRoot, func);
     }
 
     intersectsBB(bb: BB): boolean {
         return (
-            this.bb_l <= bb.r &&
-            bb.l <= this.bb_r &&
-            this.bb_b <= bb.t &&
-            bb.b <= this.bb_t
+            this.bbL <= bb.r &&
+            bb.l <= this.bbR &&
+            this.bbB <= bb.t &&
+            bb.b <= this.bbT
         );
     }
 
     bbArea(): number {
-        return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
+        return (this.bbR - this.bbL) * (this.bbT - this.bbB);
     }
 
     query(bb: BB, func: (obj: Shape) => any): void {
-        //if(bbIntersectsBB(subtree.bb, bb)){
+        // if(bbIntersectsBB(subtree.bb, bb)){
         if (this.intersectsBB(bb)) {
-            this.A.query(bb, func);
-            this.B.query(bb, func);
+            this.childA.query(bb, func);
+            this.childB.query(bb, func);
         }
     }
 
-    /// Returns the fraction along the segment query the node hits. Returns Infinity if it doesn't hit.
+    /// Returns the fraction along the segment query the node hits. Returns
+    /// Infinity if it doesn't hit.
     private childSegmentQuery(
-        child: Node, a: Vect, b: Vect,
+        child: INode, a: Vect, b: Vect,
     ): number {
         const idx = 1 / (b.x - a.x);
-        const tx1 = (child.bb_l == a.x ? -Infinity : (child.bb_l - a.x) * idx);
-        const tx2 = (child.bb_r == a.x ? Infinity : (child.bb_r - a.x) * idx);
-        const txmin = Math.min(tx1, tx2);
-        const txmax = Math.max(tx1, tx2);
+        const txA = (child.bbL === a.x ? -Infinity : (child.bbL - a.x) * idx);
+        const txB = (child.bbR === a.x ? Infinity : (child.bbR - a.x) * idx);
+        const txMin = Math.min(txA, txB);
+        const txMax = Math.max(txA, txB);
 
         const idy = 1 / (b.y - a.y);
-        const ty1 = (child.bb_b == a.y ? -Infinity : (child.bb_b - a.y) * idy);
-        const ty2 = (child.bb_t == a.y ? Infinity : (child.bb_t - a.y) * idy);
-        const tymin = Math.min(ty1, ty2);
-        const tymax = Math.max(ty1, ty2);
+        const tyA = (child.bbB === a.y ? -Infinity : (child.bbB - a.y) * idy);
+        const tyB = (child.bbT === a.y ? Infinity : (child.bbT - a.y) * idy);
+        const tyMin = Math.min(tyA, tyB);
+        const tyMax = Math.max(tyA, tyB);
 
-        if (tymin <= txmax && txmin <= tymax) {
-            const min_ = Math.max(txmin, tymin);
-            const max_ = Math.min(txmax, tymax);
+        if (tyMin <= txMax && txMin <= tyMax) {
+            const tMin = Math.max(txMin, tyMin);
+            const tMax = Math.min(txMax, tyMax);
 
-            if (0.0 <= max_ && min_ <= 1.0) return Math.max(min_, 0.0);
+            if (0.0 <= tMax && tMin <= 1.0) {
+                return Math.max(tMin, 0.0);
+            }
         }
 
         return Infinity;
     }
 
     segmentQuery(
-        a: Vect, b: Vect, t_exit: number,
+        a: Vect, b: Vect, tExit: number,
         func: (obj: Shape) => any,
     ): number {
-        const t_a = this.childSegmentQuery(this.A, a, b);
-        const t_b = this.childSegmentQuery(this.B, a, b);
+        const tA = this.childSegmentQuery(this.childA, a, b);
+        const tB = this.childSegmentQuery(this.childB, a, b);
 
-        if (t_a < t_b) {
-            if (t_a < t_exit) {
-                t_exit = Math.min(
-                    t_exit, this.A.segmentQuery(a, b, t_exit, func),
+        if (tA < tB) {
+            if (tA < tExit) {
+                tExit = Math.min(
+                    tExit, this.childA.segmentQuery(a, b, tExit, func),
                 );
             }
-            if (t_b < t_exit) {
-                t_exit = Math.min(
-                    t_exit, this.B.segmentQuery(a, b, t_exit, func),
+            if (tB < tExit) {
+                tExit = Math.min(
+                    tExit, this.childB.segmentQuery(a, b, tExit, func),
                 );
             }
         } else {
-            if (t_b < t_exit) {
-                t_exit = Math.min(
-                    t_exit, this.B.segmentQuery(a, b, t_exit, func),
+            if (tB < tExit) {
+                tExit = Math.min(
+                    tExit, this.childB.segmentQuery(a, b, tExit, func),
                 );
             }
-            if (t_a < t_exit) {
-                t_exit = Math.min(
-                    t_exit, this.A.segmentQuery(a, b, t_exit, func),
+            if (tA < tExit) {
+                tExit = Math.min(
+                    tExit, this.childA.segmentQuery(a, b, tExit, func),
                 );
             }
         }
 
-        return t_exit;
+        return tExit;
     }
 }
 
-export class Leaf implements Node {
-    bb_l: number;
-    bb_b: number;
-    bb_r: number;
-    bb_t: number;
+class Leaf implements INode {
+    bbL: number;
+    bbB: number;
+    bbR: number;
+    bbT: number;
     obj: Shape;
     parent: Branch;
     number: number;
     stamp: number;
 
-    touching_right: Set<Leaf>;
-    touching_left: Set<Leaf>;
+    touchingRight: Set<Leaf>;
+    touchingLeft: Set<Leaf>;
 
     constructor(tree: BBTree, obj: Shape) {
         this.obj = obj;
@@ -259,24 +267,24 @@ export class Leaf implements Node {
         this.parent = null;
 
         this.stamp = 1;
-        this.touching_left = new Set();
-        this.touching_right = new Set();
+        this.touchingLeft = new Set();
+        this.touchingRight = new Set();
     }
 
-    insert(leaf: Leaf): Node {
+    insert(leaf: Leaf): INode {
         return new Branch(leaf, this);
     }
 
     clearPairs(tree: BBTree): void {
-        this.touching_left.forEach((other: Leaf) => {
-            other.touching_right.delete(this);
+        this.touchingLeft.forEach((other: Leaf) => {
+            other.touchingRight.delete(this);
         });
-        this.touching_right.forEach((other: Leaf) => {
-            other.touching_left.delete(this);
+        this.touchingRight.forEach((other: Leaf) => {
+            other.touchingLeft.delete(this);
         });
 
-        this.touching_left.clear();
-        this.touching_right.clear();
+        this.touchingLeft.clear();
+        this.touchingRight.clear();
     }
 
     markLeafQuery(
@@ -285,40 +293,44 @@ export class Leaf implements Node {
     ): void {
         if (bbTreeIntersectsNode(leaf, this)) {
             if (left) {
-                leaf.touching_left.add(this);
-                this.touching_right.add(leaf);
+                leaf.touchingLeft.add(this);
+                this.touchingRight.add(leaf);
             } else {
                 // we don't have to check if the other leaf has been updated
                 // as this operation is idempotent.
-                leaf.touching_right.add(this);
-                this.touching_left.add(leaf);
+                leaf.touchingRight.add(this);
+                this.touchingLeft.add(leaf);
 
-                if (func) func(leaf.obj, this.obj);
+                if (func) {
+                    func(leaf.obj, this.obj);
+                }
             }
         }
     }
 
     markSubtree(
-        tree: BBTree, staticRoot: Node,
+        tree: BBTree, staticRoot: INode,
         func: (a: Shape, b: Shape) => any,
     ): void {
-        if (this.stamp == tree.getStamp()) {
+        if (this.stamp === tree.getStamp()) {
             // Shape has been changed in the most recent step.  Rebuild the
             // list of neighbours.
-            if (staticRoot) staticRoot.markLeafQuery(this, false, tree, func);
+            if (staticRoot) {
+                staticRoot.markLeafQuery(this, false, tree, func);
+            }
 
-            for (let node: Node = this; node.parent; node = node.parent) {
-                if (node == node.parent.A) {
-                    node.parent.B.markLeafQuery(this, true, tree, func);
+            for (let node: INode = this; node.parent; node = node.parent) {
+                if (node === node.parent.childA) {
+                    node.parent.childB.markLeafQuery(this, true, tree, func);
                 } else {
-                    node.parent.A.markLeafQuery(this, false, tree, func);
+                    node.parent.childA.markLeafQuery(this, false, tree, func);
                 }
             }
         } else {
             // Shape has not been changed in the most recent step.  Use the
             // cached list of neighbours.
             if (func) {
-                this.touching_right.forEach((other: Leaf) => {
+                this.touchingRight.forEach((other: Leaf) => {
                     func(this.obj, other.obj);
                 });
             }
@@ -328,10 +340,10 @@ export class Leaf implements Node {
     // **** Leaf Functions
     containsObj(obj: Shape): boolean {
         return (
-            this.bb_l <= obj.bbL &&
-            this.bb_r >= obj.bbR &&
-            this.bb_b <= obj.bbB &&
-            this.bb_t >= obj.bbT
+            this.bbL <= obj.bbL &&
+            this.bbR >= obj.bbR &&
+            this.bbB <= obj.bbB &&
+            this.bbT >= obj.bbT
         );
     }
 
@@ -339,7 +351,7 @@ export class Leaf implements Node {
         let root = tree.root;
         const obj = this.obj;
 
-        //if(!bbContainsBB(this.bb, bb)){
+        // if(!bbContainsBB(this.bb, bb)){
         if (!this.containsObj(obj)) {
             tree.getBB(this.obj, this);
 
@@ -374,15 +386,15 @@ export class Leaf implements Node {
 
     intersectsBB(bb: BB): boolean {
         return (
-            this.bb_l <= bb.r &&
-            bb.l <= this.bb_r &&
-            this.bb_b <= bb.t &&
-            bb.b <= this.bb_t
+            this.bbL <= bb.r &&
+            bb.l <= this.bbR &&
+            this.bbB <= bb.t &&
+            bb.b <= this.bbT
         );
     }
 
     bbArea(): number {
-        return (this.bb_r - this.bb_l) * (this.bb_t - this.bb_b);
+        return (this.bbR - this.bbL) * (this.bbT - this.bbB);
     }
 
     query(bb: BB, func: (obj: Shape) => any): void {
@@ -392,7 +404,7 @@ export class Leaf implements Node {
     }
 
     segmentQuery(
-        a: Vect, b: Vect, t_exit: number,
+        a: Vect, b: Vect, tExit: number,
         func: (obj: Shape) => any,
     ): number {
         return func(this.obj);
@@ -402,7 +414,7 @@ export class Leaf implements Node {
 export class BBTree extends SpatialIndex {
     velocityFunc: (obj: Shape) => Vect = null;
     leaves: Map<Shape, Leaf>;  // TODO TODO TODO
-    root: Node = null;
+    root: INode = null;
     stamp: number = 0;
 
     staticIndex: BBTree;
@@ -411,7 +423,8 @@ export class BBTree extends SpatialIndex {
     constructor(staticIndex: BBTree) {
         super(staticIndex);
 
-        // This is a hash from object ID -> object for the objects stored in the BBTree.
+        // This is a hash from object ID -> object for the objects stored in the
+        // BBTree.
         this.leaves = new Map();
     }
 
@@ -424,15 +437,15 @@ export class BBTree extends SpatialIndex {
 
             const v = vmult(velocityFunc(obj), 0.1);
 
-            dest.bb_l = obj.bbL + Math.min(-x, v.x);
-            dest.bb_b = obj.bbB + Math.min(-y, v.y);
-            dest.bb_r = obj.bbR + Math.max(x, v.x);
-            dest.bb_t = obj.bbT + Math.max(y, v.y);
+            dest.bbL = obj.bbL + Math.min(-x, v.x);
+            dest.bbB = obj.bbB + Math.min(-y, v.y);
+            dest.bbR = obj.bbR + Math.max(x, v.x);
+            dest.bbT = obj.bbT + Math.max(y, v.y);
         } else {
-            dest.bb_l = obj.bbL;
-            dest.bb_b = obj.bbB;
-            dest.bb_r = obj.bbR;
-            dest.bb_t = obj.bbT;
+            dest.bbL = obj.bbL;
+            dest.bbB = obj.bbB;
+            dest.bbR = obj.bbR;
+            dest.bbT = obj.bbT;
         }
     }
 
@@ -481,7 +494,9 @@ export class BBTree extends SpatialIndex {
     }
 
     reindexQuery(func: (a: Shape, b: Shape) => any): void {
-        if (!this.root) return;
+        if (!this.root) {
+            return;
+        }
 
         this.leaves.forEach((leaf: Leaf) => {
             leaf.update(this);
@@ -505,15 +520,17 @@ export class BBTree extends SpatialIndex {
     reindexObject(obj: Shape): void {
         const leaf = this.leaves.get(obj);
         if (leaf) {
-            if (leaf.update(this)) leaf.addPairs(this);
+            if (leaf.update(this)) {
+                leaf.addPairs(this);
+            }
             this.incrementStamp();
         }
     }
 
     // **** Query
 
-    // This has since been removed from upstream Chipmunk - which recommends you just use query() below
-    // directly.
+    // This has since been removed from upstream Chipmunk - which recommends you
+    // just use query() below directly.
     pointQuery(
         v: Vect,
         func: (obj: Shape) => any,
@@ -522,11 +539,11 @@ export class BBTree extends SpatialIndex {
     }
 
     segmentQuery(
-        a: Vect, b: Vect, t_exit: number,
+        a: Vect, b: Vect, tExit: number,
         func: (obj: Shape) => any,
     ): void {
         if (this.root) {
-            this.root.segmentQuery(a, b, t_exit, func);
+            this.root.segmentQuery(a, b, tExit, func);
         }
     }
 
@@ -539,12 +556,6 @@ export class BBTree extends SpatialIndex {
         }
     }
 
-    log(): void {
-        if (this.root) {
-            //nodeRender(this.root, 0);
-        }
-    }
-
     each(func: (obj: Shape) => any) {
         this.leaves.forEach((leaf: Leaf) => {
             func(leaf.obj);
@@ -552,25 +563,25 @@ export class BBTree extends SpatialIndex {
     }
 }
 
-function bbTreeMergedArea(a: Node, b: Node): number {
+function bbTreeMergedArea(a: INode, b: INode): number {
     return (
-        (Math.max(a.bb_r, b.bb_r) - Math.min(a.bb_l, b.bb_l)) *
-        (Math.max(a.bb_t, b.bb_t) - Math.min(a.bb_b, b.bb_b))
+        (Math.max(a.bbR, b.bbR) - Math.min(a.bbL, b.bbL)) *
+        (Math.max(a.bbT, b.bbT) - Math.min(a.bbB, b.bbB))
     );
 }
 
-function bbProximity(a: Node, b: Node): number {
+function bbProximity(a: INode, b: INode): number {
     return (
-        Math.abs(a.bb_l + a.bb_r - b.bb_l - b.bb_r) +
-        Math.abs(a.bb_b + a.bb_t - b.bb_b - b.bb_t)
+        Math.abs(a.bbL + a.bbR - b.bbL - b.bbR) +
+        Math.abs(a.bbB + a.bbT - b.bbB - b.bbT)
     );
 }
 
-function subtreeRemove(subtree: Node, leaf: Leaf, tree: BBTree): Node {
-    if (leaf == subtree) {
+function subtreeRemove(subtree: INode, leaf: Leaf, tree: BBTree): INode {
+    if (leaf === subtree) {
         return null;
     } else {
-        if (leaf.parent == subtree) {
+        if (leaf.parent === subtree) {
             const other = leaf.parent.otherChild(leaf);
             other.parent = subtree.parent;
             return other;
@@ -582,34 +593,20 @@ function subtreeRemove(subtree: Node, leaf: Leaf, tree: BBTree): Node {
     }
 }
 
-function bbTreeIntersectsNode(a: Node, b: Node): boolean {
+function bbTreeIntersectsNode(a: INode, b: INode): boolean {
     return (
-        a.bb_l <= b.bb_r &&
-        b.bb_l <= a.bb_r &&
-        a.bb_b <= b.bb_t &&
-        b.bb_b <= a.bb_t
+        a.bbL <= b.bbR &&
+        b.bbL <= a.bbR &&
+        a.bbB <= b.bbT &&
+        b.bbB <= a.bbT
     );
 }
 
 function bbTreeMergedArea2(
-    node: Node, l: number, b: number, r: number, t: number,
+    node: INode, l: number, b: number, r: number, t: number,
 ): number {
     return (
-        (Math.max(node.bb_r, r) - Math.min(node.bb_l, l)) *
-        (Math.max(node.bb_t, t) - Math.min(node.bb_b, b))
+        (Math.max(node.bbR, r) - Math.min(node.bbL, l)) *
+        (Math.max(node.bbT, t) - Math.min(node.bbB, b))
     );
 }
-
-/* export function nodeRender(node: Node, depth: number): void {
-    if (!node.isLeaf && depth <= 10) {
-        nodeRender(node.A, depth + 1);
-        nodeRender(node.B, depth + 1);
-    }
-
-    let str = '';
-    for (let i = 0; i < depth; i++) {
-        str += ' ';
-    }
-
-    console.log(str + node.bb_b + ' ' + node.bb_t);
-}*/
