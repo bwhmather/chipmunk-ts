@@ -1,4 +1,4 @@
 # Chipmunk Physics for Typescript
 
 This is a port of [Chipmunk-js](https://github.com/josephg/Chipmunk-js) to typescript.
-[Chipmunk-js](https://github.com/josephg/Chipmunk-js) is, in turn, a port of the [Chipmunk Physics](http://chipmunk-physics.net/) C library to Javascript.:w
+[Chipmunk-js](https://github.com/josephg/Chipmunk-js) is, in turn, a port of the [Chipmunk Physics](http://chipmunk-physics.net/) C library to Javascript.
