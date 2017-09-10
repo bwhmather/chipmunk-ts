@@ -12,7 +12,7 @@ export default [
     ],
     output: {
       format: 'es',
-      file: 'dist/chipmunk.jsm',
+      file: 'dist/chipmunk.mjs',
     }
   },
   {
