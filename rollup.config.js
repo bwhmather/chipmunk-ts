@@ -4,41 +4,47 @@ import uglify from 'rollup-plugin-uglify';
 
 export default [
   {
-    entry: 'src/index.ts',
-    format: 'es',
-    dest: 'dist/chipmunk.jsm',
+    input: 'src/index.ts',
     plugins: [
       typescript({
         abortOnError: false,
       }),
-    ]
+    ],
+    output: {
+      format: 'es',
+      file: 'dist/chipmunk.jsm',
+    }
   },
   {
-    entry: 'src/index.ts',
-    format: 'iife',
-    moduleName: 'cp',
-    dest: 'dist/chipmunk.js',
-    sourceMapFile: 'dist/chipmunk.js.map',
-    sourceMap: true,
+    input: 'src/index.ts',
+    name: 'cp',
+    sourcemap: true,
     plugins: [
       typescript({
         abortOnError: false,
       }),
-    ]
+    ],
+    output: {
+      format: 'iife',
+      file: 'dist/chipmunk.js',
+      sourcemapFile: 'dist/chipmunk.js.map',
+    }
   },
   {
-    entry: 'src/index.ts',
-    format: 'iife',
-    moduleName: 'cp',
-    dest: 'dist/chipmunk.min.js',
-    sourceMapFile: 'dist/chipmunk.min.js.map',
-    sourceMap: true,
+    input: 'src/index.ts',
+    name: 'cp',
+    sourcemap: true,
     plugins: [
       typescript({
         abortOnError: false,
       }),
       uglify(),
-    ]
+    ],
+    output: {
+      format: 'iife',
+      file: 'dist/chipmunk.min.js',
+      sourcemapFile: 'dist/chipmunk.min.js.map'
+    }
   },
 ]
 
