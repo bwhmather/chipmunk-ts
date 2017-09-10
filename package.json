@@ -13,7 +13,7 @@
     "type": "git",
     "url": "git://github.com/bwhmather/chipmunk-ts.git"
   },
-  "main": "dist/chipmunk.js",
+  "main": "dist/chipmunk.umd.js",
   "module": "dist/chipmunk.jsm",
   "dependencies": {},
   "devDependencies": {
