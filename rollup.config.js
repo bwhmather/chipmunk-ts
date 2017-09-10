@@ -17,6 +17,18 @@ export default [
   },
   {
     input: 'src/index.ts',
+    plugins: [
+      typescript({
+        abortOnError: false,
+      }),
+    ],
+    output: {
+      format: 'cjs',
+      file: 'dist/chipmunk.umd.js'
+    }
+  },
+  {
+    input: 'src/index.ts',
     name: 'cp',
     sourcemap: true,
     plugins: [
