@@ -26,7 +26,7 @@ import { clamp } from "../util";
 import { Constraint } from "./constraint";
 import { biasCoef } from "./util";
 
-class RotaryLimitJoint extends Constraint {
+export class RotaryLimitJoint extends Constraint {
     min: number;
     max: number;
 
