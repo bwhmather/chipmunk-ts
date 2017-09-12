@@ -120,20 +120,4 @@ export abstract class SpatialIndex {
     abstract each(
         f: (obj: Shape) => any,
     ): void;
-
-    // Collide the objects in an index against the objects in a staticIndex
-    // using the query callback function.
-    protected collideStatic(
-        staticIndex: SpatialIndex,
-        func: (a: Shape, b: Shape) => any,
-    ) {
-        if (staticIndex.count > 0) {
-            this.each((obj) => {
-                staticIndex.query(
-                    new BB(obj.bbL, obj.bbB, obj.bbR, obj.bbT),
-                    func as any,  // TODO TODO TODO
-                );
-            });
-        }
-    }
 }

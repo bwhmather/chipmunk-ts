@@ -470,10 +470,6 @@ export class BBTree extends SpatialIndex {
             visited.add(leaf);
         });
 
-        if (staticIndex && !staticRoot) {
-            this.collideStatic(staticIndex, func);
-        }
-
         this.incrementStamp();
     }
 
