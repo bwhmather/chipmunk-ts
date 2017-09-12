@@ -395,10 +395,10 @@ cp.SegmentShape.prototype.draw = function(ctx, scale, point2canvas) {
 };
 
 cp.CircleShape.prototype.draw = function(ctx, scale, point2canvas) {
-	drawCircle(ctx, scale, point2canvas, this.tc, this.r);
+	drawCircle(ctx, scale, point2canvas, this.tc, this.radius);
 
 	// And draw a little radian so you can see the circle roll.
-	drawLine(ctx, point2canvas, this.tc, cp.vmult(this.body.rot, this.r).add(this.tc));
+	drawLine(ctx, point2canvas, this.tc, cp.vadd(cp.vmult(this.body.rot, this.radius), this.tc));
 };
 
 
