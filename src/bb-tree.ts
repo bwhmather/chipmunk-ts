@@ -46,11 +46,6 @@ interface INode {
         func: (a: Shape, b: Shape) => any,
     ): void;
 
-    markSubtree(
-        tree: BBTree, staticRoot: INode,
-        func: (a: Shape, b: Shape) => any,
-    ): void;
-
     bbArea(): number;
 
     query(bb: BB, func: (obj: Shape) => any): void;
@@ -152,14 +147,6 @@ class Branch implements INode {
             this.childA.markLeafQuery(leaf, left, tree, func);
             this.childB.markLeafQuery(leaf, left, tree, func);
         }
-    }
-
-    markSubtree(
-        tree: BBTree, staticRoot: INode,
-        func: (a: Shape, b: Shape) => any,
-    ) {
-        this.childA.markSubtree(tree, staticRoot, func);
-        this.childB.markSubtree(tree, staticRoot, func);
     }
 
     intersectsBB(bb: BB): boolean {
@@ -308,7 +295,7 @@ class Leaf implements INode {
         }
     }
 
-    markSubtree(
+    markFromLeafQuery(
         tree: BBTree, staticRoot: INode,
         func: (a: Shape, b: Shape) => any,
     ): void {
@@ -380,7 +367,7 @@ class Leaf implements INode {
             }
         } else {
             const staticRoot = tree.staticIndex.root;
-            this.markSubtree(tree, staticRoot, null);
+            this.markFromLeafQuery(tree, staticRoot, null);
         }
     }
 
@@ -505,7 +492,10 @@ export class BBTree extends SpatialIndex {
         const staticIndex = this.staticIndex;
         const staticRoot = staticIndex && staticIndex.root;
 
-        this.root.markSubtree(this, staticRoot, func);
+        this.leaves.forEach((leaf: Leaf) => {
+            leaf.markFromLeafQuery(this, staticRoot, func);
+        });
+
         if (staticIndex && !staticRoot) {
             this.collideStatic(staticIndex, func);
         }
