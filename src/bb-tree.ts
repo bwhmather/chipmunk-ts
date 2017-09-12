@@ -41,10 +41,7 @@ interface INode {
 
     insert(leaf: Leaf): INode;
 
-    markIfTouchingQuery(
-        leaf: Leaf, left: boolean, tree: BBTree,
-        func: (a: Shape, b: Shape) => any,
-    ): void;
+    markIfTouchingQuery(leaf: Leaf, tree: BBTree): void;
 
     bbArea(): number;
 
@@ -139,13 +136,10 @@ class Branch implements INode {
         return this;
     }
 
-    markIfTouchingQuery(
-        leaf: Leaf, left: boolean, tree: BBTree,
-        func: (a: Shape, b: Shape) => any,
-    ) {
+    markIfTouchingQuery(leaf: Leaf, tree: BBTree): void {
         if (bbTreeIntersectsNode(leaf, this)) {
-            this.childA.markIfTouchingQuery(leaf, left, tree, func);
-            this.childB.markIfTouchingQuery(leaf, left, tree, func);
+            this.childA.markIfTouchingQuery(leaf, tree);
+            this.childB.markIfTouchingQuery(leaf, tree);
         }
     }
 
@@ -244,8 +238,7 @@ class Leaf implements INode {
     number: number;
     stamp: number;
 
-    touchingRight: Set<Leaf>;
-    touchingLeft: Set<Leaf>;
+    touching: Set<Leaf>;
 
     constructor(tree: BBTree, obj: Shape) {
         this.obj = obj;
@@ -254,8 +247,7 @@ class Leaf implements INode {
         this.parent = null;
 
         this.stamp = 1;
-        this.touchingLeft = new Set();
-        this.touchingRight = new Set();
+        this.touching = new Set();
     }
 
     insert(leaf: Leaf): INode {
@@ -263,63 +255,34 @@ class Leaf implements INode {
     }
 
     clearPairs(tree: BBTree): void {
-        this.touchingLeft.forEach((other: Leaf) => {
-            other.touchingRight.delete(this);
-        });
-        this.touchingRight.forEach((other: Leaf) => {
-            other.touchingLeft.delete(this);
+        this.touching.forEach((other: Leaf) => {
+            other.touching.delete(this);
         });
 
-        this.touchingLeft.clear();
-        this.touchingRight.clear();
+        this.touching.clear();
     }
 
-    markIfTouchingQuery(
-        leaf: Leaf, left: boolean, tree: BBTree,
-        func: (a: Shape, b: Shape) => any,
-    ): void {
+    markIfTouchingQuery(leaf: Leaf, tree: BBTree): void {
         if (bbTreeIntersectsNode(leaf, this)) {
-            if (left) {
-                leaf.touchingLeft.add(this);
-                this.touchingRight.add(leaf);
-            } else {
-                // we don't have to check if the other leaf has been updated
-                // as this operation is idempotent.
-                leaf.touchingRight.add(this);
-                this.touchingLeft.add(leaf);
-
-                if (func) {
-                    func(leaf.obj, this.obj);
-                }
-            }
+            this.touching.add(leaf);
+            leaf.touching.add(this);
         }
     }
 
-    markTouchingQuery(
-        tree: BBTree, staticRoot: INode,
-        func: (a: Shape, b: Shape) => any,
-    ): void {
+    markTouchingQuery(tree: BBTree, staticRoot: INode): void {
         if (this.stamp === tree.getStamp()) {
             // Shape has been changed in the most recent step.  Rebuild the
             // list of neighbours.
             if (staticRoot) {
-                staticRoot.markIfTouchingQuery(this, false, tree, func);
+                staticRoot.markIfTouchingQuery(this, tree);
             }
 
             for (let node: INode = this; node.parent; node = node.parent) {
                 if (node === node.parent.childA) {
-                    node.parent.childB.markIfTouchingQuery(this, true, tree, func);
+                    node.parent.childB.markIfTouchingQuery(this, tree);
                 } else {
-                    node.parent.childA.markIfTouchingQuery(this, false, tree, func);
+                    node.parent.childA.markIfTouchingQuery(this, tree);
                 }
-            }
-        } else {
-            // Shape has not been changed in the most recent step.  Use the
-            // cached list of neighbours.
-            if (func) {
-                this.touchingRight.forEach((other: Leaf) => {
-                    func(this.obj, other.obj);
-                });
             }
         }
     }
@@ -363,11 +326,11 @@ class Leaf implements INode {
         if (dynamicIndex) {
             const dynamicRoot = dynamicIndex.root;
             if (dynamicRoot) {
-                dynamicRoot.markIfTouchingQuery(this, true, dynamicIndex, null);
+                dynamicRoot.markIfTouchingQuery(this, dynamicIndex);
             }
         } else {
             const staticRoot = tree.staticIndex.root;
-            this.markTouchingQuery(tree, staticRoot, null);
+            this.markTouchingQuery(tree, staticRoot);
         }
     }
 
@@ -492,8 +455,19 @@ export class BBTree extends SpatialIndex {
         const staticIndex = this.staticIndex;
         const staticRoot = staticIndex && staticIndex.root;
 
+        const visited = new Set()
+
         this.leaves.forEach((leaf: Leaf) => {
-            leaf.markTouchingQuery(this, staticRoot, func);
+            leaf.markTouchingQuery(this, staticRoot);
+
+            leaf.touching.forEach((touching: Leaf) => {
+                // TODO I think this should be the other way round.
+                if (visited.has(touching)) {
+                    func(leaf.obj, touching.obj)
+                }
+            });
+
+            visited.add(leaf);
         });
 
         if (staticIndex && !staticRoot) {
