@@ -133,7 +133,9 @@ Demo.prototype.drawInfo = function() {
 	this.ctx.fillStyle = "black";
 	//this.ctx.fillText(this.ctx.font, 100, 100);
 	var fpsStr = Math.floor(this.fps * 10) / 10;
-	if (space.activeShapes.count === 0) {
+	// TODO 
+  // if (space.activeShapes.count === 0) {
+	if (space.spatialIndex.count === 0) {
 		fpsStr = '--';
 	}
 	this.ctx.fillText("FPS: " + fpsStr, 10, 50, maxWidth);
@@ -241,7 +243,9 @@ Demo.prototype.benchmark = function() {
 	soon(function() {
 		console.log("Benchmarking... waiting for the space to come to rest");
 		var start = Date.now();
-		while (self.space.activeShapes.count !== 0) {
+    // TODO
+		// while (self.space.activeShapes.count !== 0) {
+		while (self.space.spatialIndex.count !== 0) {
 			self.update(1/60);
 		}
 		var end = Date.now();
@@ -266,7 +270,9 @@ Demo.prototype.step = function(dt) {
 	this.mouseBody.v = cp.vmult(cp.vsub(newPoint, this.mouseBody.p), 60);
 	this.mouseBody.p = newPoint;
 
-	var lastNumActiveShapes = this.space.activeShapes.count;
+  // TODO
+	//var lastNumActiveShapes = this.space.activeShapes.count;
+	var lastNumActiveShapes = this.space.spatialIndex.count;
 
 	var now = Date.now();
 	this.update(1/60);

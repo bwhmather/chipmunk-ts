@@ -42,48 +42,48 @@ import { BB } from "./bb";
 import { Shape } from "./shapes";
 import { Vect } from "./vect";
 
+
 export abstract class SpatialIndex {
 
     // The number of objects in the spatial index.
     count: number = 0;
 
-    staticIndex: SpatialIndex;
-    dynamicIndex: SpatialIndex;
-
-    constructor(staticIndex: SpatialIndex) {
-        this.staticIndex = staticIndex;
-
-        if (staticIndex) {
-            if (staticIndex.dynamicIndex) {
-                throw new Error(
-                    "This static index is already associated with a dynamic " +
-                    "index.",
-                );
-            }
-            staticIndex.dynamicIndex = this;
-        }
-    }
-
     // Returns true if the spatial index contains the given object.
-    // Most spatial indexes use hashed storage, so you must provide a hash value
-    // too.
+    // Most spatial indexes use hashed storage, so you must provide a hash
+    // value too.
     abstract contains(obj: Shape): boolean;
 
     // Add an object to a spatial index.
     abstract insert(obj: Shape): void;
 
+    // Insert a static object into the spatial index.
+    abstract insertStatic(obj: Shape): void;
+
     // Remove an object from a spatial index.
     abstract remove(obj: Shape): void;
-
-    // Perform a full reindex of a spatial index.
-    reindex(): void {
-        // Pass.
-    }
 
     // Reindex a single object in the spatial index.
     reindexObject(obj: Shape): void {
         // Pass.
     }
+
+    // Perform a re-index of all active shapes in the spatial index.
+    reindex(): void {
+        // Pass.
+    }
+
+    // Perform a full re-index of all static and active shapes in the spatial
+    // index.
+    reindexStatic(): void {
+        // Pass.
+    }
+
+    // Finds all potentially intersecting shapes in the index.  `func` will be
+    // called once for each candidate pair.  Shapes marked as static cannot
+    // collide with each other.
+    abstract touchingQuery(
+        func: (a: Shape, b: Shape) => any,
+    ): void;
 
     // Perform a point query against the spatial index, calling `func` for each
     // potential match. A pointer to the point will be passed as `obj1` of
@@ -107,16 +107,8 @@ export abstract class SpatialIndex {
         func: (obj: Shape) => any,
     ): void;
 
-    // Simultaneously reindex and find all colliding objects.
-    // @c func will be called once for each potentially overlapping pair of
-    // objects found. If the spatial index was initialized with a static index,
-    // it will collide it's objects against that as well.
-    abstract reindexQuery(
-        func: (a: Shape, b: Shape) => any,
-    ): void;
-
-    // Iterate the objects in the spatial index. @c func will be called once for
-    // each object.
+    // Iterate the objects in the spatial index. @c func will be called once
+    // for each object.
     abstract each(
         f: (obj: Shape) => any,
     ): void;

@@ -24,6 +24,7 @@
 import { Arbiter, CollisionHandler, ContactPoint } from "./arbiter";
 import { BB, bbIntersects2, bbNewForCircle } from "./bb";
 import { BBTree } from "./bb-tree";
+import { SpatialIndex } from "./spatial-index";
 import { Body } from "./body";
 import { collideShapes, Contact } from "./collision";
 import { Constraint } from "./constraints/constraint";
@@ -62,8 +63,7 @@ export class Space {
     // TODO
     sleepingComponents: Body[] = [];
 
-    staticShapes: BBTree = new BBTree(null);
-    activeShapes: BBTree = new BBTree(this.staticShapes);
+    spatialIndex: SpatialIndex = new BBTree();
 
     arbiters: Arbiter[] = [];
     cachedArbiters: Map<string, Arbiter> = new Map();
@@ -250,7 +250,7 @@ export class Space {
         body.addShape(shape);
 
         shape.update(body.p, body.rot);
-        this.activeShapes.insert(shape);
+        this.spatialIndex.insert(shape);
         shape.space = this;
 
         return shape;
@@ -269,7 +269,7 @@ export class Space {
         body.addShape(shape);
 
         shape.update(body.p, body.rot);
-        this.staticShapes.insert(shape);
+        this.spatialIndex.insertStatic(shape);
         shape.space = this;
 
         return shape;
@@ -362,7 +362,7 @@ export class Space {
             body.activate();
             body.removeShape(shape);
             this.filterArbiters(body, shape);
-            this.activeShapes.remove(shape);
+            this.spatialIndex.remove(shape);
             shape.space = null;
         }
     }
@@ -383,7 +383,7 @@ export class Space {
         }
         body.removeShape(shape);
         this.filterArbiters(body, shape);
-        this.staticShapes.remove(shape);
+        this.spatialIndex.remove(shape);
         shape.space = null;
     }
 
@@ -470,8 +470,7 @@ export class Space {
     eachShape(func: (shape: Shape) => any): void {
         this.lock();
         {
-            this.activeShapes.each(func);
-            this.staticShapes.each(func);
+            this.spatialIndex.each(func);
         }
         this.unlock(true);
     }
@@ -497,11 +496,12 @@ export class Space {
             "Wait until the current query or step is complete.",
         );
 
-        this.staticShapes.each((shape: Shape) => {
+        // TODO this should only update static shapes.
+        this.spatialIndex.each((shape: Shape) => {
             const body = shape.body;
             shape.update(body.p, body.rot);
         });
-        this.staticShapes.reindex();
+        this.spatialIndex.reindexStatic()
     }
 
     /// Update the collision detection data for a specific shape in the space.
@@ -516,8 +516,7 @@ export class Space {
         shape.update(body.p, body.rot);
 
         // attempt to rehash the shape in both hashes
-        this.activeShapes.reindexObject(shape);
-        this.staticShapes.reindexObject(shape);
+        this.spatialIndex.reindexObject(shape);
     }
 
     /// Update the collision detection data for all shapes attached to a body.
@@ -542,8 +541,8 @@ export class Space {
             this.bodies.push(body);
 
             body.eachShape((shape) => {
-                this.staticShapes.remove(shape);
-                this.activeShapes.insert(shape);
+                this.spatialIndex.remove(shape);
+                this.spatialIndex.insert(shape);
             });
 
             body.eachArbiter((arbiter) => {
@@ -595,8 +594,8 @@ export class Space {
         deleteObjFromList(this.bodies, body);
 
         body.eachShape((shape) => {
-            this.activeShapes.remove(shape);
-            this.staticShapes.insert(shape);
+            this.spatialIndex.remove(shape);
+            this.spatialIndex.insertStatic(shape);
         });
 
         body.eachArbiter((arbiter) => {
@@ -744,8 +743,7 @@ export class Space {
         const bb = new BB(point.x, point.y, point.x, point.y);
         this.lock();
         {
-            this.activeShapes.query(bb, helper);
-            this.staticShapes.query(bb, helper);
+            this.spatialIndex.query(bb, helper);
         }
         this.unlock(true);
     }
@@ -787,8 +785,7 @@ export class Space {
 
         this.lock();
         {
-            this.activeShapes.query(bb, helper);
-            this.staticShapes.query(bb, helper);
+            this.spatialIndex.query(bb, helper);
         }
         this.unlock(true);
     }
@@ -816,8 +813,7 @@ export class Space {
         };
 
         const bb = bbNewForCircle(point, maxDistance);
-        this.activeShapes.query(bb, helper);
-        this.staticShapes.query(bb, helper);
+        this.spatialIndex.query(bb, helper);
 
         return out;
     }
@@ -845,8 +841,7 @@ export class Space {
 
         this.lock();
         {
-            this.staticShapes.segmentQuery(start, end, 1, helper);
-            this.activeShapes.segmentQuery(start, end, 1, helper);
+            this.spatialIndex.segmentQuery(start, end, 1, helper);
         }
         this.unlock(true);
     }
@@ -874,8 +869,7 @@ export class Space {
             return out ? out.t : 1;
         };
 
-        this.staticShapes.segmentQuery(start, end, 1, helper);
-        this.activeShapes.segmentQuery(start, end, out ? out.t : 1, helper);
+        this.spatialIndex.segmentQuery(start, end, 1, helper);
 
         return out;
     }
@@ -900,8 +894,7 @@ export class Space {
 
         this.lock();
         {
-            this.activeShapes.query(bb, helper);
-            this.staticShapes.query(bb, helper);
+            this.spatialIndex.query(bb, helper);
         }
         this.unlock(true);
     }
@@ -966,8 +959,7 @@ export class Space {
 
         this.lock();
         {
-            this.activeShapes.query(bb, helper);
-            this.staticShapes.query(bb, helper);
+            this.spatialIndex.query(bb, helper);
         }
         this.unlock(true);
 
@@ -1184,8 +1176,10 @@ export class Space {
 
             // Find colliding pairs.
             // this.pushFreshContactBuffer();
-            this.activeShapes.each(updateFunc);
-            this.activeShapes.reindexQuery(this.collideShapes);
+            // TODO this should only visit active shapes.
+            this.spatialIndex.each(updateFunc);
+            this.spatialIndex.reindex();
+            this.spatialIndex.touchingQuery(this.collideShapes);
         }
         this.unlock(false);
 

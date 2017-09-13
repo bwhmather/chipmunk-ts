@@ -41,7 +41,7 @@ interface INode {
 
     insert(leaf: Leaf): INode;
 
-    markIfTouchingQuery(leaf: Leaf, tree: BBTree): void;
+    markIfTouching(leaf: Leaf, tree: BBTree): void;
 
     bbArea(): number;
 
@@ -136,10 +136,10 @@ class Branch implements INode {
         return this;
     }
 
-    markIfTouchingQuery(leaf: Leaf, tree: BBTree): void {
+    markIfTouching(leaf: Leaf, tree: BBTree): void {
         if (bbTreeIntersectsNode(leaf, this)) {
-            this.childA.markIfTouchingQuery(leaf, tree);
-            this.childB.markIfTouchingQuery(leaf, tree);
+            this.childA.markIfTouching(leaf, tree);
+            this.childB.markIfTouching(leaf, tree);
         }
     }
 
@@ -262,26 +262,22 @@ class Leaf implements INode {
         this.touching.clear();
     }
 
-    markIfTouchingQuery(leaf: Leaf, tree: BBTree): void {
+    markIfTouching(leaf: Leaf, tree: BBTree): void {
         if (bbTreeIntersectsNode(leaf, this)) {
             this.touching.add(leaf);
             leaf.touching.add(this);
         }
     }
 
-    markTouchingQuery(tree: BBTree, staticRoot: INode): void {
+    markTouching(tree: BBTree): void {
         if (this.stamp === tree.getStamp()) {
             // Shape has been changed in the most recent step.  Rebuild the
             // list of neighbours.
-            if (staticRoot) {
-                staticRoot.markIfTouchingQuery(this, tree);
-            }
-
             for (let node: INode = this; node.parent; node = node.parent) {
                 if (node === node.parent.childA) {
-                    node.parent.childB.markIfTouchingQuery(this, tree);
+                    node.parent.childB.markIfTouching(this, tree);
                 } else {
-                    node.parent.childA.markIfTouchingQuery(this, tree);
+                    node.parent.childA.markIfTouching(this, tree);
                 }
             }
         }
@@ -322,15 +318,8 @@ class Leaf implements INode {
     }
 
     addPairs(tree: BBTree): void {
-        const dynamicIndex = tree.dynamicIndex;
-        if (dynamicIndex) {
-            const dynamicRoot = dynamicIndex.root;
-            if (dynamicRoot) {
-                dynamicRoot.markIfTouchingQuery(this, dynamicIndex);
-            }
-        } else {
-            const staticRoot = tree.staticIndex.root;
-            this.markTouchingQuery(tree, staticRoot);
+        if (tree.root) {
+            tree.root.markIfTouching(this, tree);
         }
     }
 
@@ -363,20 +352,13 @@ class Leaf implements INode {
 
 export class BBTree extends SpatialIndex {
     velocityFunc: (obj: Shape) => Vect = null;
-    leaves: Map<Shape, Leaf>;  // TODO TODO TODO
+
+    leaves: Map<Shape, Leaf> = new Map();
+    activeShapes: Set<Shape> = new Set();
+
     root: INode = null;
     stamp: number = 0;
 
-    staticIndex: BBTree;
-    dynamicIndex: BBTree;
-
-    constructor(staticIndex: BBTree) {
-        super(staticIndex);
-
-        // This is a hash from object ID -> object for the objects stored in the
-        // BBTree.
-        this.leaves = new Map();
-    }
 
     getBB(obj: Shape, dest: Leaf): void {
         const velocityFunc = this.velocityFunc;
@@ -400,20 +382,15 @@ export class BBTree extends SpatialIndex {
     }
 
     getStamp() {
-        const dynamic = this.dynamicIndex;
-        return (dynamic && dynamic.stamp ? dynamic.stamp : this.stamp);
+        return this.stamp;
     }
 
     incrementStamp() {
-        if (this.dynamicIndex && this.dynamicIndex.stamp) {
-            this.dynamicIndex.stamp++;
-        } else {
-            this.stamp++;
-        }
+        this.stamp++;
     }
 
     // **** Insert/Remove
-    insert(obj: Shape): void {
+    insertStatic(obj: Shape): void {
         const leaf = new Leaf(this, obj);
 
         this.leaves.set(obj, leaf);
@@ -429,10 +406,16 @@ export class BBTree extends SpatialIndex {
         this.incrementStamp();
     }
 
+    insert(obj: Shape): void {
+        this.insertStatic(obj);
+        this.activeShapes.add(obj);
+    }
+
     remove(obj: Shape) {
         const leaf = this.leaves.get(obj);
 
         this.leaves.delete(obj);
+        this.activeShapes.delete(obj);
         this.root = subtreeRemove(this.root, leaf, this);
         this.count--;
 
@@ -443,30 +426,30 @@ export class BBTree extends SpatialIndex {
         return this.leaves.has(obj);
     }
 
-    reindex(): void {
-        if (!this.root) {
-            return;
-        }
-
+    reindexStatic(): void {
         this.leaves.forEach((leaf: Leaf) => {
             leaf.update(this);
         });
 
-        const staticIndex = this.staticIndex;
-        const staticRoot = staticIndex && staticIndex.root;
-
-
         this.leaves.forEach((leaf: Leaf) => {
-            leaf.markTouchingQuery(this, staticRoot);
+            leaf.markTouching(this);
         });
 
         this.incrementStamp();
     }
 
-    // DEPRECATED
-    reindexQuery(func: (a: Shape, b: Shape) => any): void {
-        this.reindex();
-        this.touchingQuery(func);
+    reindex(): void {
+        this.activeShapes.forEach((shape: Shape) => {
+            const leaf = this.leaves.get(shape)
+            leaf.update(this);
+        });
+
+        this.activeShapes.forEach((shape: Shape) => {
+            const leaf = this.leaves.get(shape)
+            leaf.markTouching(this);
+        });
+
+        this.incrementStamp();
     }
 
     reindexObject(obj: Shape): void {
