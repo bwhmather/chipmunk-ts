@@ -263,6 +263,10 @@ class Leaf implements INode {
     }
 
     markIfTouching(leaf: Leaf, tree: BBTree): void {
+        if (leaf === this) {
+            return
+        }
+
         if (bbTreeIntersectsNode(leaf, this)) {
             this.touching.add(leaf);
             leaf.touching.add(this);
