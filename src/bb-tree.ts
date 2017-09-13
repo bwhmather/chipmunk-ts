@@ -443,7 +443,7 @@ export class BBTree extends SpatialIndex {
         return this.leaves.has(obj);
     }
 
-    reindexQuery(func: (a: Shape, b: Shape) => any): void {
+    reindex(): void {
         if (!this.root) {
             return;
         }
@@ -455,26 +455,18 @@ export class BBTree extends SpatialIndex {
         const staticIndex = this.staticIndex;
         const staticRoot = staticIndex && staticIndex.root;
 
-        const visited = new Set()
 
         this.leaves.forEach((leaf: Leaf) => {
             leaf.markTouchingQuery(this, staticRoot);
-
-            leaf.touching.forEach((touching: Leaf) => {
-                // TODO I think this should be the other way round.
-                if (visited.has(touching)) {
-                    func(leaf.obj, touching.obj)
-                }
-            });
-
-            visited.add(leaf);
         });
 
         this.incrementStamp();
     }
 
-    reindex(): void {
-        this.reindexQuery(voidQueryFunc);
+    // DEPRECATED
+    reindexQuery(func: (a: Shape, b: Shape) => any): void {
+        this.reindex();
+        this.touchingQuery(func);
     }
 
     reindexObject(obj: Shape): void {
@@ -489,8 +481,19 @@ export class BBTree extends SpatialIndex {
 
     // **** Query
 
-    // This has since been removed from upstream Chipmunk - which recommends you
-    // just use query() below directly.
+    touchingQuery(func: (a: Shape, b: Shape) => any): void {
+        const visited = new Set()
+        this.leaves.forEach((leaf: Leaf) => {
+            leaf.touching.forEach((touching: Leaf) => {
+                // TODO I think this should be the other way round.
+                if (visited.has(touching)) {
+                    func(leaf.obj, touching.obj)
+                }
+                visited.add(leaf);
+            });
+        });
+    }
+
     pointQuery(
         v: Vect,
         func: (obj: Shape) => any,
