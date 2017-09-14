@@ -277,13 +277,7 @@ class Leaf implements INode {
         if (this.stamp === tree.getStamp()) {
             // Shape has been changed in the most recent step.  Rebuild the
             // list of neighbours.
-            for (let node: INode = this; node.parent; node = node.parent) {
-                if (node === node.parent.childA) {
-                    node.parent.childB.markIfTouching(this, tree);
-                } else {
-                    node.parent.childA.markIfTouching(this, tree);
-                }
-            }
+            tree.root.markIfTouching(this, tree);
         }
     }
 
