@@ -27,10 +27,6 @@ import { SpatialIndex } from "./spatial-index";
 import { assertSoft } from "./util";
 import { Vect, vmult } from "./vect";
 
-function voidQueryFunc(obj1: Shape, obj2: Shape) {
-    // Pass.
-}
-
 interface INode {
     parent: Branch;
 
