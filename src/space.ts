@@ -24,7 +24,6 @@
 import { Arbiter, CollisionHandler, ContactPoint } from "./arbiter";
 import { BB, bbIntersects2, bbNewForCircle } from "./bb";
 import { BBTreeIndex } from "./bb-tree";
-import { SpatialIndex } from "./spatial-index";
 import { Body } from "./body";
 import { collideShapes, Contact } from "./collision";
 import { Constraint } from "./constraints/constraint";
@@ -32,6 +31,7 @@ import { NearestPointQueryInfo, SegmentQueryInfo, Shape } from "./shapes";
 import {
     componentActive, componentRoot, floodFillComponent,
 } from "./space-components";
+import { SpatialIndex } from "./spatial-index";
 import { assert, assertSoft, deleteObjFromList, hashPair } from "./util";
 import { Vect, vlengthsq, vneg, vzero } from "./vect";
 
@@ -501,7 +501,7 @@ export class Space {
             const body = shape.body;
             shape.update(body.p, body.rot);
         });
-        this.spatialIndex.reindexStatic()
+        this.spatialIndex.reindexStatic();
     }
 
     /// Update the collision detection data for a specific shape in the space.

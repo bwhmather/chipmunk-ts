@@ -42,7 +42,6 @@ import { BB } from "./bb";
 import { Shape } from "./shapes";
 import { Vect } from "./vect";
 
-
 export abstract class SpatialIndex {
 
     // The number of objects in the spatial index.

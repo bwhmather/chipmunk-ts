@@ -264,7 +264,7 @@ class Leaf implements INode {
 
     markIfTouching(leaf: Leaf, tree: BBTree): void {
         if (leaf === this) {
-            return
+            return;
         }
 
         if (bbTreeIntersectsNode(leaf, this)) {
@@ -354,7 +354,6 @@ class Leaf implements INode {
     }
 }
 
-
 function bbTreeMergedArea(a: INode, b: INode): number {
     return (
         (Math.max(a.bbR, b.bbR) - Math.min(a.bbL, b.bbL)) *
@@ -362,14 +361,12 @@ function bbTreeMergedArea(a: INode, b: INode): number {
     );
 }
 
-
 function bbProximity(a: INode, b: INode): number {
     return (
         Math.abs(a.bbL + a.bbR - b.bbL - b.bbR) +
         Math.abs(a.bbB + a.bbT - b.bbB - b.bbT)
     );
 }
-
 
 function subtreeRemove(subtree: INode, leaf: Leaf, tree: BBTree): INode {
     if (leaf === subtree) {
@@ -387,7 +384,6 @@ function subtreeRemove(subtree: INode, leaf: Leaf, tree: BBTree): INode {
     }
 }
 
-
 function bbTreeIntersectsNode(a: INode, b: INode): boolean {
     return (
         a.bbL <= b.bbR &&
@@ -397,7 +393,6 @@ function bbTreeIntersectsNode(a: INode, b: INode): boolean {
     );
 }
 
-
 function bbTreeMergedArea2(
     node: INode, l: number, b: number, r: number, t: number,
 ): number {
@@ -406,7 +401,6 @@ function bbTreeMergedArea2(
         (Math.max(node.bbT, t) - Math.min(node.bbB, b))
     );
 }
-
 
 class BBTree {
     private velocityFunc: (obj: Shape) => Vect = null;
@@ -498,7 +492,7 @@ class BBTree {
             // Leaf is in the index.  Use the cached sets of touching leaves.
             leaf.touching.forEach((other: Leaf) => {
                 func(other.obj);
-            })
+            });
         } else {
             // Shape is not in the index.  Perform a regular query using the
             // shape's bounding box.
@@ -540,9 +534,8 @@ class BBTree {
     }
 }
 
-
 export class BBTreeIndex extends SpatialIndex {
-    private tree = new BBTree()
+    private tree = new BBTree();
 
     private activeShapes: Set<Shape> = new Set();
 
@@ -559,7 +552,7 @@ export class BBTreeIndex extends SpatialIndex {
     }
 
     remove(obj: Shape) {
-        this.tree.remove(obj)
+        this.tree.remove(obj);
         this.activeShapes.delete(obj);
         this.count--;
     }
@@ -569,21 +562,19 @@ export class BBTreeIndex extends SpatialIndex {
     }
 
     reindexStatic(): void {
-        const shapes: Shape[] = []
+        const shapes: Shape[] = [];
         this.tree.leaves.forEach((leaf: Leaf, shape: Shape) => {
             shapes.push(shape);
         });
         this.tree.reindex(shapes);
-        //this.tree.reindex([...this.tree.leaves.keys()]);
     }
 
     reindex(): void {
-        const shapes: Shape[] = []
+        const shapes: Shape[] = [];
         this.activeShapes.forEach((shape: Shape) => {
             shapes.push(shape);
         });
         this.tree.reindex(shapes);
-        //this.tree.reindex([...this.activeShapes.values()]);
     }
 
     reindexObject(obj: Shape): void {
@@ -593,7 +584,7 @@ export class BBTreeIndex extends SpatialIndex {
     // **** Query
 
     touchingQuery(func: (a: Shape, b: Shape) => any): void {
-        const visited = new Set()
+        const visited = new Set();
         this.activeShapes.forEach((shape: Shape) => {
             this.tree.shapeQuery(shape, (other: Shape) => {
                 if (visited.has(other)) {
