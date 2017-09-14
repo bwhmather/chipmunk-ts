@@ -23,7 +23,7 @@
 
 import { Arbiter, CollisionHandler, ContactPoint } from "./arbiter";
 import { BB, bbIntersects2, bbNewForCircle } from "./bb";
-import { BBTree } from "./bb-tree";
+import { BBTreeIndex } from "./bb-tree";
 import { SpatialIndex } from "./spatial-index";
 import { Body } from "./body";
 import { collideShapes, Contact } from "./collision";
@@ -63,7 +63,7 @@ export class Space {
     // TODO
     sleepingComponents: Body[] = [];
 
-    spatialIndex: SpatialIndex = new BBTree();
+    spatialIndex: SpatialIndex = new BBTreeIndex();
 
     arbiters: Arbiter[] = [];
     cachedArbiters: Map<string, Arbiter> = new Map();

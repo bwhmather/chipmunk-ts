@@ -354,16 +354,76 @@ class Leaf implements INode {
     }
 }
 
-export class BBTree extends SpatialIndex {
-    velocityFunc: (obj: Shape) => Vect = null;
+
+function bbTreeMergedArea(a: INode, b: INode): number {
+    return (
+        (Math.max(a.bbR, b.bbR) - Math.min(a.bbL, b.bbL)) *
+        (Math.max(a.bbT, b.bbT) - Math.min(a.bbB, b.bbB))
+    );
+}
+
+
+function bbProximity(a: INode, b: INode): number {
+    return (
+        Math.abs(a.bbL + a.bbR - b.bbL - b.bbR) +
+        Math.abs(a.bbB + a.bbT - b.bbB - b.bbT)
+    );
+}
+
+
+function subtreeRemove(subtree: INode, leaf: Leaf, tree: BBTree): INode {
+    if (leaf === subtree) {
+        return null;
+    } else {
+        if (leaf.parent === subtree) {
+            const other = leaf.parent.otherChild(leaf);
+            other.parent = subtree.parent;
+            return other;
+        } else {
+            leaf.parent.parent.replaceChild(
+                leaf.parent, leaf.parent.otherChild(leaf));
+            return subtree;
+        }
+    }
+}
+
+
+function bbTreeIntersectsNode(a: INode, b: INode): boolean {
+    return (
+        a.bbL <= b.bbR &&
+        b.bbL <= a.bbR &&
+        a.bbB <= b.bbT &&
+        b.bbB <= a.bbT
+    );
+}
+
+
+function bbTreeMergedArea2(
+    node: INode, l: number, b: number, r: number, t: number,
+): number {
+    return (
+        (Math.max(node.bbR, r) - Math.min(node.bbL, l)) *
+        (Math.max(node.bbT, t) - Math.min(node.bbB, b))
+    );
+}
+
+
+class BBTree {
+    private velocityFunc: (obj: Shape) => Vect = null;
 
     leaves: Map<Shape, Leaf> = new Map();
-    activeShapes: Set<Shape> = new Set();
-
+    private stamp: number = 0;
     root: INode = null;
-    stamp: number = 0;
 
+    getStamp() {
+        return this.stamp;
+    }
 
+    incrementStamp() {
+        this.stamp++;
+    }
+
+    // TODO move to leaf
     getBB(obj: Shape, dest: Leaf): void {
         const velocityFunc = this.velocityFunc;
         if (velocityFunc) {
@@ -385,16 +445,8 @@ export class BBTree extends SpatialIndex {
         }
     }
 
-    getStamp() {
-        return this.stamp;
-    }
-
-    incrementStamp() {
-        this.stamp++;
-    }
-
     // **** Insert/Remove
-    insertStatic(obj: Shape): void {
+    insert(obj: Shape): void {
         const leaf = new Leaf(this, obj);
 
         this.leaves.set(obj, leaf);
@@ -403,25 +455,17 @@ export class BBTree extends SpatialIndex {
         } else {
             this.root = leaf;
         }
-        this.count++;
 
         leaf.stamp = this.getStamp();
         leaf.addPairs(this);
         this.incrementStamp();
     }
 
-    insert(obj: Shape): void {
-        this.insertStatic(obj);
-        this.activeShapes.add(obj);
-    }
-
     remove(obj: Shape) {
         const leaf = this.leaves.get(obj);
 
         this.leaves.delete(obj);
-        this.activeShapes.delete(obj);
         this.root = subtreeRemove(this.root, leaf, this);
-        this.count--;
 
         leaf.clearPairs(this);
     }
@@ -430,55 +474,38 @@ export class BBTree extends SpatialIndex {
         return this.leaves.has(obj);
     }
 
-    reindexStatic(): void {
-        this.leaves.forEach((leaf: Leaf) => {
+    reindex(shapes: Shape[]): void {
+        const leaves = shapes.map((shape: Shape) => {
+            return this.leaves.get(shape);
+        });
+
+        leaves.forEach((leaf: Leaf) => {
             leaf.update(this);
         });
 
-        this.leaves.forEach((leaf: Leaf) => {
+        leaves.forEach((leaf: Leaf) => {
             leaf.markTouching(this);
         });
 
         this.incrementStamp();
-    }
-
-    reindex(): void {
-        this.activeShapes.forEach((shape: Shape) => {
-            const leaf = this.leaves.get(shape)
-            leaf.update(this);
-        });
-
-        this.activeShapes.forEach((shape: Shape) => {
-            const leaf = this.leaves.get(shape)
-            leaf.markTouching(this);
-        });
-
-        this.incrementStamp();
-    }
-
-    reindexObject(obj: Shape): void {
-        const leaf = this.leaves.get(obj);
-        if (leaf) {
-            if (leaf.update(this)) {
-                leaf.addPairs(this);
-            }
-            this.incrementStamp();
-        }
     }
 
     // **** Query
 
-    touchingQuery(func: (a: Shape, b: Shape) => any): void {
-        const visited = new Set()
-        this.leaves.forEach((leaf: Leaf) => {
-            leaf.touching.forEach((touching: Leaf) => {
-                // TODO I think this should be the other way round.
-                if (visited.has(touching)) {
-                    func(leaf.obj, touching.obj)
-                }
-                visited.add(leaf);
-            });
-        });
+    shapeQuery(shape: Shape, func: (other: Shape) => any): void {
+        const leaf = this.leaves.get(shape);
+        if (leaf) {
+            // Leaf is in the index.  Use the cached sets of touching leaves.
+            leaf.touching.forEach((other: Leaf) => {
+                func(other.obj);
+            })
+        } else {
+            // Shape is not in the index.  Perform a regular query using the
+            // shape's bounding box.
+            // TODO use velocityFunc
+            // TODO it's possible that we don't want to provide this fallback
+            this.query(shape.getBB(), func);
+        }
     }
 
     pointQuery(
@@ -513,50 +540,94 @@ export class BBTree extends SpatialIndex {
     }
 }
 
-function bbTreeMergedArea(a: INode, b: INode): number {
-    return (
-        (Math.max(a.bbR, b.bbR) - Math.min(a.bbL, b.bbL)) *
-        (Math.max(a.bbT, b.bbT) - Math.min(a.bbB, b.bbB))
-    );
-}
 
-function bbProximity(a: INode, b: INode): number {
-    return (
-        Math.abs(a.bbL + a.bbR - b.bbL - b.bbR) +
-        Math.abs(a.bbB + a.bbT - b.bbB - b.bbT)
-    );
-}
+export class BBTreeIndex extends SpatialIndex {
+    private tree = new BBTree()
 
-function subtreeRemove(subtree: INode, leaf: Leaf, tree: BBTree): INode {
-    if (leaf === subtree) {
-        return null;
-    } else {
-        if (leaf.parent === subtree) {
-            const other = leaf.parent.otherChild(leaf);
-            other.parent = subtree.parent;
-            return other;
-        } else {
-            leaf.parent.parent.replaceChild(
-                leaf.parent, leaf.parent.otherChild(leaf));
-            return subtree;
-        }
+    private activeShapes: Set<Shape> = new Set();
+
+    // **** Insert/Remove
+    insertStatic(obj: Shape): void {
+        this.tree.insert(obj);
+        this.count++;
     }
-}
 
-function bbTreeIntersectsNode(a: INode, b: INode): boolean {
-    return (
-        a.bbL <= b.bbR &&
-        b.bbL <= a.bbR &&
-        a.bbB <= b.bbT &&
-        b.bbB <= a.bbT
-    );
-}
+    insert(obj: Shape): void {
+        this.tree.insert(obj);
+        this.activeShapes.add(obj);
+        this.count++;
+    }
 
-function bbTreeMergedArea2(
-    node: INode, l: number, b: number, r: number, t: number,
-): number {
-    return (
-        (Math.max(node.bbR, r) - Math.min(node.bbL, l)) *
-        (Math.max(node.bbT, t) - Math.min(node.bbB, b))
-    );
+    remove(obj: Shape) {
+        this.tree.remove(obj)
+        this.activeShapes.delete(obj);
+        this.count--;
+    }
+
+    contains(obj: Shape) {
+        return this.tree.contains(obj);
+    }
+
+    reindexStatic(): void {
+        const shapes: Shape[] = []
+        this.tree.leaves.forEach((leaf: Leaf, shape: Shape) => {
+            shapes.push(shape);
+        });
+        this.tree.reindex(shapes);
+        //this.tree.reindex([...this.tree.leaves.keys()]);
+    }
+
+    reindex(): void {
+        const shapes: Shape[] = []
+        this.activeShapes.forEach((shape: Shape) => {
+            shapes.push(shape);
+        });
+        this.tree.reindex(shapes);
+        //this.tree.reindex([...this.activeShapes.values()]);
+    }
+
+    reindexObject(obj: Shape): void {
+        this.tree.reindex([obj]);
+    }
+
+    // **** Query
+
+    touchingQuery(func: (a: Shape, b: Shape) => any): void {
+        const visited = new Set()
+        this.activeShapes.forEach((shape: Shape) => {
+            this.tree.shapeQuery(shape, (other: Shape) => {
+                if (visited.has(other)) {
+                    func(shape, other);
+                }
+                visited.add(shape);
+            });
+        });
+    }
+
+    pointQuery(
+        v: Vect,
+        func: (obj: Shape) => any,
+    ): void {
+        return this.tree.pointQuery(v, func);
+    }
+
+    segmentQuery(
+        a: Vect, b: Vect, tExit: number,
+        func: (obj: Shape) => any,
+    ): void {
+        return this.tree.segmentQuery(a, b, tExit, func);
+    }
+
+    query(
+        bb: BB,
+        func: (obj: Shape) => any,
+    ): void {
+        this.tree.query(bb, func);
+    }
+
+    each(func: (obj: Shape) => any) {
+        this.tree.leaves.forEach((leaf: Leaf) => {
+            func(leaf.obj);
+        });
+    }
 }
