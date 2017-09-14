@@ -41,13 +41,13 @@ interface INode {
 
     bbArea(): number;
 
-    query(bb: BB, func: (obj: Shape) => any): void;
+    query(bb: BB, func: (shape: Shape) => any): void;
 
     /// Returns the fraction along the segment query the node hits. Returns
     /// Infinity if it doesn't hit.
     segmentQuery(
         a: Vect, b: Vect, tExit: number,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): number;
 }
 
@@ -152,7 +152,7 @@ class Branch implements INode {
         return (this.bbR - this.bbL) * (this.bbT - this.bbB);
     }
 
-    query(bb: BB, func: (obj: Shape) => any): void {
+    query(bb: BB, func: (shape: Shape) => any): void {
         // if(bbIntersectsBB(subtree.bb, bb)){
         if (this.intersectsBB(bb)) {
             this.childA.query(bb, func);
@@ -191,7 +191,7 @@ class Branch implements INode {
 
     segmentQuery(
         a: Vect, b: Vect, tExit: number,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): number {
         const tA = this.childSegmentQuery(this.childA, a, b);
         const tB = this.childSegmentQuery(this.childB, a, b);
@@ -229,16 +229,16 @@ class Leaf implements INode {
     bbB: number;
     bbR: number;
     bbT: number;
-    obj: Shape;
+    shape: Shape;
     parent: Branch;
     number: number;
     stamp: number;
 
     touching: Set<Leaf>;
 
-    constructor(tree: BBTree, obj: Shape) {
-        this.obj = obj;
-        tree.getBB(obj, this);
+    constructor(tree: BBTree, shape: Shape) {
+        this.shape = shape;
+        tree.getBB(shape, this);
 
         this.parent = null;
 
@@ -278,22 +278,22 @@ class Leaf implements INode {
     }
 
     // **** Leaf Functions
-    containsObj(obj: Shape): boolean {
+    containsShape(shape: Shape): boolean {
         return (
-            this.bbL <= obj.bbL &&
-            this.bbR >= obj.bbR &&
-            this.bbB <= obj.bbB &&
-            this.bbT >= obj.bbT
+            this.bbL <= shape.bbL &&
+            this.bbR >= shape.bbR &&
+            this.bbB <= shape.bbB &&
+            this.bbT >= shape.bbT
         );
     }
 
     update(tree: BBTree): boolean {
         let root = tree.root;
-        const obj = this.obj;
+        const shape = this.shape;
 
         // if(!bbContainsBB(this.bb, bb)){
-        if (!this.containsObj(obj)) {
-            tree.getBB(this.obj, this);
+        if (!this.containsShape(shape)) {
+            tree.getBB(this.shape, this);
 
             root = subtreeRemove(root, this, tree);
             if (tree.root) {
@@ -330,17 +330,17 @@ class Leaf implements INode {
         return (this.bbR - this.bbL) * (this.bbT - this.bbB);
     }
 
-    query(bb: BB, func: (obj: Shape) => any): void {
+    query(bb: BB, func: (shape: Shape) => any): void {
         if (this.intersectsBB(bb)) {
-            func(this.obj);
+            func(this.shape);
         }
     }
 
     segmentQuery(
         a: Vect, b: Vect, tExit: number,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): number {
-        return func(this.obj);
+        return func(this.shape);
     }
 }
 
@@ -393,7 +393,7 @@ function bbTreeMergedArea2(
 }
 
 class BBTree {
-    private velocityFunc: (obj: Shape) => Vect = null;
+    private velocityFunc: (shape: Shape) => Vect = null;
 
     leaves: Map<Shape, Leaf> = new Map();
     private stamp: number = 0;
@@ -408,32 +408,32 @@ class BBTree {
     }
 
     // TODO move to leaf
-    getBB(obj: Shape, dest: Leaf): void {
+    getBB(shape: Shape, dest: Leaf): void {
         const velocityFunc = this.velocityFunc;
         if (velocityFunc) {
             const coef = 0.1;
-            const x = (obj.bbR - obj.bbL) * coef;
-            const y = (obj.bbT - obj.bbB) * coef;
+            const x = (shape.bbR - shape.bbL) * coef;
+            const y = (shape.bbT - shape.bbB) * coef;
 
-            const v = vmult(velocityFunc(obj), 0.1);
+            const v = vmult(velocityFunc(shape), 0.1);
 
-            dest.bbL = obj.bbL + Math.min(-x, v.x);
-            dest.bbB = obj.bbB + Math.min(-y, v.y);
-            dest.bbR = obj.bbR + Math.max(x, v.x);
-            dest.bbT = obj.bbT + Math.max(y, v.y);
+            dest.bbL = shape.bbL + Math.min(-x, v.x);
+            dest.bbB = shape.bbB + Math.min(-y, v.y);
+            dest.bbR = shape.bbR + Math.max(x, v.x);
+            dest.bbT = shape.bbT + Math.max(y, v.y);
         } else {
-            dest.bbL = obj.bbL;
-            dest.bbB = obj.bbB;
-            dest.bbR = obj.bbR;
-            dest.bbT = obj.bbT;
+            dest.bbL = shape.bbL;
+            dest.bbB = shape.bbB;
+            dest.bbR = shape.bbR;
+            dest.bbT = shape.bbT;
         }
     }
 
     // **** Insert/Remove
-    insert(obj: Shape): void {
-        const leaf = new Leaf(this, obj);
+    insert(shape: Shape): void {
+        const leaf = new Leaf(this, shape);
 
-        this.leaves.set(obj, leaf);
+        this.leaves.set(shape, leaf);
         if (this.root) {
             this.root = this.root.insert(leaf);
         } else {
@@ -445,17 +445,17 @@ class BBTree {
         this.incrementStamp();
     }
 
-    remove(obj: Shape) {
-        const leaf = this.leaves.get(obj);
+    remove(shape: Shape) {
+        const leaf = this.leaves.get(shape);
 
-        this.leaves.delete(obj);
+        this.leaves.delete(shape);
         this.root = subtreeRemove(this.root, leaf, this);
 
         leaf.clearPairs(this);
     }
 
-    contains(obj: Shape) {
-        return this.leaves.has(obj);
+    contains(shape: Shape) {
+        return this.leaves.has(shape);
     }
 
     reindex(shapes: Shape[]): void {
@@ -481,7 +481,7 @@ class BBTree {
         if (leaf) {
             // Leaf is in the index.  Use the cached sets of touching leaves.
             leaf.touching.forEach((other: Leaf) => {
-                func(other.obj);
+                func(other.shape);
             });
         } else {
             // Shape is not in the index.  Perform a regular query using the
@@ -494,14 +494,14 @@ class BBTree {
 
     pointQuery(
         v: Vect,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): void {
         this.query(new BB(v.x, v.y, v.x, v.y), func);
     }
 
     segmentQuery(
         a: Vect, b: Vect, tExit: number,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): void {
         if (this.root) {
             this.root.segmentQuery(a, b, tExit, func);
@@ -510,16 +510,16 @@ class BBTree {
 
     query(
         bb: BB,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): void {
         if (this.root) {
             this.root.query(bb, func);
         }
     }
 
-    each(func: (obj: Shape) => any) {
+    each(func: (shape: Shape) => any) {
         this.leaves.forEach((leaf: Leaf) => {
-            func(leaf.obj);
+            func(leaf.shape);
         });
     }
 }
@@ -530,25 +530,25 @@ export class BBTreeIndex extends SpatialIndex {
     private activeShapes: Set<Shape> = new Set();
 
     // **** Insert/Remove
-    insertStatic(obj: Shape): void {
-        this.tree.insert(obj);
+    insertStatic(shape: Shape): void {
+        this.tree.insert(shape);
         this.count++;
     }
 
-    insert(obj: Shape): void {
-        this.tree.insert(obj);
-        this.activeShapes.add(obj);
+    insert(shape: Shape): void {
+        this.tree.insert(shape);
+        this.activeShapes.add(shape);
         this.count++;
     }
 
-    remove(obj: Shape) {
-        this.tree.remove(obj);
-        this.activeShapes.delete(obj);
+    remove(shape: Shape) {
+        this.tree.remove(shape);
+        this.activeShapes.delete(shape);
         this.count--;
     }
 
-    contains(obj: Shape) {
-        return this.tree.contains(obj);
+    contains(shape: Shape) {
+        return this.tree.contains(shape);
     }
 
     reindexStatic(): void {
@@ -567,8 +567,8 @@ export class BBTreeIndex extends SpatialIndex {
         this.tree.reindex(shapes);
     }
 
-    reindexObject(obj: Shape): void {
-        this.tree.reindex([obj]);
+    reindexShape(shape: Shape): void {
+        this.tree.reindex([shape]);
     }
 
     // **** Query
@@ -587,28 +587,28 @@ export class BBTreeIndex extends SpatialIndex {
 
     pointQuery(
         v: Vect,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): void {
         return this.tree.pointQuery(v, func);
     }
 
     segmentQuery(
         a: Vect, b: Vect, tExit: number,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): void {
         return this.tree.segmentQuery(a, b, tExit, func);
     }
 
     query(
         bb: BB,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): void {
         this.tree.query(bb, func);
     }
 
-    each(func: (obj: Shape) => any) {
+    each(func: (shape: Shape) => any) {
         this.tree.leaves.forEach((leaf: Leaf) => {
-            func(leaf.obj);
+            func(leaf.shape);
         });
     }
 }

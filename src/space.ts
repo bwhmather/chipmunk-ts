@@ -516,7 +516,7 @@ export class Space {
         shape.update(body.p, body.rot);
 
         // attempt to rehash the shape in both hashes
-        this.spatialIndex.reindexObject(shape);
+        this.spatialIndex.reindexShape(shape);
     }
 
     /// Update the collision detection data for all shapes attached to a body.

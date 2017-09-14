@@ -50,19 +50,19 @@ export abstract class SpatialIndex {
     // Returns true if the spatial index contains the given object.
     // Most spatial indexes use hashed storage, so you must provide a hash
     // value too.
-    abstract contains(obj: Shape): boolean;
+    abstract contains(shape: Shape): boolean;
 
     // Add an object to a spatial index.
-    abstract insert(obj: Shape): void;
+    abstract insert(shape: Shape): void;
 
     // Insert a static object into the spatial index.
-    abstract insertStatic(obj: Shape): void;
+    abstract insertStatic(shape: Shape): void;
 
     // Remove an object from a spatial index.
-    abstract remove(obj: Shape): void;
+    abstract remove(shape: Shape): void;
 
     // Reindex a single object in the spatial index.
-    reindexObject(obj: Shape): void {
+    reindexShape(shape: Shape): void {
         // Pass.
     }
 
@@ -89,26 +89,26 @@ export abstract class SpatialIndex {
     // `func`.
     abstract pointQuery(
         point: Vect,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): void;
 
     // Perform a segment query against the spatial index, calling @c func for
     // each potential match.
     abstract segmentQuery(
         vectA: Vect, vectB: Vect, tExit: number,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): void;
 
     // Perform a rectangle query against the spatial index, calling @c func for
     // each potential match.
     abstract query(
         bb: BB,
-        func: (obj: Shape) => any,
+        func: (shape: Shape) => any,
     ): void;
 
     // Iterate the objects in the spatial index. @c func will be called once
     // for each object.
     abstract each(
-        f: (obj: Shape) => any,
+        f: (shape: Shape) => any,
     ): void;
 }
