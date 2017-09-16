@@ -58,6 +58,16 @@ export class BB {
             this.t >= other.t
         );
     }
+
+    /// Returns a bounding box that holds both @c bb and @c v.
+    expand(vect: Vect): BB {
+        return new BB(
+            Math.min(this.l, vect.x),
+            Math.min(this.b, vect.y),
+            Math.max(this.r, vect.x),
+            Math.max(this.t, vect.y),
+        );
+    }
 }
 
 export function bb(l: number, b: number, r: number, t: number): BB {
@@ -96,16 +106,6 @@ export function bbMerge(boxA: BB, boxB: BB): BB {
         Math.min(boxA.b, boxB.b),
         Math.max(boxA.r, boxB.r),
         Math.max(boxA.t, boxB.t),
-    );
-}
-
-/// Returns a bounding box that holds both @c bb and @c v.
-export function bbExpand(box: BB, vect: Vect): BB {
-    return new BB(
-        Math.min(box.l, vect.x),
-        Math.min(box.b, vect.y),
-        Math.max(box.r, vect.x),
-        Math.max(box.t, vect.y),
     );
 }
 
