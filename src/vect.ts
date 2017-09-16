@@ -62,8 +62,14 @@ export function veql(v1: Vect, v2: Vect): boolean {
 }
 
 /// Add two vectors
-export function vadd(v1: Vect, v2: Vect): Vect {
-    return new Vect(v1.x + v2.x, v1.y + v2.y);
+export function vadd(...vectors: Vect[]) {
+    let x = 0;
+    let y = 0;
+    for (const vector of vectors) {
+        x += vector.x;
+        y += vector.y;
+    }
+    return new Vect(x, y);
 }
 
 /// Subtract two vectors.

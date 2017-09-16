@@ -60,8 +60,7 @@ export class Body {
     /// Position of the rigid body's center of gravity.
     p: Vect = new Vect(0, 0);
     /// Velocity of the rigid body's center of gravity.
-    vx: number = 0;
-    vy: number = 0;
+    v: Vect = new Vect(0, 0);
     /// Force acting on the rigid body's center of gravity.
     f: Vect = new Vect(0, 0);
 
@@ -86,8 +85,7 @@ export class Body {
     wLimit: number = Infinity;
 
     // This stuff is all private.
-    vyBias: number = 0;
-    vxBias: number = 0;
+    vBias: Vect = new Vect(0, 0);
     wBias: number = 0;
 
     space: Space = null;
@@ -126,7 +124,7 @@ export class Body {
         return this.p;
     }
     getVel(): Vect {
-        return new Vect(this.vx, this.vy);
+        return this.v;
     }
     getAngVel(): number {
         return this.w;
@@ -198,8 +196,7 @@ export class Body {
 
     setVel(vel: Vect): void {
         this.activate();
-        this.vx = vel.x;
-        this.vy = vel.y;
+        this.v = vel;
     }
 
     setAngVel(w: number): void {
@@ -229,12 +226,13 @@ export class Body {
         //     vmult(this.v, damping),
         //     vmult(vadd(gravity, vmult(this.f, this.m_inv)), dt)
         // ), this.v_limit);
+        //
         const vx = (
-            this.vx * damping +
+            this.v.x * damping +
             (gravity.x + this.f.x * this.massInv) * dt
         );
         const vy = (
-            this.vy * damping +
+            this.v.y * damping +
             (gravity.y + this.f.y * this.massInv) * dt
         );
 
@@ -246,8 +244,7 @@ export class Body {
             ? vLimit / Math.sqrt(lensq)
             : 1
         );
-        this.vx = vx * scale;
-        this.vy = vy * scale;
+        this.v = vmult(new Vect(vx, vy), scale);
 
         const wLimit = this.wLimit;
         this.w = clamp(
@@ -264,15 +261,12 @@ export class Body {
         // this.p = this.p + (this.v + this.v_bias) * dt;
         this.p = vadd(
             this.p,
-            new Vect(
-                (this.vx + this.vxBias) * dt,
-                (this.vy + this.vyBias) * dt,
-            ),
+            vmult(vadd(this.v, this.vBias), dt),
         );
 
         this.setAngleInternal(this.a + (this.w + this.wBias) * dt);
 
-        this.vxBias = this.vyBias = 0;
+        this.vBias = new Vect(0, 0);
         this.wBias = 0;
 
         this.sanityCheck();
@@ -296,7 +290,7 @@ export class Body {
     }
 
     getVelAtPoint(r: Vect): Vect {
-        return vadd(new Vect(this.vx, this.vy), vmult(vperp(r), this.w));
+        return vadd(this.v, vmult(vperp(r), this.w));
     }
 
     /// Get the velocity on a body (in world units) at a point on the body in
@@ -351,7 +345,7 @@ export class Body {
     /// Get the kinetic energy of a body.
     kineticEnergy(): number {
         // Need to do some fudging to avoid NaNs
-        const vsq = this.vx * this.vx + this.vy * this.vy;
+        const vsq = this.v.x * this.v.x + this.v.y * this.v.y;
         const wsq = this.w * this.w;
         return (vsq ? vsq * this.mass : 0) + (wsq ? wsq * this.inertia : 0);
     }
@@ -372,11 +366,11 @@ export class Body {
         v_assert_sane(this.p, "Body's position is invalid.");
         v_assert_sane(this.f, "Body's force is invalid.");
         assert(
-            this.vx === this.vx && Math.abs(this.vx) !== Infinity,
+            this.v.x === this.v.x && Math.abs(this.v.x) !== Infinity,
             "Body's velocity is invalid.",
         );
         assert(
-            this.vy === this.vy && Math.abs(this.vy) !== Infinity,
+            this.v.y === this.v.y && Math.abs(this.v.y) !== Infinity,
             "Body's velocity is invalid.",
         );
 

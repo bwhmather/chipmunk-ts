@@ -23,19 +23,19 @@
 
 import { Body } from "../body";
 import { assertSoft } from "../util";
-import { vcross, vcross2, vdot, vdot2, Vect } from "../vect";
+import { vadd, vcross, vcross2, vdot, vdot2, Vect, vmult } from "../vect";
 
 // a and b are bodies.
 export function relativeVelocity(
     a: Body, b: Body, r1: Vect, r2: Vect,
 ) {
     // var v1_sum = vadd(a.v, vmult(vperp(r1), a.w));
-    const v1sumx = a.vx + (-r1.y) * a.w;
-    const v1sumy = a.vy + (r1.x) * a.w;
+    const v1sumx = a.v.x + (-r1.y) * a.w;
+    const v1sumy = a.v.y + (r1.x) * a.w;
 
     // var v2_sum = vadd(b.v, vmult(vperp(r2), b.w));
-    const v2sumx = b.vx + (-r2.y) * b.w;
-    const v2sumy = b.vy + (r2.x) * b.w;
+    const v2sumx = b.v.x + (-r2.y) * b.w;
+    const v2sumy = b.v.y + (r2.x) * b.w;
 
     // return vsub(v2_sum, v1_sum);
     return new Vect(v2sumx - v1sumx, v2sumy - v1sumy);
@@ -47,10 +47,10 @@ export function normalRelativeVelocity(
     n: Vect,
 ) {
     // return vdot(relative_velocity(a, b, r1, r2), n);
-    const v1sumx = a.vx + (-r1.y) * a.w;
-    const v1sumy = a.vy + (r1.x) * a.w;
-    const v2sumx = b.vx + (-r2.y) * b.w;
-    const v2sumy = b.vy + (r2.x) * b.w;
+    const v1sumx = a.v.x + (-r1.y) * a.w;
+    const v1sumy = a.v.y + (r1.x) * a.w;
+    const v2sumx = b.v.x + (-r2.y) * b.w;
+    const v2sumy = b.v.y + (r2.x) * b.w;
 
     return vdot2(v2sumx - v1sumx, v2sumy - v1sumy, n.x, n.y);
 }
@@ -58,10 +58,7 @@ export function normalRelativeVelocity(
 export function applyImpulse(
     body: Body, jx: number, jy: number, r: Vect,
 ) {
-    // body.v = body.v.add(vmult(j, body.m_inv));
-    body.vx += jx * body.massInv;
-    body.vy += jy * body.massInv;
-    // body.w += body.i_inv*vcross(r, j);
+    body.v = vadd(body.v, vmult(new Vect(jx, jy), body.massInv));
     body.w += body.inertiaInv * (r.x * jy - r.y * jx);
 }
 
@@ -75,9 +72,7 @@ export function applyImpulses(
 export function applyBiasImpulse(
     body: Body, jx: number, jy: number, r: Vect,
 ) {
-    // body.v_bias = vadd(body.v_bias, vmult(j, body.m_inv));
-    body.vxBias += jx * body.massInv;
-    body.vyBias += jy * body.massInv;
+    body.vBias = vadd(body.vBias, vmult(new Vect(jx, jy), body.massInv));
     body.wBias += body.inertiaInv * vcross2(r.x, r.y, jx, jy);
 }
 

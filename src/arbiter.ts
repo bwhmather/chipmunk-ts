@@ -375,8 +375,8 @@ export class Arbiter {
             const r2 = con.r2;
 
             // var vr = relative_velocity(a, b, r1, r2);
-            const vrx = b.vx - r2.y * b.w - (a.vx - r1.y * a.w);
-            const vry = b.vy + r2.x * b.w - (a.vy + r1.x * a.w);
+            const vrx = b.v.x - r2.y * b.w - (a.v.x - r1.y * a.w);
+            const vry = b.v.y + r2.x * b.w - (a.v.y + r1.x * a.w);
 
             // var vb1 = vadd(vmult(vperp(r1), a.w_bias), a.v_bias);
             // var vb2 = vadd(vmult(vperp(r2), b.w_bias), b.v_bias);
@@ -384,12 +384,12 @@ export class Arbiter {
 
             const vbn = (
                 n.x * (
-                    b.vxBias - r2.y * b.wBias -
-                    a.vxBias + r1.y * a.wBias
+                    b.vBias.x - r2.y * b.wBias -
+                    a.vBias.x + r1.y * a.wBias
                 ) +
                 n.y * (
-                    r2.x * b.wBias + b.vyBias -
-                    r1.x * a.wBias - a.vyBias
+                    r2.x * b.wBias + b.vBias.y -
+                    r1.x * a.wBias - a.vBias.y
                 )
             );
 
