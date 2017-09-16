@@ -40,6 +40,24 @@ export class BB {
         this.r = r;
         this.t = t;
     }
+
+    containsVect(vect: Vect): boolean {
+        return (
+            this.l <= vect.x &&
+            this.r >= vect.x &&
+            this.b <= vect.y &&
+            this.t >= vect.y
+        );
+    }
+
+    containsBox(other: BB): boolean {
+        return (
+            this.l <= other.l &&
+            this.r >= other.r &&
+            this.b <= other.b &&
+            this.t >= other.t
+        );
+    }
 }
 
 export function bb(l: number, b: number, r: number, t: number): BB {
@@ -69,38 +87,6 @@ export function bbIntersects2(
     l: number, b: number, r: number, t: number,
 ): boolean {
     return (box.l <= r && l <= box.r && box.b <= t && b <= box.t);
-}
-
-/// Returns true if @c other lies completely within @c bb.
-export function bbContainsBB(boxA: BB, boxB: BB): boolean {
-    return (
-        boxA.l <= boxB.l &&
-        boxA.r >= boxB.r &&
-        boxA.b <= boxB.b &&
-        boxA.t >= boxB.t
-    );
-}
-
-/// Returns true if @c bb contains @c v.
-export function bbContainsVect(box: BB, vect: Vect): boolean {
-    return (
-        box.l <= vect.x &&
-        box.r >= vect.x &&
-        box.b <= vect.y &&
-        box.t >= vect.y
-    );
-}
-
-export function bbContainsVect2(
-    l: number, b: number, r: number, t: number,
-    vect: Vect,
-): boolean {
-    return (
-        l <= vect.x &&
-        r >= vect.x &&
-        b <= vect.y &&
-        t >= vect.y
-    );
 }
 
 /// Returns a bounding box that holds both bounding boxes.
