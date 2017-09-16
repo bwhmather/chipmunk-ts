@@ -93,7 +93,7 @@ export class CollisionHandler {
     }
 }
 
-type ArbiterState = (
+export type ArbiterState = (
     // Arbiter is active and its the first collision.
     "first-coll" |
     // Arbiter is active and its not the first collision.
