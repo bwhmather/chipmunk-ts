@@ -28,5 +28,10 @@
   "scripts": {
     "build": "rollup -c",
     "tslint": "tslint src/*.ts src/*/*.ts"
-  }
+  },
+  "files": [
+    "dist/*.js",
+    "dist/*.mjs",
+    "dist/*.d.ts"
+  ]
 }
