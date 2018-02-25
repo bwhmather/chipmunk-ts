@@ -3,3 +3,5 @@
 /.rpt2_cache/
 /dist/
 /node_modules/
+/*.tgz
+/package-lock.json
