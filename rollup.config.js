@@ -14,6 +14,8 @@ export default [
     output: {
       format: 'es',
       file: 'dist/chipmunk.mjs',
+      sourcemap: true,
+      sourcemapFile: 'dist/chipmunk.mjs.map'
     }
   },
   {
@@ -26,13 +28,14 @@ export default [
     ],
     output: {
       format: 'cjs',
-      file: 'dist/chipmunk.umd.js'
+      file: 'dist/chipmunk.umd.js',
+      sourcemap: true,
+      sourcemapFile: 'dist/chipmunk.umd.js.map'
     }
   },
   {
     input: 'src/index.ts',
     name: 'cp',
-    sourcemap: true,
     plugins: [
       typescript({
         abortOnError: false,
@@ -42,13 +45,13 @@ export default [
     output: {
       format: 'iife',
       file: 'dist/chipmunk.js',
+      sourcemap: true,
       sourcemapFile: 'dist/chipmunk.js.map',
     }
   },
   {
     input: 'src/index.ts',
     name: 'cp',
-    sourcemap: true,
     plugins: [
       typescript({
         abortOnError: false,
@@ -59,6 +62,7 @@ export default [
     output: {
       format: 'iife',
       file: 'dist/chipmunk.min.js',
+      sourcemap: true,
       sourcemapFile: 'dist/chipmunk.min.js.map'
     }
   },
