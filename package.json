@@ -32,6 +32,7 @@
   "files": [
     "dist/*.js",
     "dist/*.mjs",
-    "dist/*.d.ts"
+    "dist/*.d.ts",
+    "dist/**/*.d.ts"
   ]
 }
