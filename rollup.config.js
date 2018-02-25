@@ -8,6 +8,7 @@ export default [
     plugins: [
       typescript({
         abortOnError: false,
+        useTsconfigDeclarationDir: true,
       }),
     ],
     output: {
@@ -20,6 +21,7 @@ export default [
     plugins: [
       typescript({
         abortOnError: false,
+        useTsconfigDeclarationDir: true,
       }),
     ],
     output: {
@@ -34,6 +36,7 @@ export default [
     plugins: [
       typescript({
         abortOnError: false,
+        useTsconfigDeclarationDir: true,
       }),
     ],
     output: {
@@ -49,6 +52,7 @@ export default [
     plugins: [
       typescript({
         abortOnError: false,
+        useTsconfigDeclarationDir: true,
       }),
       uglify(),
     ],

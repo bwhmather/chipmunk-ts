@@ -2,6 +2,9 @@
   "compilerOptions": {
     "sourceMap": true,
     "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declarationDir": "dist/types",
     "moduleResolution": "node",
     "noImplicitAny": true,
     "target": "es5",
