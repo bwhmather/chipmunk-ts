@@ -21,15 +21,14 @@
  * SOFTWARE.
  */
 
-export * from "./constraint";
-export * from "./damped-rotary-spring";
-export * from "./damped-spring";
-export * from "./gear-joint";
-export * from "./groove-joint";
-export * from "./pin-joint";
-export * from "./pivot-joint";
-export * from "./ratchet-joint";
-export * from "./rotary-limit-joint";
-export * from "./simple-motor";
-export * from "./slide-joint";
-export * from "./util";
+export { Constraint } from "./constraint";
+export { DampedRotarySpring } from "./damped-rotary-spring";
+export { DampedSpring } from "./damped-spring";
+export { GearJoint } from "./gear-joint";
+export { GrooveJoint } from "./groove-joint";
+export { PinJoint } from "./pin-joint";
+export { PivotJoint } from "./pivot-joint";
+export { RatchetJoint } from "./ratchet-joint";
+export { RotaryLimitJoint } from "./rotary-limit-joint";
+export { SimpleMotor } from "./simple-motor";
+export { SlideJoint } from "./slide-joint";
