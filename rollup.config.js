@@ -35,7 +35,6 @@ export default [
   },
   {
     input: 'src/index.ts',
-    name: 'cp',
     plugins: [
       typescript({
         abortOnError: false,
@@ -44,6 +43,7 @@ export default [
     ],
     output: {
       format: 'iife',
+      name: 'cp',
       file: 'dist/chipmunk.js',
       sourcemap: true,
       sourcemapFile: 'dist/chipmunk.js.map',
@@ -51,7 +51,6 @@ export default [
   },
   {
     input: 'src/index.ts',
-    name: 'cp',
     plugins: [
       typescript({
         abortOnError: false,
@@ -61,6 +60,7 @@ export default [
     ],
     output: {
       format: 'iife',
+      name: 'cp',
       file: 'dist/chipmunk.min.js',
       sourcemap: true,
       sourcemapFile: 'dist/chipmunk.min.js.map'
