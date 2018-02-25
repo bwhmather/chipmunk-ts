@@ -6,7 +6,7 @@
     "engine",
     "chipmunk"
   ],
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Ben Mather <bwhmather@bwhmather.com> (bwhmather.com)",
   "homepage": "https://github.com/bwhmather/chipmunk-ts",
   "repository": {
